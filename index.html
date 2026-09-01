@@ -2,11 +2,11 @@
 <html lang="zh-HK">
 <head>
   <meta charset="utf-8">
-  <title>Google Drive 測試 (GIS)</title>
+  <title>Google Drive 測試 (GIS + OAuth)</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
-  <h2>Google Drive 測試 App (新版)</h2>
+  <h2>Google Drive 測試 App</h2>
   <div id="g_id_onload"
        data-client_id="58009415485-8qvhrvbasmrq5ugms01dv8vt7pneen6u.apps.googleusercontent.com"
        data-context="signin"
@@ -21,9 +21,19 @@
     let accessToken = null;
 
     function handleCredentialResponse(response) {
-      alert("登入成功！ID Token: " + response.credential);
-      // ⚠️ 注意：新版 GIS 只會俾 ID Token，唔會直接俾 access token
-      // 如果要用 Google Drive API，要再用 OAuth 2.0 flow 換取 access token
+      // 這裡只會得到 ID Token
+      console.log("ID Token:", response.credential);
+
+      // 要再用 OAuth 2.0 flow 換取 access token
+      const client = google.accounts.oauth2.initTokenClient({
+        client_id: "58009415485-8qvhrvbasmrq5ugms01dv8vt7pneen6u.apps.googleusercontent.com",
+        scope: "https://www.googleapis.com/auth/drive.file",
+        callback: (tokenResponse) => {
+          accessToken = tokenResponse.access_token;
+          alert("成功取得 access token！");
+        },
+      });
+      client.requestAccessToken();
     }
 
     document.getElementById("uploadBtn").onclick = () => {
@@ -31,7 +41,21 @@
         alert("未有 access token，Drive API 上載唔會成功。");
         return;
       }
-      // 上載檔案嘅程式碼（同之前一樣）
+      const metadata = { name: "test.json", mimeType: "application/json" };
+      const file = new Blob([JSON.stringify({hello:"world"})], { type: "application/json" });
+      const form = new FormData();
+      form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
+      form.append("file", file);
+
+      fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
+        method: "POST",
+        headers: new Headers({ "Authorization": "Bearer " + accessToken }),
+        body: form
+      }).then(res => res.json()).then(val => {
+        alert("檔案已上載！ID: " + val.id);
+      }).catch(err => {
+        alert("上載錯誤：" + JSON.stringify(err));
+      });
     };
   </script>
 </body>
