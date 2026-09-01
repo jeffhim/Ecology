@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Ecology & Taxonomy App</title>
 
-  <!-- PWA manifest (必須為獨立檔案) -->
+  <!-- PWA manifest (需放獨立檔案 manifest.json) -->
   <link rel="manifest" href="manifest.json" />
 
   <!-- Google Identity Services -->
@@ -49,6 +49,7 @@
     .debugBox{white-space:pre-wrap;background:#fff;padding:8px;border-radius:8px;margin-top:10px;border:1px solid #eee;font-size:12px}
     .btnClose{float:right;background:#eee;border:none;padding:6px;border-radius:6px}
     .taxonomyFields input{flex:1;min-width:120px;padding:8px;border-radius:8px;border:1px solid #e0e0e0}
+    #grantAccessBtn{display:none;margin-top:8px;padding:8px 12px;border-radius:8px;background:#1f8b6f;color:#fff;border:none}
   </style>
 </head>
 <body>
@@ -67,6 +68,11 @@
       </div>
       <div class="g_id_signin" data-type="standard"></div>
       <div class="muted">登入後可將紀錄與圖片儲存到你嘅 Google Drive</div>
+
+      <!-- 授權按鈕（收到 ID token 後顯示，避免 popup 被阻擋） -->
+      <button id="grantAccessBtn">授權 Drive 存取</button>
+
+      <!-- debug 區（手機可見） -->
       <div id="loginDebug" class="debugBox" style="display:none"></div>
     </div>
 
@@ -80,7 +86,7 @@
           </label>
 
           <label>分類（分欄填寫）</label>
-          <div id="taxonomyFields" class="taxonomyFields">
+          <div id="taxonomyFields" class="taxonomyFields" style="display:flex;gap:8px;flex-wrap:wrap">
             <input id="taxKingdom" placeholder="Kingdom">
             <input id="taxPhylum"  placeholder="Phylum">
             <input id="taxClass"   placeholder="Class">
@@ -149,16 +155,18 @@
   const CLIENT_ID = "58009415485-8qvhrvbasmrq5ugms01dv8vt7pneen6u.apps.googleusercontent.com";
   const SCOPES = "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive";
   let accessToken = null;
+  let tokenClientGlobal = null;
 
   // -------------------------
-  // GIS callback: 取得 access token（並把 debug 顯示在頁面，方便手機測試）
+  // GIS callback: 取得 ID token，建立 token client，但不立即 requestAccessToken
   // -------------------------
   function handleCredentialResponse(resp) {
     const dbgEl = document.getElementById("loginDebug");
     dbgEl.style.display = "block";
-    dbgEl.innerText = "收到 ID token 回應:\n" + JSON.stringify(resp, null, 2) + "\n\n嘗試用 token client 取得 access token...";
+    dbgEl.innerText = "收到 ID token 回應:\n" + JSON.stringify(resp, null, 2) + "\n\n請按「授權 Drive 存取」以取得 access token。";
 
-    const tokenClient = google.accounts.oauth2.initTokenClient({
+    // 建立 token client 並儲存到全域變數（但不立即 requestAccessToken）
+    tokenClientGlobal = google.accounts.oauth2.initTokenClient({
       client_id: CLIENT_ID,
       scope: SCOPES,
       callback: (tokenResp) => {
@@ -167,17 +175,25 @@
           accessToken = tokenResp.access_token;
           document.getElementById("userInfo").innerText = "已登入（Drive 可用）";
           dbgEl.innerText += "\n\n已取得 access token。";
+          document.getElementById("grantAccessBtn").style.display = "none";
         } else {
-          dbgEl.innerText += "\n\n未取得 access_token，可能被 popup 阻擋或授權未完成。";
+          dbgEl.innerText += "\n\n未取得 access_token，請再次按「授權 Drive 存取」。";
         }
       }
     });
 
-    try {
-      tokenClient.requestAccessToken();
-    } catch (err) {
-      dbgEl.innerText += "\n\n呼叫 requestAccessToken 時發生錯誤:\n" + (err && err.message ? err.message : String(err));
-    }
+    // 顯示授權按鈕，等用戶手動點擊（避免 popup 被阻擋）
+    const grantBtn = document.getElementById("grantAccessBtn");
+    grantBtn.style.display = "inline-block";
+    grantBtn.onclick = () => {
+      try {
+        // 用戶手勢觸發 requestAccessToken，並加 prompt: 'consent' 強制顯示授權畫面
+        tokenClientGlobal.requestAccessToken({ prompt: 'consent' });
+        dbgEl.innerText += "\n\n已觸發 requestAccessToken，請完成授權畫面。";
+      } catch (err) {
+        dbgEl.innerText += "\n\n呼叫 requestAccessToken 時發生錯誤:\n" + (err && err.message ? err.message : String(err));
+      }
+    };
   }
 
   // -------------------------
