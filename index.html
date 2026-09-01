@@ -1,586 +1,674 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Exploration of the Nature by Jeffrey</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Exploration of the Nature by Jeffrey</title>
 
-  <!-- Cute rounded font -->
-  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;800&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://d3js.org/d3.v7.min.js"></script>
 
-  <!-- Google Identity Services -->
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <!-- D3 for tree -->
-  <script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+:root{
+  --accent:#2fb86a;
+  --accent-dark:#238a55;
+  --bg:#eef6f0;
+  --card:#ffffff;
+  --muted:#6b6b6b;
+  --radius:14px;
+  --nav-height:84px;
+  --safe-bottom:calc(var(--nav-height) + 28px);
+  --shadow: 0 10px 30px rgba(20,40,30,0.06);
+  --dot-size:9px;
+  --toast-bg: rgba(15,80,50,0.95);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family:"Baloo 2", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  background:
+    radial-gradient(circle at 10% 10%, rgba(43,160,90,0.03), transparent 20%),
+    radial-gradient(circle at 90% 90%, rgba(43,160,90,0.02), transparent 20%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40'><rect width='40' height='40' fill='%23eef6f0'/><circle cx='20' cy='20' r='1' fill='%23e6efe6'/></svg>");
+  color:#0b2b1f;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  padding-bottom:var(--safe-bottom);
+}
 
-  <style>
-    :root{
-      --accent:#2fb86a;
-      --accent-dark:#238a55;
-      --bg:#eef6f0;
-      --card:#ffffff;
-      --muted:#6b6b6b;
-      --radius:14px;
-      --nav-height:84px;
-      --safe-bottom:calc(var(--nav-height) + 28px);
-      --shadow: 0 10px 30px rgba(20,40,30,0.06);
-      --dot-size:9px;
-      --toast-bg: rgba(15,80,50,0.95);
-    }
+header{
+  background:linear-gradient(90deg,var(--accent),var(--accent-dark));
+  color:#fff;
+  padding:14px 18px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  box-shadow:0 6px 18px rgba(0,0,0,0.08);
+  position:sticky;
+  top:0;
+  z-index:60;
+}
+.titleWrap{display:flex;align-items:center;gap:12px;min-width:0}
+h1{
+  font-size:18px;margin:0;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+/* very small right-side status labels */
+.headerStatus{display:flex;gap:10px;align-items:center;font-weight:700}
+.statusMini{display:flex;align-items:center;gap:6px;font-size:10px;color:#eafaf0}
+.dot{width:var(--dot-size);height:var(--dot-size);border-radius:999px;background:#d9534f;box-shadow:0 2px 6px rgba(0,0,0,0.08)}
+.dot.green{background:#2fb86a}
+.statusMini span{font-weight:700;letter-spacing:0.2px}
 
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0;
-      font-family:"Baloo 2", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-      background:
-        radial-gradient(circle at 10% 10%, rgba(43,160,90,0.03), transparent 20%),
-        radial-gradient(circle at 90% 90%, rgba(43,160,90,0.02), transparent 20%),
-        url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40'><rect width='40' height='40' fill='%23eef6f0'/><circle cx='20' cy='20' r='1' fill='%23e6efe6'/></svg>");
-      color:#0b2b1f;
-      -webkit-font-smoothing:antialiased;
-      -moz-osx-font-smoothing:grayscale;
-      padding-bottom:var(--safe-bottom);
-    }
+/* ensure page content never hidden behind nav: extra bottom padding */
+main{max-width:980px;margin:14px auto;padding:0 14px calc(var(--nav-height) + 36px);}
 
-    header{
-      background:linear-gradient(90deg,var(--accent),var(--accent-dark));
-      color:#fff;
-      padding:14px 18px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      box-shadow:0 6px 18px rgba(0,0,0,0.08);
-      position:sticky;
-      top:0;
-      z-index:60;
-    }
-    header .titleWrap{display:flex;align-items:center;gap:12px;min-width:0}
-    header h1{
-      font-size:18px;
-      margin:0;
-      font-weight:800;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
-    /* very small right-side status labels */
-    .headerStatus{display:flex;gap:10px;align-items:center;font-weight:700}
-    .statusMini{display:flex;align-items:center;gap:6px;font-size:10px;color:#eafaf0}
-    .dot{width:var(--dot-size);height:var(--dot-size);border-radius:999px;background:#d9534f;box-shadow:0 2px 6px rgba(0,0,0,0.08)}
-    .dot.green{background:#2fb86a}
-    .statusMini span{font-weight:700;letter-spacing:0.2px}
+.card{
+  background:var(--card);
+  border-radius:var(--radius);
+  padding:14px;
+  margin-bottom:18px;
+  box-shadow:var(--shadow);
+  overflow:visible;
+}
 
-    /* ensure page content never hidden behind nav: extra bottom padding */
-    main{max-width:980px;margin:14px auto;padding:0 14px  calc(var(--nav-height) + 36px);}
+.sectionTitle{
+  display:block;background:linear-gradient(180deg,#f3fff6,#ffffff);border-radius:10px;padding:8px 12px;color:var(--accent-dark);font-weight:800;margin:-14px -14px 12px -14px;
+  box-shadow:inset 0 -1px 0 rgba(0,0,0,0.02);
+}
 
-    .card{
-      background:var(--card);
-      border-radius:var(--radius);
-      padding:14px;
-      margin-bottom:18px;
-      box-shadow:var(--shadow);
-      overflow:visible;
-    }
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+button{
+  background:var(--accent);color:#fff;border:none;padding:12px 16px;border-radius:12px;font-weight:800;cursor:pointer;box-shadow:0 6px 18px rgba(43,160,106,0.12);
+}
+button.secondary{background:#fff;color:var(--accent);border:2px solid var(--accent);box-shadow:none;font-weight:800}
+button.ghost{background:transparent;border:2px dashed rgba(15,80,50,0.08);color:var(--accent-dark);font-weight:700}
 
-    .sectionTitle{
-      display:block;
-      background:linear-gradient(180deg,#f3fff6,#ffffff);
-      border-radius:10px;
-      padding:8px 12px;
-      color:var(--accent-dark);
-      font-weight:800;
-      margin:-14px -14px 12px -14px;
-      box-shadow:inset 0 -1px 0 rgba(0,0,0,0.02);
-    }
+input,textarea,select{
+  width:100%;padding:10px;border-radius:10px;border:1px solid #e6efe8;font-size:14px;outline:none;background:linear-gradient(180deg,#fff,#fbfffb);
+}
+textarea{min-height:96px;resize:vertical}
 
-    .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
-    button{
-      background:var(--accent);
-      color:#fff;
-      border:none;
-      padding:12px 16px;
-      border-radius:12px;
-      font-weight:800;
-      cursor:pointer;
-      box-shadow:0 6px 18px rgba(43,160,106,0.12);
-    }
-    button.secondary{
-      background:#fff;color:var(--accent);border:2px solid var(--accent);box-shadow:none;font-weight:800;
-    }
-    button.ghost{
-      background:transparent;border:2px dashed rgba(15,80,50,0.08);color:var(--accent-dark);font-weight:700;
-    }
+.statusRow{display:flex;gap:18px;align-items:center}
+.statusItem{display:flex;gap:8px;align-items:center;font-weight:800;color:#234f3a}
+.statusLabel{font-weight:700;color:#145a3f}
 
-    input,textarea{
-      width:100%;
-      padding:12px;
-      border-radius:12px;
-      border:1px solid #e6efe8;
-      font-size:15px;
-      outline:none;
-      background:linear-gradient(180deg,#fff,#fbfffb);
-    }
-    textarea{min-height:96px;resize:vertical}
+.debug{white-space:pre-wrap;background:#0f2b1f;color:#dff6e9;padding:12px;border-radius:10px;font-size:13px;overflow:auto;max-height:260px;display:none;box-shadow:0 8px 20px rgba(10,30,20,0.12);}
 
-    .statusRow{display:flex;gap:18px;align-items:center}
-    .statusItem{display:flex;gap:8px;align-items:center;font-weight:800;color:#234f3a}
-    .statusLabel{font-weight:700;color:#145a3f}
+/* Tree */
+#taxonomyTree{min-height:260px;padding:8px;border-radius:12px;background:linear-gradient(180deg,#ffffff,#f7fff8);border:1px dashed #e6efe6}
 
-    .debug{
-      white-space:pre-wrap;
-      background:#0f2b1f;color:#dff6e9;padding:12px;border-radius:10px;font-size:13px;overflow:auto;max-height:260px;display:none;
-      box-shadow:0 8px 20px rgba(10,30,20,0.12);
-    }
+/* toast */
+.toast{
+  position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--nav-height) + 18px);
+  background:var(--toast-bg);color:#fff;padding:12px 18px;border-radius:12px;font-weight:700;box-shadow:0 10px 30px rgba(0,0,0,0.25);z-index:200;opacity:0;transition:opacity .25s ease, transform .25s ease;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(-6px);}
 
-    /* Tree */
-    #taxonomyTree{min-height:260px;padding:8px;border-radius:12px;background:linear-gradient(180deg,#ffffff,#f7fff8);border:1px dashed #e6efe6}
+/* bottom nav */
+.bottomNav{
+  position:fixed;left:0;right:0;bottom:0;height:var(--nav-height);background:linear-gradient(180deg,#ffffff,#f6fff6);border-top:1px solid #e9f3ea;display:flex;align-items:center;justify-content:space-around;z-index:80;padding:8px 12px;box-shadow:0 -6px 20px rgba(10,30,20,0.03);
+}
+.navBtn{flex:1;text-align:center;color:#3b6b52;font-weight:800;cursor:pointer;padding:8px 6px}
+.navBtn.active{color:var(--accent-dark)}
+.navIcon{display:block;font-size:20px;margin-bottom:6px}
 
-    /* image grid */
-    .imageGrid{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
-    .thumb{width:96px;height:96px;border-radius:12px;overflow:hidden;border:1px solid #eef6ef;background:#fbfff9;display:flex;align-items:center;justify-content:center}
-    .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.page{display:none}
+.page.active{display:block}
 
-    /* toast */
-    .toast{
-      position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--nav-height) + 18px);
-      background:var(--toast-bg);color:#fff;padding:12px 18px;border-radius:12px;font-weight:700;box-shadow:0 10px 30px rgba(0,0,0,0.25);z-index:200;opacity:0;transition:opacity .25s ease, transform .25s ease;
-    }
-    .toast.show{opacity:1;transform:translateX(-50%) translateY(-6px);}
+.syncLog{max-height:180px;overflow:auto;border-radius:10px;padding:8px;background:#fbfff9;border:1px solid #eef6ef;font-size:13px}
 
-    /* bottom nav */
-    .bottomNav{
-      position:fixed;left:0;right:0;bottom:0;height:var(--nav-height);background:linear-gradient(180deg,#ffffff,#f6fff6);border-top:1px solid #e9f3ea;display:flex;align-items:center;justify-content:space-around;z-index:80;padding:8px 12px;
-      box-shadow:0 -6px 20px rgba(10,30,20,0.03);
-    }
-    .navBtn{flex:1;text-align:center;color:#3b6b52;font-weight:800;cursor:pointer;padding:8px 6px}
-    .navBtn.active{color:var(--accent-dark)}
-    .navIcon{display:block;font-size:20px;margin-bottom:6px}
-
-    /* central camera button */
-    .cameraWrap{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--nav-height) - 36px);z-index:90}
-    .cameraBtn{width:76px;height:76px;border-radius:50%;background:linear-gradient(180deg,var(--accent),var(--accent-dark));display:flex;align-items:center;justify-content:center;color:#fff;font-size:34px;box-shadow:0 12px 30px rgba(30,80,50,0.18);border:6px solid #fff;cursor:pointer}
-
-    .page{display:none}
-    .page.active{display:block}
-
-    @media (min-width:900px){
-      main{padding:18px}
-      .card{padding:18px}
-    }
-  </style>
+@media (min-width:900px){
+  main{padding:18px}
+  .card{padding:18px}
+}
+</style>
 </head>
 <body>
-  <header>
-    <div class="titleWrap" aria-hidden="false">
-      <h1>Exploration of the Nature by Jeffrey</h1>
-    </div>
-
-    <div class="headerStatus" aria-hidden="false">
-      <div class="statusMini" title="Signed in status">
-        <div id="signedDot" class="dot red" aria-hidden="true"></div>
-        <span style="font-size:10px">Sign</span>
-      </div>
-      <div class="statusMini" title="Auto sync status">
-        <div id="syncDot" class="dot red" aria-hidden="true"></div>
-        <span style="font-size:10px">Sync</span>
-      </div>
-    </div>
-  </header>
-
-  <main>
-    <!-- Controls moved to Settings tab only -->
-    <section id="pageHome" class="page active">
-      <div class="card">
-        <div class="sectionTitle">Taxonomy Tree</div>
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div style="font-weight:800;color:#145a3f">Browse your recorded species</div>
-          <div id="speciesCountLine" style="font-weight:800;color:#0f5b3f">Jeffrey has explored 0 species</div>
-        </div>
-
-        <div id="taxonomyTree" style="margin-top:12px">
-          <svg id="treeSvg" width="100%" height="320"></svg>
-        </div>
-
-        <div class="row" style="margin-top:12px">
-          <button id="refreshTreeBtn">Refresh Tree</button>
-          <button id="countRefreshBtn" class="secondary">Refresh Count</button>
-        </div>
-      </div>
-    </section>
-
-    <section id="pageAdd" class="page">
-      <div class="card">
-        <div class="sectionTitle">Add / Save Species Record</div>
-
-        <label>Species name
-          <input id="speciesName" type="text" placeholder="e.g. Formica rufa">
-        </label>
-
-        <label>Taxonomy (comma separated)
-          <input id="taxonomyInput" placeholder="Kingdom, Phylum, Class, Order, Family, Genus, Species">
-        </label>
-
-        <label>Notes
-          <textarea id="speciesNote" placeholder="Location, behavior, time, etc."></textarea>
-        </label>
-
-        <label>Upload images (multiple)
-          <input id="speciesImages" type="file" accept="image/*" multiple>
-        </label>
-
-        <div class="row" style="margin-top:12px">
-          <button id="saveBtn">Save Record</button>
-          <button id="clearBtn" class="secondary">Clear Form</button>
-        </div>
-      </div>
-    </section>
-
-    <section id="pageBrowse" class="page">
-      <div class="card">
-        <div class="sectionTitle">Search / List Records</div>
-        <div class="row">
-          <input id="searchQuery" type="text" placeholder="Search by name or keyword">
-          <button id="searchBtn">Search</button>
-          <button id="listBtn" class="secondary">List recent 50</button>
-        </div>
-        <div id="searchResult" style="margin-top:12px"></div>
-      </div>
-
-      <div class="card">
-        <div class="sectionTitle">Record Viewer</div>
-        <div id="recordViewer" style="margin-top:8px">Click an item to view details</div>
-      </div>
-    </section>
-
-    <!-- Settings tab: only place with sign/grant/retry and export -->
-    <section id="pageSettings" class="page">
-      <div class="card">
-        <div class="sectionTitle">Settings</div>
-
-        <div style="display:flex;flex-direction:column;gap:10px">
-          <div style="font-weight:700;color:#145a3f">Account</div>
-          <div class="row">
-            <button id="btnSignGrant">Sign in & Grant Drive Access</button>
-            <button id="btnSignRetry" class="secondary">Retry</button>
-          </div>
-
-          <div style="margin-top:8px">
-            <div style="font-weight:700;color:#145a3f;margin-bottom:6px">Export / Backup</div>
-            <div class="row">
-              <button id="exportLocalBtn" class="ghost">Export local JSON</button>
-              <button id="exportDriveBtn" class="secondary">Export to Drive (signed)</button>
-            </div>
-            <div style="margin-top:8px;color:var(--muted);font-size:13px">Export will download a JSON file of locally saved records. Drive export requires sign-in.</div>
-          </div>
-
-          <div style="margin-top:12px">
-            <div style="font-weight:700;color:#145a3f;margin-bottom:6px">Debug (shown only on failure)</div>
-            <div id="loginDebug" class="debug" aria-live="polite"></div>
-          </div>
-        </div>
-      </div>
-    </section>
-  </main>
-
-  <!-- toast -->
-  <div id="toast" class="toast" role="status" aria-live="polite"></div>
-
-  <!-- central camera button -->
-  <div class="cameraWrap" aria-hidden="false">
-    <div class="cameraBtn" id="cameraBtn">📷</div>
+<header>
+  <div class="titleWrap" aria-hidden="false">
+    <h1>Exploration of the Nature by Jeffrey</h1>
   </div>
 
-  <!-- bottom nav -->
-  <nav class="bottomNav" role="navigation" aria-label="Main navigation">
-    <div id="navHome" class="navBtn active" data-target="pageHome"><span class="navIcon">🌳</span>Home</div>
-    <div id="navAdd" class="navBtn" data-target="pageAdd"><span class="navIcon">➕</span>Add</div>
-    <div id="navBrowse" class="navBtn" data-target="pageBrowse"><span class="navIcon">🔎</span>Browse</div>
-    <div id="navSettings" class="navBtn" data-target="pageSettings"><span class="navIcon">⚙️</span>Settings</div>
-  </nav>
+  <div class="headerStatus" aria-hidden="false">
+    <div class="statusMini" title="Signed in status">
+      <div id="signedDot" class="dot red" aria-hidden="true"></div>
+      <span>Sign</span>
+    </div>
+    <div class="statusMini" title="Auto sync status">
+      <div id="syncDot" class="dot red" aria-hidden="true"></div>
+      <span>Sync</span>
+    </div>
+  </div>
+</header>
 
-  <script>
-  /************************************************************************
-   * Adjusted behavior per request:
-   * - Sign-in controls only in Settings tab
-   * - Title exact text preserved
-   * - Small Sign/Sync indicators on header (no extra signed-in text)
-   * - Debug area hidden unless login/drive errors occur
-   * - Export local JSON and export-to-Drive (Drive requires sign-in)
-   * - Toast notifications for local save and Drive upload
-   * - Bottom nav no longer overlaps content (main has bottom padding)
-   ************************************************************************/
+<main>
+  <!-- Home -->
+  <section id="pageHome" class="page active">
+    <div class="card">
+      <div class="sectionTitle">Taxonomy Tree</div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font-weight:800;color:#145a3f">Browse your recorded species</div>
+        <div id="speciesCountLine" style="font-weight:800;color:#0f5b3f">Jeffrey has explored 0 species</div>
+      </div>
 
-  const CLIENT_ID = "58009415485-8qvhrvbasmrq5ugms01dv8vt7pneen6u.apps.googleusercontent.com";
-  const SCOPES = "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive";
-  const TARGET_FOLDER_NAME = "EcologyApp_Records";
+      <div id="taxonomyTree" style="margin-top:12px">
+        <svg id="treeSvg" width="100%" height="320"></svg>
+      </div>
 
-  let tokenClient = null;
-  let accessToken = null;
-  let cachedFolderId = null;
-  let autoSyncInterval = null;
+      <div class="row" style="margin-top:12px">
+        <button id="refreshTreeBtn">Refresh Tree</button>
+        <button id="countRefreshBtn" class="secondary">Refresh Count</button>
+      </div>
+    </div>
+  </section>
 
-  // UI refs
-  const signedDot = document.getElementById('signedDot');
-  const syncDot = document.getElementById('syncDot');
-  const loginDebug = document.getElementById('loginDebug');
-  const toastEl = document.getElementById('toast');
+  <!-- Add -->
+  <section id="pageAdd" class="page">
+    <div class="card">
+      <div class="sectionTitle">Add / Save Species Record</div>
 
-  function setSignedState(ok) {
-    signedDot.classList.toggle('green', ok);
-    signedDot.classList.toggle('red', !ok);
-  }
-  function setSyncState(ok) {
-    syncDot.classList.toggle('green', ok);
-    syncDot.classList.toggle('red', !ok);
-  }
-  function showDebug(text) {
-    loginDebug.style.display = 'block';
-    loginDebug.innerText = text;
-    loginDebug.scrollIntoView({behavior:'smooth', block:'center'});
-  }
-  function hideDebug() {
-    loginDebug.style.display = 'none';
-    loginDebug.innerText = '';
-  }
+      <label>Species name
+        <input id="speciesName" type="text" placeholder="e.g. Formica rufa">
+      </label>
 
-  function showToast(message, seconds = 3) {
-    toastEl.innerText = message;
-    toastEl.classList.add('show');
-    clearTimeout(toastEl._timeout);
-    toastEl._timeout = setTimeout(() => {
-      toastEl.classList.remove('show');
-    }, seconds * 1000);
-  }
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px">
+        <label>Kingdom <input id="taxKingdom" placeholder="Kingdom"></label>
+        <label>Phylum <input id="taxPhylum" placeholder="Phylum"></label>
+        <label>Class <input id="taxClass" placeholder="Class"></label>
+        <label>Order <input id="taxOrder" placeholder="Order"></label>
+        <label>Family <input id="taxFamily" placeholder="Family"></label>
+        <label>Genus <input id="taxGenus" placeholder="Genus"></label>
+        <label>Species <input id="taxSpecies" placeholder="Species"></label>
+      </div>
 
-  // Wait for GIS
-  function waitForGISReady(timeout = 4000) {
-    return new Promise((resolve) => {
-      const start = Date.now();
-      (function check(){
-        if (window.google && google.accounts && google.accounts.oauth2) return resolve(true);
-        if (Date.now() - start > timeout) return resolve(false);
-        setTimeout(check, 100);
-      })();
-    });
-  }
+      <label style="margin-top:10px">Notes
+        <textarea id="speciesNote" placeholder="Location, behavior, time, etc."></textarea>
+      </label>
 
-  async function initTokenClient() {
-    const ready = await waitForGISReady(5000);
-    if (!ready) {
-      // show debug only on failure
-      showDebug("Google Identity Services not loaded. Check network or script blocking.");
-      setSignedState(false);
-      setSyncState(false);
-      return false;
-    }
-    tokenClient = google.accounts.oauth2.initTokenClient({
-      client_id: CLIENT_ID,
-      scope: SCOPES,
-      callback: (resp) => {
-        if (resp && resp.access_token) {
-          accessToken = resp.access_token;
-          setSignedState(true);
-          hideDebug();
-          // ensure folder and start auto sync
-          getOrCreateFolderId(TARGET_FOLDER_NAME).then(id => {
-            cachedFolderId = id;
-            startAutoSync();
-            refreshSpeciesCount();
-            buildTaxonomyTree();
-          }).catch(e => {
-            showDebug("Folder creation/access error:\n" + (e && e.message ? e.message : String(e)));
-            setSyncState(false);
-          });
-        } else {
-          // show debug only on failure
-          showDebug("Token response error:\n" + JSON.stringify(resp, null, 2));
-          setSignedState(false);
-          setSyncState(false);
-        }
+      <label>Upload images (multiple)
+        <input id="speciesImages" type="file" accept="image/*" multiple>
+      </label>
+
+      <div class="row" style="margin-top:12px">
+        <button id="saveBtn">Save Record</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Browse -->
+  <section id="pageBrowse" class="page">
+    <div class="card">
+      <div class="sectionTitle">Search / List Records</div>
+      <div class="row">
+        <input id="searchQuery" type="text" placeholder="Search by name or keyword">
+        <button id="searchBtn">Search</button>
+        <button id="listBtn" class="secondary">List recent 50</button>
+      </div>
+      <div id="searchResult" style="margin-top:12px"></div>
+    </div>
+
+    <div class="card">
+      <div class="sectionTitle">Record Viewer</div>
+      <div id="recordViewer" style="margin-top:8px">Click an item to view details</div>
+    </div>
+  </section>
+
+  <!-- Settings -->
+  <section id="pageSettings" class="page">
+    <div class="card">
+      <div class="sectionTitle">Settings</div>
+
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="font-weight:700;color:#145a3f">Account</div>
+        <div class="row">
+          <button id="btnSignGrant">Sign in & Grant Drive Access</button>
+          <button id="btnSignRetry" class="secondary">Retry</button>
+        </div>
+
+        <div style="margin-top:8px">
+          <div style="font-weight:700;color:#145a3f;margin-bottom:6px">Export / Backup</div>
+          <div class="row">
+            <button id="exportLocalBtn" class="ghost">Export local JSON</button>
+            <button id="exportDriveBtn" class="secondary">Export to Drive (signed)</button>
+          </div>
+          <div style="margin-top:8px;color:var(--muted);font-size:13px">Export will download a JSON file of locally saved records. Drive export requires sign-in.</div>
+        </div>
+
+        <div style="margin-top:12px">
+          <div style="font-weight:700;color:#145a3f;margin-bottom:6px">Sync Log</div>
+          <div id="syncLog" class="syncLog">No sync activity yet.</div>
+          <div style="margin-top:8px;color:var(--muted);font-size:13px">Shows queued items, upload attempts and last sync time.</div>
+        </div>
+
+        <div style="margin-top:12px">
+          <div style="font-weight:700;color:#145a3f;margin-bottom:6px">Debug (shown only on failure)</div>
+          <div id="loginDebug" class="debug" aria-live="polite"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- toast -->
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<!-- bottom nav -->
+<nav class="bottomNav" role="navigation" aria-label="Main navigation">
+  <div id="navHome" class="navBtn active" data-target="pageHome"><span class="navIcon">🌳</span>Home</div>
+  <div id="navAdd" class="navBtn" data-target="pageAdd"><span class="navIcon">➕</span>Add</div>
+  <div id="navBrowse" class="navBtn" data-target="pageBrowse"><span class="navIcon">🔎</span>Browse</div>
+  <div id="navSettings" class="navBtn" data-target="pageSettings"><span class="navIcon">⚙️</span>Settings</div>
+</nav>
+
+<script>
+/* CONFIG */
+const CLIENT_ID = "58009415485-8qvhrvbasmrq5ugms01dv8vt7pneen6u.apps.googleusercontent.com";
+const SCOPES = "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive";
+const TARGET_FOLDER_NAME = "EcologyApp_Records";
+
+/* STATE */
+let tokenClient = null;
+let accessToken = null;
+let cachedFolderId = null;
+let autoSyncInterval = null;
+
+/* UI refs */
+const signedDot = document.getElementById('signedDot');
+const syncDot = document.getElementById('syncDot');
+const loginDebug = document.getElementById('loginDebug');
+const toastEl = document.getElementById('toast');
+const syncLogEl = document.getElementById('syncLog');
+
+function setSignedState(ok){ signedDot.classList.toggle('green', ok); signedDot.classList.toggle('red', !ok); }
+function setSyncState(ok){ syncDot.classList.toggle('green', ok); syncDot.classList.toggle('red', !ok); }
+function showDebug(text){ loginDebug.style.display='block'; loginDebug.innerText=text; loginDebug.scrollIntoView({behavior:'smooth', block:'center'}); }
+function hideDebug(){ loginDebug.style.display='none'; loginDebug.innerText=''; }
+
+function showToast(message, seconds=3){
+  toastEl.innerText = message;
+  toastEl.classList.add('show');
+  clearTimeout(toastEl._timeout);
+  toastEl._timeout = setTimeout(()=> toastEl.classList.remove('show'), seconds*1000);
+}
+
+/* Storage keys */
+const LOCAL_KEY = 'exploration_records_v1';
+const SYNC_QUEUE_KEY = 'exploration_sync_queue_v1';
+
+/* IndexedDB for images */
+const DB_NAME = 'exploration_images_db_v1';
+const DB_STORE = 'images';
+let dbPromise = null;
+
+function openDb(){
+  if(dbPromise) return dbPromise;
+  dbPromise = new Promise((resolve,reject)=>{
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = (e)=>{
+      const db = e.target.result;
+      if(!db.objectStoreNames.contains(DB_STORE)){
+        db.createObjectStore(DB_STORE, { keyPath: 'id' });
       }
-    });
-    return true;
-  }
-
-  // Combined sign & grant (Settings tab)
-  document.getElementById('btnSignGrant').addEventListener('click', async () => {
-    if (!tokenClient) {
-      const ok = await initTokenClient();
-      if (!ok) return;
-    }
-    try {
-      tokenClient.requestAccessToken({ prompt: 'consent' });
-    } catch (err) {
-      showDebug("Sign & Grant error:\n" + (err && err.message ? err.message : String(err)));
-      setSignedState(false);
-      setSyncState(false);
-    }
+    };
+    req.onsuccess = ()=> resolve(req.result);
+    req.onerror = ()=> reject(req.error);
   });
-
-  // Retry (Settings tab)
-  document.getElementById('btnSignRetry').addEventListener('click', async () => {
-    if (!tokenClient) {
-      const ok = await initTokenClient();
-      if (!ok) return;
-    }
-    try {
-      tokenClient.requestAccessToken({ prompt: 'consent' });
-    } catch (err) {
-      showDebug("Retry error:\n" + (err && err.message ? err.message : String(err)));
-      setSignedState(false);
-      setSyncState(false);
-    }
+  return dbPromise;
+}
+async function idbPut(id, blob){
+  const db = await openDb();
+  return new Promise((resolve,reject)=>{
+    const tx = db.transaction(DB_STORE, 'readwrite');
+    const store = tx.objectStore(DB_STORE);
+    store.put({ id, blob });
+    tx.oncomplete = ()=> resolve(true);
+    tx.onerror = ()=> reject(tx.error);
   });
+}
+async function idbGet(id){
+  const db = await openDb();
+  return new Promise((resolve,reject)=>{
+    const tx = db.transaction(DB_STORE, 'readonly');
+    const store = tx.objectStore(DB_STORE);
+    const r = store.get(id);
+    r.onsuccess = ()=> resolve(r.result ? r.result.blob : null);
+    r.onerror = ()=> reject(r.error);
+  });
+}
+async function idbDelete(id){
+  const db = await openDb();
+  return new Promise((resolve,reject)=>{
+    const tx = db.transaction(DB_STORE, 'readwrite');
+    const store = tx.objectStore(DB_STORE);
+    store.delete(id);
+    tx.oncomplete = ()=> resolve(true);
+    tx.onerror = ()=> reject(tx.error);
+  });
+}
 
-  // Silent attempt on load
-  (async function startup(){
-    await initTokenClient();
-    if (tokenClient) {
-      try {
-        tokenClient.requestAccessToken({ prompt: '' });
-        setTimeout(()=> {
-          if (!accessToken) {
-            setSignedState(false);
-            setSyncState(false);
-          }
-        }, 900);
-      } catch (e) {
+/* Local record helpers */
+function readLocalRecords(){ try{ return JSON.parse(localStorage.getItem(LOCAL_KEY) || '[]'); }catch(e){ return []; } }
+function writeLocalRecords(arr){ localStorage.setItem(LOCAL_KEY, JSON.stringify(arr)); }
+function readSyncQueue(){ try{ return JSON.parse(localStorage.getItem(SYNC_QUEUE_KEY) || '[]'); }catch(e){ return []; } }
+function writeSyncQueue(q){ localStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify(q)); }
+
+/* Sync log */
+function appendSyncLog(line){
+  const now = new Date().toLocaleString();
+  const entry = `${now} — ${line}`;
+  const prev = syncLogEl.dataset.log ? JSON.parse(syncLogEl.dataset.log) : [];
+  prev.push(entry);
+  syncLogEl.dataset.log = JSON.stringify(prev);
+  syncLogEl.innerHTML = prev.slice().reverse().map(l=>`<div>${escapeHtml(l)}</div>`).join('');
+}
+
+/* Wait for GIS */
+function waitForGISReady(timeout=4000){
+  return new Promise(resolve=>{
+    const start = Date.now();
+    (function check(){
+      if(window.google && google.accounts && google.accounts.oauth2) return resolve(true);
+      if(Date.now()-start>timeout) return resolve(false);
+      setTimeout(check,100);
+    })();
+  });
+}
+
+/* Init token client */
+async function initTokenClient(){
+  const ready = await waitForGISReady(5000);
+  if(!ready){ showDebug("Google Identity Services not loaded. Check network or script blocking."); setSignedState(false); setSyncState(false); return false; }
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: SCOPES,
+    callback: (resp) => {
+      if(resp && resp.access_token){
+        accessToken = resp.access_token;
+        setSignedState(true);
+        hideDebug();
+        ensureFolderAndStartSync().catch(e=>{
+          showDebug("Folder error:\n"+(e && e.message? e.message: String(e)));
+          setSyncState(false);
+        });
+      } else {
+        showDebug("Token response error:\n"+JSON.stringify(resp,null,2));
         setSignedState(false);
         setSyncState(false);
       }
     }
-  })();
+  });
+  return true;
+}
 
-  // Auto sync: check folder and refresh count/tree periodically
-  function startAutoSync() {
-    if (autoSyncInterval) clearInterval(autoSyncInterval);
+/* Combined sign & grant (Settings) */
+document.getElementById('btnSignGrant').addEventListener('click', async ()=>{
+  if(!tokenClient){ const ok = await initTokenClient(); if(!ok) return; }
+  try{ tokenClient.requestAccessToken({ prompt: 'consent' }); } catch(err){ showDebug("Sign & Grant error:\n"+(err && err.message? err.message: String(err))); setSignedState(false); setSyncState(false); }
+});
+document.getElementById('btnSignRetry').addEventListener('click', async ()=>{
+  if(!tokenClient){ const ok = await initTokenClient(); if(!ok) return; }
+  try{ tokenClient.requestAccessToken({ prompt: 'consent' }); } catch(err){ showDebug("Retry error:\n"+(err && err.message? err.message: String(err))); setSignedState(false); setSyncState(false); }
+});
+
+/* Silent attempt on load */
+(async function startup(){
+  await initTokenClient();
+  if(tokenClient){
+    try{
+      tokenClient.requestAccessToken({ prompt: '' });
+      setTimeout(()=>{ if(!accessToken){ setSignedState(false); setSyncState(false); } }, 900);
+    }catch(e){ setSignedState(false); setSyncState(false); }
+  }
+  // attempt to sync if online and signed in
+  if(navigator.onLine) attemptSyncQueue();
+})();
+
+/* Ensure folder and start auto sync */
+async function ensureFolderAndStartSync(){
+  try{
+    cachedFolderId = await getOrCreateFolderId(TARGET_FOLDER_NAME);
     setSyncState(true);
-    autoSyncInterval = setInterval(async () => {
-      try {
-        if (!cachedFolderId) {
-          cachedFolderId = await getOrCreateFolderId(TARGET_FOLDER_NAME);
-        }
-        setSyncState(true);
-        refreshSpeciesCount();
-      } catch (e) {
-        setSyncState(false);
-        showDebug("Auto sync error:\n" + (e && e.message ? e.message : String(e)));
+    refreshSpeciesCount();
+    buildTaxonomyTree();
+    if(autoSyncInterval) clearInterval(autoSyncInterval);
+    autoSyncInterval = setInterval(()=>{ if(navigator.onLine) attemptSyncQueue(); }, 60000);
+    if(navigator.onLine) attemptSyncQueue();
+  }catch(e){
+    setSyncState(false);
+    throw e;
+  }
+}
+
+/* Drive helpers */
+async function driveFetch(url, opts = {}){
+  if(!accessToken) throw new Error("Please sign in and grant Drive access first.");
+  opts.headers = opts.headers || {};
+  opts.headers["Authorization"] = "Bearer " + accessToken;
+  const res = await fetch(url, opts);
+  if(!res.ok){ const txt = await res.text(); throw new Error("Drive API error: " + res.status + " " + txt); }
+  return res;
+}
+async function driveFetchJson(url, opts = {}){ const res = await driveFetch(url, opts); return res.json(); }
+
+async function getOrCreateFolderId(folderName){
+  if(cachedFolderId) return cachedFolderId;
+  const q = `mimeType='application/vnd.google-apps.folder' and name='${folderName.replace("'", "\\'")}' and trashed=false`;
+  const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name)`;
+  const res = await driveFetchJson(url);
+  if(res.files && res.files.length){ cachedFolderId = res.files[0].id; return cachedFolderId; }
+  const metadata = { name: folderName, mimeType: "application/vnd.google-apps.folder" };
+  const createRes = await fetch("https://www.googleapis.com/drive/v3/files", {
+    method: "POST",
+    headers: { "Authorization": "Bearer " + accessToken, "Content-Type": "application/json" },
+    body: JSON.stringify(metadata)
+  });
+  if(!createRes.ok){ const txt = await createRes.text(); throw new Error("Create folder failed: " + createRes.status + " " + txt); }
+  const j = await createRes.json();
+  cachedFolderId = j.id;
+  return cachedFolderId;
+}
+
+/* Image compression helper: resize to max dimension and quality */
+async function compressImageFile(file, maxDim = 1200, quality = 0.75){
+  return new Promise((resolve,reject)=>{
+    const img = new Image();
+    const fr = new FileReader();
+    fr.onload = ()=>{ img.src = fr.result; };
+    fr.onerror = ()=> reject(fr.error);
+    img.onload = ()=>{
+      const w = img.width, h = img.height;
+      let nw = w, nh = h;
+      if(Math.max(w,h) > maxDim){
+        if(w > h){ nw = maxDim; nh = Math.round(h * (maxDim / w)); } else { nh = maxDim; nw = Math.round(w * (maxDim / h)); }
       }
-    }, 60000); // every 60s
-  }
+      const canvas = document.createElement('canvas');
+      canvas.width = nw; canvas.height = nh;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img,0,0,nw,nh);
+      canvas.toBlob(blob => {
+        resolve(blob);
+      }, 'image/jpeg', quality);
+    };
+    img.onerror = ()=> reject(new Error('Image load error'));
+    fr.readAsDataURL(file);
+  });
+}
 
-  // Drive helpers
-  async function driveFetch(url, opts = {}) {
-    if (!accessToken) throw new Error("Please sign in and grant Drive access first.");
-    opts.headers = opts.headers || {};
-    opts.headers["Authorization"] = "Bearer " + accessToken;
-    const res = await fetch(url, opts);
-    if (!res.ok) {
-      const txt = await res.text();
-      throw new Error("Drive API error: " + res.status + " " + txt);
+/* Upload helpers using data from IndexedDB (blobs) */
+async function uploadImageBlobToFolder(blob, nameHint, folderId){
+  const meta = { name: nameHint, mimeType: blob.type, parents: folderId ? [folderId] : undefined };
+  const form = new FormData();
+  form.append("metadata", new Blob([JSON.stringify(meta)], { type: "application/json" }));
+  form.append("file", blob);
+  const r = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
+    method: "POST",
+    headers: { "Authorization": "Bearer " + accessToken },
+    body: form
+  });
+  if(!r.ok){ const txt = await r.text(); throw new Error("Upload image failed: " + r.status + " " + txt); }
+  return r.json();
+}
+async function uploadJsonRecordToFolder(name, obj, folderId){
+  const metadata = { name: name + ".json", mimeType: "application/json", parents: folderId ? [folderId] : undefined };
+  const blob = new Blob([JSON.stringify(obj)], { type: "application/json" });
+  const form = new FormData();
+  form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
+  form.append("file", blob);
+  const res = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
+    method: "POST",
+    headers: { "Authorization": "Bearer " + accessToken },
+    body: form
+  });
+  if(!res.ok){ const txt = await res.text(); throw new Error("Upload JSON failed: " + res.status + " " + txt); }
+  return res.json();
+}
+
+/* Save record offline-first: compress images, store blobs in IndexedDB, store record in localStorage and queue */
+document.getElementById('saveBtn').addEventListener('click', async ()=>{
+  try{
+    const name = document.getElementById('speciesName').value.trim();
+    if(!name) return alert('Please enter species name.');
+    const taxonomy = [
+      document.getElementById('taxKingdom').value.trim(),
+      document.getElementById('taxPhylum').value.trim(),
+      document.getElementById('taxClass').value.trim(),
+      document.getElementById('taxOrder').value.trim(),
+      document.getElementById('taxFamily').value.trim(),
+      document.getElementById('taxGenus').value.trim(),
+      document.getElementById('taxSpecies').value.trim()
+    ].filter(Boolean);
+    const note = document.getElementById('speciesNote').value.trim();
+    const files = document.getElementById('speciesImages').files;
+
+    // compress and store images in IndexedDB as blobs; store references in record
+    const imageRefs = [];
+    for(let i=0;i<files.length;i++){
+      const f = files[i];
+      const compressedBlob = await compressImageFile(f, 1200, 0.75);
+      const imgId = 'img_' + Date.now() + '_' + i;
+      await idbPut(imgId, compressedBlob);
+      imageRefs.push({ id: imgId, name: f.name, type: compressedBlob.type });
     }
-    return res;
-  }
-  async function driveFetchJson(url, opts = {}) {
-    const res = await driveFetch(url, opts);
-    return res.json();
-  }
 
-  async function getOrCreateFolderId(folderName) {
-    if (cachedFolderId) return cachedFolderId;
-    const q = `mimeType='application/vnd.google-apps.folder' and name='${folderName.replace("'", "\\'")}' and trashed=false`;
-    const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name)`;
-    const res = await driveFetchJson(url);
-    if (res.files && res.files.length) {
-      cachedFolderId = res.files[0].id;
-      return cachedFolderId;
+    const record = {
+      id: 'rec_' + Date.now(),
+      species: name,
+      taxonomy,
+      note,
+      images: imageRefs, // references to IndexedDB blobs
+      createdAt: new Date().toISOString(),
+      status: 'pending'
+    };
+
+    // save locally
+    const existing = readLocalRecords();
+    existing.push(record);
+    writeLocalRecords(existing);
+
+    // add to sync queue
+    const q = readSyncQueue();
+    q.push(record.id);
+    writeSyncQueue(q);
+
+    appendSyncLog(`Queued record ${record.id} (${record.species})`);
+    showToast('Saved locally', 2);
+
+    // attempt immediate upload if online & signed in
+    if(navigator.onLine && accessToken){
+      attemptSyncQueue();
+    } else {
+      setSyncState(false);
     }
-    const metadata = { name: folderName, mimeType: "application/vnd.google-apps.folder" };
-    const createRes = await fetch("https://www.googleapis.com/drive/v3/files", {
-      method: "POST",
-      headers: { "Authorization": "Bearer " + accessToken, "Content-Type": "application/json" },
-      body: JSON.stringify(metadata)
-    });
-    if (!createRes.ok) {
-      const txt = await createRes.text();
-      throw new Error("Create folder failed: " + createRes.status + " " + txt);
-    }
-    const j = await createRes.json();
-    cachedFolderId = j.id;
-    return cachedFolderId;
+
+    // clear some fields (not taxonomy)
+    document.getElementById('speciesName').value = '';
+    document.getElementById('speciesImages').value = '';
+    document.getElementById('speciesNote').value = '';
+
+    if(document.getElementById('navBrowse').classList.contains('active')) listLocalRecords();
+
+  }catch(e){
+    showDebug('Save failed:\n' + (e && e.message ? e.message : String(e)));
+    showToast('Save failed', 3);
   }
+});
 
-  // Save record (local + Drive) with toast notifications
-  document.getElementById('saveBtn').addEventListener('click', async () => {
-    try {
-      const name = document.getElementById('speciesName').value.trim();
-      if (!name) return alert('Please enter species name.');
-      const taxonomy = (document.getElementById('taxonomyInput').value || '').split(',').map(s => s.trim()).filter(Boolean);
-      const note = document.getElementById('speciesNote').value.trim();
-      const files = document.getElementById('speciesImages').files;
-
-      // Save locally (localStorage)
-      const record = { species: name, taxonomy, note, createdAt: new Date().toISOString() };
-      const localKey = 'exploration_records_v1';
-      const existing = JSON.parse(localStorage.getItem(localKey) || '[]');
-      existing.push(record);
-      localStorage.setItem(localKey, JSON.stringify(existing));
-      showToast('Saved locally', 2);
-
-      // Upload images (if signed in) and JSON to Drive
-      if (!accessToken) {
-        showToast('Not signed in — saved locally only', 4);
-        return;
+/* Attempt to sync queue: upload images from IndexedDB then JSON record */
+async function attemptSyncQueue(){
+  if(!accessToken) return;
+  const queue = readSyncQueue();
+  if(!queue.length){ setSyncState(true); appendSyncLog('Sync queue empty'); return; }
+  setSyncState(true);
+  appendSyncLog('Starting sync of ' + queue.length + ' item(s)');
+  for(const recId of [...queue]){
+    try{
+      const local = readLocalRecords();
+      const rec = local.find(r=>r.id===recId);
+      if(!rec){
+        const q = readSyncQueue().filter(x=>x!==recId); writeSyncQueue(q); appendSyncLog(`Removed missing record ${recId} from queue`); continue;
       }
-
-      // ensure folder
+      appendSyncLog(`Uploading ${rec.id} (${rec.species})`);
       const folderId = await getOrCreateFolderId(TARGET_FOLDER_NAME);
 
-      // upload images first
+      // upload images from IndexedDB
       const imageRefs = [];
-      for (let i = 0; i < files.length; i++) {
-        const f = files[i];
-        const up = await uploadImageFileToFolder(f, `${name}_img_${Date.now()}_${i}.${(f.name||'').split('.').pop()}`, folderId);
+      for(let i=0;i<(rec.images||[]).length;i++){
+        const imRef = rec.images[i];
+        const blob = await idbGet(imRef.id);
+        if(!blob) { appendSyncLog(`Image ${imRef.id} missing in IndexedDB`); continue; }
+        const up = await uploadImageBlobToFolder(blob, `${rec.species}_img_${Date.now()}_${i}.${(imRef.name||'').split('.').pop()}`, folderId);
         imageRefs.push({ id: up.id, name: up.name, mimeType: up.mimeType });
+        // optionally delete blob after upload to free space
+        await idbDelete(imRef.id);
       }
 
       // upload JSON record
-      const recordWithImages = { ...record, images: imageRefs };
-      const uploaded = await uploadJsonRecordToFolder(name, recordWithImages, folderId);
+      const recToUpload = { ...rec, images: imageRefs };
+      const uploaded = await uploadJsonRecordToFolder(rec.species || 'record', recToUpload, folderId);
 
+      // update local record status and remove from queue
+      const q = readSyncQueue().filter(x=>x!==recId); writeSyncQueue(q);
+      const localUpdated = readLocalRecords().map(r => r.id===recId ? ({...r, status:'uploaded', driveId: uploaded.id}) : r);
+      writeLocalRecords(localUpdated);
+
+      appendSyncLog(`Uploaded ${rec.id} -> Drive file ${uploaded.id}`);
       showToast('Saved to Drive', 3);
-      // refresh UI
       refreshSpeciesCount();
       buildTaxonomyTree();
 
-    } catch (e) {
-      showDebug('Save failed:\n' + (e && e.message ? e.message : String(e)));
-      showToast('Save failed', 4);
+    }catch(e){
+      appendSyncLog(`Sync failed for ${recId}: ${(e && e.message) ? e.message : String(e)}`);
+      showDebug('Sync error:\n' + (e && e.message ? e.message : String(e)));
+      setSyncState(false);
+      return;
     }
-  });
-
-  // helper: upload image
-  async function uploadImageFileToFolder(file, nameHint, folderId) {
-    const meta = { name: nameHint, mimeType: file.type, parents: folderId ? [folderId] : undefined };
-    const form = new FormData();
-    form.append("metadata", new Blob([JSON.stringify(meta)], { type: "application/json" }));
-    form.append("file", file);
-    const res = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
-      method: "POST",
-      headers: { "Authorization": "Bearer " + accessToken },
-      body: form
-    });
-    if (!res.ok) {
-      const txt = await res.text();
-      throw new Error("Upload image failed: " + res.status + " " + txt);
-    }
-    return res.json();
   }
+  setSyncState(true);
+  appendSyncLog('Sync completed');
+}
 
-  async function uploadJsonRecordToFolder(name, obj, folderId) {
-    const metadata = { name: name + ".json", mimeType: "application/json", parents: folderId ? [folderId] : undefined };
-    const blob = new Blob([JSON.stringify(obj)], { type: "application/json" });
+/* Export local JSON */
+document.getElementById('exportLocalBtn').addEventListener('click', ()=>{
+  const data = JSON.stringify(readLocalRecords(), null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `exploration_records_${new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')}.json`;
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  showToast('Local JSON exported', 3);
+});
+
+/* Export to Drive (Settings) */
+document.getElementById('exportDriveBtn').addEventListener('click', async ()=>{
+  try{
+    if(!accessToken){ showDebug('Please sign in first to export to Drive.'); showToast('Sign in required',3); return; }
+    const data = JSON.stringify(readLocalRecords(), null, 2);
+    const folderId = await getOrCreateFolderId(TARGET_FOLDER_NAME);
+    const metadata = { name: `exploration_records_backup_${Date.now()}.json`, mimeType: "application/json", parents: [folderId] };
+    const blob = new Blob([data], { type: "application/json" });
     const form = new FormData();
     form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
     form.append("file", blob);
@@ -589,186 +677,174 @@
       headers: { "Authorization": "Bearer " + accessToken },
       body: form
     });
-    if (!res.ok) {
-      const txt = await res.text();
-      throw new Error("Upload JSON failed: " + res.status + " " + txt);
+    if(!res.ok){ const txt = await res.text(); throw new Error("Drive export failed: " + res.status + " " + txt); }
+    appendSyncLog('Exported local JSON to Drive');
+    showToast('Exported to Drive', 3);
+  }catch(e){ showDebug('Export to Drive failed:\n' + (e && e.message ? e.message : String(e))); showToast('Export failed', 3); }
+});
+
+/* Minimal tree & count functions (kept) */
+async function buildTaxonomyTree(){
+  try{
+    if(!accessToken) return;
+    const q = `mimeType='application/json' and trashed=false`;
+    const url = `https://www.googleapis.com/drive/v3/files?pageSize=200&q=${encodeURIComponent(q)}&fields=files(id,name)`;
+    const res = await driveFetchJson(url);
+    const files = res.files || [];
+    const nodes = [];
+    for(const f of files){
+      try{
+        const data = await getFileJson(f.id);
+        const tax = (data.taxonomy || []);
+        nodes.push({ id: f.id, name: data.species || f.name, taxonomy: tax });
+      }catch(e){ /* skip */ }
     }
-    return res.json();
-  }
-
-  // Export local JSON (download)
-  document.getElementById('exportLocalBtn').addEventListener('click', () => {
-    const localKey = 'exploration_records_v1';
-    const data = localStorage.getItem(localKey) || '[]';
-    const blob = new Blob([data], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `exploration_records_${new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')}.json`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-    showToast('Local JSON exported', 3);
-  });
-
-  // Export to Drive: upload local JSON file into folder (requires sign-in)
-  document.getElementById('exportDriveBtn').addEventListener('click', async () => {
-    try {
-      if (!accessToken) {
-        showDebug('Please sign in first to export to Drive.');
-        showToast('Sign in required', 3);
-        return;
+    const root = { name: "Life", children: [] };
+    for(const n of nodes){
+      let cursor = root;
+      const levels = n.taxonomy.length ? n.taxonomy : ["Unclassified"];
+      for(const lvl of levels){
+        let child = cursor.children.find(c=>c.name===lvl);
+        if(!child){ child = { name: lvl, children: [] }; cursor.children.push(child); }
+        cursor = child;
       }
-      const localKey = 'exploration_records_v1';
-      const data = localStorage.getItem(localKey) || '[]';
-      const folderId = await getOrCreateFolderId(TARGET_FOLDER_NAME);
-      const metadata = { name: `exploration_records_backup_${Date.now()}.json`, mimeType: "application/json", parents: [folderId] };
-      const blob = new Blob([data], { type: "application/json" });
-      const form = new FormData();
-      form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
-      form.append("file", blob);
-      const res = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
-        method: "POST",
-        headers: { "Authorization": "Bearer " + accessToken },
-        body: form
-      });
-      if (!res.ok) {
-        const txt = await res.text();
-        throw new Error("Drive export failed: " + res.status + " " + txt);
-      }
-      showToast('Exported to Drive', 3);
-    } catch (e) {
-      showDebug('Export to Drive failed:\n' + (e && e.message ? e.message : String(e)));
-      showToast('Export failed', 3);
+      cursor.children = cursor.children || [];
+      cursor.children.push({ name: n.name, fileId: n.id, leaf: true });
     }
-  });
+    renderD3Tree(root);
+  }catch(e){ showDebug('Tree build error:\n' + (e && e.message ? e.message : String(e))); }
+}
 
-  // Minimal tree & count functions (kept)
-  async function buildTaxonomyTree() {
-    try {
-      const q = `mimeType='application/json' and trashed=false`;
-      const url = `https://www.googleapis.com/drive/v3/files?pageSize=200&q=${encodeURIComponent(q)}&fields=files(id,name)`;
-      const res = await driveFetchJson(url);
-      const files = res.files || [];
-      const nodes = [];
-      for (const f of files) {
-        try {
-          const data = await getFileJson(f.id);
-          const tax = (data.taxonomy || []);
-          nodes.push({ id: f.id, name: data.species || f.name, taxonomy: tax });
-        } catch (e) { /* skip */ }
+function renderD3Tree(data){
+  const svgEl = d3.select("#treeSvg"); svgEl.selectAll("*").remove();
+  const width = svgEl.node().clientWidth || 320; const height = +svgEl.attr("height") || 320;
+  const root = d3.hierarchy(data); const treeLayout = d3.tree().size([height-20, width-40]); treeLayout(root);
+  svgEl.append("g").selectAll("path").data(root.links()).enter().append("path")
+    .attr("d", d => `M${d.source.y+20},${d.source.x}C${d.source.y+60},${d.source.x} ${d.target.y-20},${d.target.x} ${d.target.y},${d.target.x}`)
+    .attr("fill","none").attr("stroke","#cfeee0").attr("stroke-width",1.6);
+  const node = svgEl.append("g").selectAll("g").data(root.descendants()).enter().append("g").attr("transform", d => `translate(${d.y},${d.x})`);
+  node.append("circle").attr("r", d => d.data.leaf ? 6 : 5).attr("fill", d => d.data.leaf ? "var(--accent)" : "#fff").attr("stroke", "var(--accent)");
+  node.append("text").attr("x", 10).attr("y", 4).text(d => d.data.name).style("font-size","13px").style("fill","#0f4f36")
+    .on("click", (event,d) => { if(d.data.leaf && d.data.fileId){ document.getElementById("navBrowse").click(); loadAndShowRecord(d.data.fileId); }});
+}
+
+async function refreshSpeciesCount(){
+  try{
+    if(!accessToken) return;
+    const q = `mimeType='application/json' and trashed=false`;
+    const url2 = `https://www.googleapis.com/drive/v3/files?pageSize=1000&q=${encodeURIComponent(q)}&fields=files(id)`;
+    const res = await driveFetchJson(url2);
+    const count = (res.files || []).length;
+    document.getElementById("speciesCountLine").innerText = `Jeffrey has explored ${count} species`;
+  }catch(e){ showDebug('Count error:\n' + (e && e.message ? e.message : String(e))); document.getElementById("speciesCountLine").innerText = `Jeffrey has explored ? species`; }
+}
+
+async function getFileJson(fileId){
+  const meta = await driveFetchJson(`https://www.googleapis.com/drive/v3/files/${fileId}?fields=id,name,mimeType`);
+  if(!meta.mimeType.includes("json")) throw new Error("File is not JSON");
+  const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, { headers: { "Authorization": "Bearer " + accessToken }});
+  if(!res.ok) throw new Error("Download JSON failed");
+  return res.json();
+}
+
+/* Load & show record (from Drive) */
+async function loadAndShowRecord(fileId){
+  try{
+    const data = await getFileJson(fileId);
+    const viewer = document.getElementById("recordViewer"); viewer.innerHTML = "";
+    const card = document.createElement("div"); card.className="card";
+    card.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:800;color:#145a3f">${escapeHtml(data.species||'Unnamed')}</div><div style="color:#6b6b6b">${(data.taxonomy||[]).join(' › ')}</div></div><div style="font-size:12px;color:#999">${new Date(data.createdAt||'').toLocaleDateString()}</div></div><p style="margin-top:8px;color:#333">${escapeHtml(data.note||'')}</p>`;
+    viewer.appendChild(card);
+    if(data.images && data.images.length){
+      const grid = document.createElement("div"); grid.className="imageGrid";
+      for(const im of data.images){
+        const wrap = document.createElement("div"); wrap.className="thumb";
+        const imgEl = document.createElement("img"); imgEl.alt = im.name || "image";
+        fetchImageURL(im.id).then(url=>{ imgEl.src = url; }).catch(()=>{ imgEl.alt="Unable to load"; });
+        wrap.appendChild(imgEl); grid.appendChild(wrap);
       }
-      const root = { name: "Life", children: [] };
-      for (const n of nodes) {
-        let cursor = root;
-        const levels = n.taxonomy.length ? n.taxonomy : ["Unclassified"];
-        for (const lvl of levels) {
-          let child = cursor.children.find(c => c.name === lvl);
-          if (!child) { child = { name: lvl, children: [] }; cursor.children.push(child); }
-          cursor = child;
-        }
-        cursor.children = cursor.children || [];
-        cursor.children.push({ name: n.name, fileId: n.id, leaf: true });
+      viewer.appendChild(grid);
+    }
+  }catch(e){ showDebug('Load failed:\n' + (e && e.message ? e.message : String(e))); alert('Load failed: ' + (e && e.message ? e.message : String(e))); }
+}
+
+/* fetch image blob from Drive */
+async function fetchImageURL(fileId){
+  const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, { headers: { "Authorization": "Bearer " + accessToken }});
+  if(!res.ok) throw new Error("Download image failed");
+  const blob = await res.blob();
+  return URL.createObjectURL(blob);
+}
+
+/* Navigation wiring */
+document.querySelectorAll('.navBtn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.navBtn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.getElementById(btn.dataset.target).classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if(btn.dataset.target === 'pageBrowse') listLocalRecords();
+  });
+});
+
+/* List local records in Browse */
+function listLocalRecords(){
+  const el = document.getElementById('searchResult'); el.innerHTML = '';
+  const records = readLocalRecords();
+  if(!records.length){ el.innerText = 'No local records'; return; }
+  records.slice().reverse().forEach(r=>{
+    const div = document.createElement('div'); div.className='card';
+    div.style.marginBottom='8px';
+    div.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:800">${escapeHtml(r.species||'Unnamed')}</div><div style="color:#6b6b6b;font-size:13px">${(r.taxonomy||[]).join(' › ')}</div></div><div style="font-size:12px;color:#999">${new Date(r.createdAt).toLocaleString()}</div></div>`;
+    div.addEventListener('click', ()=> showLocalRecord(r.id));
+    el.appendChild(div);
+  });
+}
+
+/* Show local record details */
+async function showLocalRecord(id){
+  const records = readLocalRecords();
+  const r = records.find(x=>x.id===id);
+  if(!r) return alert('Record not found');
+  const viewer = document.getElementById('recordViewer'); viewer.innerHTML = '';
+  const card = document.createElement('div'); card.className='card';
+  card.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:800;color:#145a3f">${escapeHtml(r.species||'Unnamed')}</div><div style="color:#6b6b6b">${(r.taxonomy||[]).join(' › ')}</div></div><div style="font-size:12px;color:#999">${new Date(r.createdAt).toLocaleString()}</div></div><p style="margin-top:8px;color:#333">${escapeHtml(r.note||'')}</p>`;
+  viewer.appendChild(card);
+  if(r.images && r.images.length){
+    const grid = document.createElement('div'); grid.className='imageGrid';
+    for(const im of r.images){
+      const wrap = document.createElement('div'); wrap.className='thumb';
+      const imgEl = document.createElement('img');
+      // load blob from IndexedDB
+      const blob = await idbGet(im.id);
+      if(blob){
+        imgEl.src = URL.createObjectURL(blob);
+      } else {
+        imgEl.alt = 'Image missing';
       }
-      renderD3Tree(root);
-    } catch (e) {
-      showDebug('Tree build error:\n' + (e && e.message ? e.message : String(e)));
+      wrap.appendChild(imgEl); grid.appendChild(wrap);
     }
+    viewer.appendChild(grid);
   }
+}
 
-  function renderD3Tree(data) {
-    const svgEl = d3.select("#treeSvg");
-    svgEl.selectAll("*").remove();
-    const width = svgEl.node().clientWidth || 320;
-    const height = +svgEl.attr("height") || 320;
-    const root = d3.hierarchy(data);
-    const treeLayout = d3.tree().size([height-20, width-40]);
-    treeLayout(root);
+/* Utility */
+function escapeHtml(s){ return (s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
 
-    svgEl.append("g")
-      .selectAll("path")
-      .data(root.links())
-      .enter()
-      .append("path")
-      .attr("d", d => `M${d.source.y+20},${d.source.x}C${d.source.y+60},${d.source.x} ${d.target.y-20},${d.target.x} ${d.target.y},${d.target.x}`)
-      .attr("fill","none").attr("stroke","#cfeee0").attr("stroke-width",1.6);
+/* Online/offline handling */
+window.addEventListener('online', ()=>{ showToast('Online — attempting sync',2); if(accessToken) attemptSyncQueue(); });
+window.addEventListener('offline', ()=>{ showToast('Offline — records will be saved locally',2); setSyncState(false); });
 
-    const node = svgEl.append("g")
-      .selectAll("g")
-      .data(root.descendants())
-      .enter()
-      .append("g")
-      .attr("transform", d => `translate(${d.y},${d.x})`);
+/* register service worker (optional) */
+if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(()=>{/* ignore */}); }
 
-    node.append("circle")
-      .attr("r", d => d.data.leaf ? 6 : 5)
-      .attr("fill", d => d.data.leaf ? "var(--accent)" : "#fff")
-      .attr("stroke", "var(--accent)");
+/* initial UI */
+setSignedState(false); setSyncState(false);
 
-    node.append("text")
-      .attr("x", 10)
-      .attr("y", 4)
-      .text(d => d.data.name)
-      .style("font-size","13px")
-      .style("fill","#0f4f36")
-      .on("click", (event,d) => {
-        if (d.data.leaf && d.data.fileId) {
-          document.getElementById("navBrowse").click();
-          loadAndShowRecord(d.data.fileId);
-        }
-      });
-  }
+/* Expose some functions for debugging in console (optional) */
+window._app = { readLocalRecords, readSyncQueue, attemptSyncQueue, appendSyncLog };
 
-  async function refreshSpeciesCount() {
-    try {
-      if (!accessToken) return;
-      const q = `mimeType='application/json' and trashed=false`;
-      const url2 = `https://www.googleapis.com/drive/v3/files?pageSize=1000&q=${encodeURIComponent(q)}&fields=files(id)`;
-      const res = await driveFetchJson(url2);
-      const count = (res.files || []).length;
-      document.getElementById("speciesCountLine").innerText = `Jeffrey has explored ${count} species`;
-    } catch (e) {
-      showDebug('Count error:\n' + (e && e.message ? e.message : String(e)));
-      document.getElementById("speciesCountLine").innerText = `Jeffrey has explored ? species`;
-    }
-  }
-
-  async function getFileJson(fileId) {
-    const meta = await driveFetchJson(`https://www.googleapis.com/drive/v3/files/${fileId}?fields=id,name,mimeType`);
-    if (!meta.mimeType.includes("json")) throw new Error("File is not JSON");
-    const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
-      headers: { "Authorization": "Bearer " + accessToken }
-    });
-    if (!res.ok) throw new Error("Download JSON failed");
-    return res.json();
-  }
-
-  // Navigation wiring (keeps content visible above nav)
-  document.querySelectorAll('.navBtn').forEach(btn=>{
-    btn.addEventListener('click', ()=> {
-      document.querySelectorAll('.navBtn').forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active');
-      document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-      document.getElementById(btn.dataset.target).classList.add('active');
-      // scroll to top of main so content not hidden by header/nav
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
-  });
-
-  document.getElementById('cameraBtn').addEventListener('click', ()=> {
-    document.getElementById('navAdd').click();
-    setTimeout(()=>document.getElementById('speciesName').focus(), 200);
-  });
-
-  // register service worker (optional)
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').catch(()=>{/* ignore */});
-  }
-
-  // initial UI states
-  setSignedState(false);
-  setSyncState(false);
-  </script>
+</script>
 </body>
 </html>
