@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-HK">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -24,13 +24,14 @@
       --nav-height:84px;
       --safe-bottom:calc(var(--nav-height) + 18px);
       --shadow: 0 10px 30px rgba(20,40,30,0.06);
+      --dot-size:12px;
     }
 
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
       margin:0;
-      font-family:"Baloo 2", "SF Pro Text", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      font-family:"Baloo 2", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
       background:
         radial-gradient(circle at 10% 10%, rgba(43,160,90,0.03), transparent 20%),
         radial-gradient(circle at 90% 90%, rgba(43,160,90,0.02), transparent 20%),
@@ -53,7 +54,15 @@
       top:0;
       z-index:60;
     }
-    header h1{font-size:18px;margin:0;font-weight:800;letter-spacing:0.2px}
+    header .titleWrap{display:flex;align-items:center;gap:12px;min-width:0}
+    header h1{
+      font-size:18px;
+      margin:0;
+      font-weight:800;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
     #userInfo{font-size:13px;opacity:0.95}
 
     main{max-width:980px;margin:14px auto;padding:0 14px}
@@ -117,10 +126,12 @@
     }
     textarea{min-height:96px;resize:vertical}
 
-    .status{padding:10px;border-radius:10px;margin-bottom:12px;font-weight:800}
-    .status.ok{background:#e8f9ef;color:#0b6b45}
-    .status.warn{background:#fff8e6;color:#6b4b00}
-    .status.err{background:#fdecea;color:#7a1f1f}
+    .statusRow{display:flex;gap:18px;align-items:center}
+    .statusItem{display:flex;gap:8px;align-items:center;font-weight:800;color:#234f3a}
+    .dot{width:var(--dot-size);height:var(--dot-size);border-radius:999px;background:#d9534f;box-shadow:0 2px 6px rgba(0,0,0,0.08)}
+    .dot.green{background:#2fb86a}
+    .dot.red{background:#d9534f}
+    .statusLabel{font-weight:700;color:#145a3f}
 
     .debug{
       white-space:pre-wrap;
@@ -149,7 +160,9 @@
     .cameraWrap{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--nav-height) - 36px);z-index:90}
     .cameraBtn{width:76px;height:76px;border-radius:50%;background:linear-gradient(180deg,var(--accent),var(--accent-dark));display:flex;align-items:center;justify-content:center;color:#fff;font-size:34px;box-shadow:0 12px 30px rgba(30,80,50,0.18);border:6px solid #fff;cursor:pointer}
 
-    /* responsive tweaks */
+    .page{display:none}
+    .page.active{display:block}
+
     @media (min-width:900px){
       main{padding:18px}
       .card{padding:18px}
@@ -158,31 +171,46 @@
 </head>
 <body>
   <header>
-    <div style="display:flex;align-items:center;gap:12px">
+    <div class="titleWrap">
       <div class="topBadge">JEFFREY</div>
-      <h1 style="margin:0;font-size:18px">Exploration of nature</h1>
+      <h1>Exploration of nature by Jeffrey</h1>
     </div>
-    <div id="userInfo">Not signed in</div>
+
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+      <div class="statusRow" aria-hidden="false">
+        <div class="statusItem" title="Signed in status">
+          <div id="signedDot" class="dot red" aria-hidden="true"></div>
+          <div class="statusLabel">Signed in</div>
+        </div>
+        <div class="statusItem" title="Auto sync status">
+          <div id="syncDot" class="dot red" aria-hidden="true"></div>
+          <div class="statusLabel">Auto sync</div>
+        </div>
+      </div>
+      <div id="userInfo">Not signed in</div>
+    </div>
   </header>
 
   <main>
-    <!-- Status + controls -->
-    <div class="card" id="statusCard">
-      <div id="statusLine" class="status warn">Status: Not signed in</div>
+    <!-- Controls -->
+    <div class="card" id="controlsCard">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+        <div style="font-weight:800;color:#145a3f">Account</div>
+        <div style="font-size:13px;color:#6b6b6b">One-click sign in and grant</div>
+      </div>
 
-      <div class="row" style="margin-top:6px">
-        <button id="btnSignIn">Sign in</button>
-        <button id="btnGrant" class="secondary">Grant Drive Access</button>
-        <button id="btnRetry" class="ghost">Retry Sign-in</button>
+      <div class="row" style="margin-top:12px">
+        <button id="btnSignGrant">Sign in & Grant Drive Access</button>
+        <button id="btnSignRetry" class="secondary">Retry</button>
       </div>
 
       <div style="margin-top:12px">
         <div style="font-weight:800;margin-bottom:8px;color:#2f6b4f">Login debug (only shown on failure)</div>
-        <div id="loginDebug" class="debug"></div>
+        <div id="loginDebug" class="debug" aria-live="polite"></div>
       </div>
     </div>
 
-    <!-- Home (Tree + count) -->
+    <!-- Home -->
     <section id="pageHome" class="page active">
       <div class="card">
         <div class="sectionTitle">Taxonomy Tree</div>
@@ -212,7 +240,7 @@
         </label>
 
         <label>Taxonomy (comma separated)
-          <input id="taxonomyInput" placeholder="Kingdom, Phylum, Class, ...">
+          <input id="taxonomyInput" placeholder="Kingdom, Phylum, Class, Order, Family, Genus, Species">
         </label>
 
         <label>Notes
@@ -263,10 +291,13 @@
 
   <script>
   /************************************************************************
-   * Improved UI + reliable sign-in buttons
-   * - Cute font, subtle patterned background
-   * - Buttons now always call token client; debug shown only on failure
-   * - Make sure to set Authorized JavaScript origins in Google Cloud Console
+   * Updated behavior:
+   * - Title forced single-line (no wrap)
+   * - Two status indicators: Signed in (green/red) and Auto sync (green/red)
+   * - Debug area hidden by default; only shown when login/drive errors occur
+   * - Single combined "Sign in & Grant Drive Access" button
+   * - Silent sign-in attempted on load; interactive consent only when needed
+   * - Auto-sync checks folder and refreshes count/tree periodically
    ************************************************************************/
 
   const CLIENT_ID = "58009415485-8qvhrvbasmrq5ugms01dv8vt7pneen6u.apps.googleusercontent.com";
@@ -276,25 +307,34 @@
   let tokenClient = null;
   let accessToken = null;
   let cachedFolderId = null;
+  let autoSyncInterval = null;
 
   // UI refs
-  const statusLine = document.getElementById('statusLine');
-  const loginDebug = document.getElementById('loginDebug');
+  const signedDot = document.getElementById('signedDot');
+  const syncDot = document.getElementById('syncDot');
   const userInfo = document.getElementById('userInfo');
+  const loginDebug = document.getElementById('loginDebug');
 
-  function setStatus(text, level='warn'){
-    statusLine.className = 'status ' + (level==='ok' ? 'ok' : level==='err' ? 'err' : 'warn');
-    statusLine.innerText = 'Status: ' + text;
+  function setSignedState(ok) {
+    signedDot.classList.toggle('green', ok);
+    signedDot.classList.toggle('red', !ok);
   }
-  function showDebug(text){
+  function setSyncState(ok) {
+    syncDot.classList.toggle('green', ok);
+    syncDot.classList.toggle('red', !ok);
+  }
+  function showDebug(text) {
     loginDebug.style.display = 'block';
     loginDebug.innerText = text;
     loginDebug.scrollIntoView({behavior:'smooth', block:'center'});
   }
-  function hideDebug(){ loginDebug.style.display='none'; loginDebug.innerText=''; }
+  function hideDebug() {
+    loginDebug.style.display = 'none';
+    loginDebug.innerText = '';
+  }
 
-  // Wait until GIS library is ready, then init token client
-  function waitForGISReady(timeout = 3000) {
+  // Wait for GIS
+  function waitForGISReady(timeout = 4000) {
     return new Promise((resolve) => {
       const start = Date.now();
       (function check(){
@@ -308,87 +348,112 @@
   async function initTokenClient() {
     const ready = await waitForGISReady(5000);
     if (!ready) {
-      // GIS not loaded; show guidance only on failure
+      // GIS not loaded; show debug only on failure
       showDebug("Google Identity Services not loaded. Check network or script blocking.");
-      setStatus("Google Identity not available", "err");
-      return;
+      setSignedState(false);
+      setSyncState(false);
+      return false;
     }
     tokenClient = google.accounts.oauth2.initTokenClient({
       client_id: CLIENT_ID,
       scope: SCOPES,
       callback: (resp) => {
-        // resp may contain access_token or error
         if (resp && resp.access_token) {
           accessToken = resp.access_token;
           userInfo.innerText = "Signed in (Drive available)";
-          setStatus("Signed in — Drive available", "ok");
+          setSignedState(true);
           hideDebug();
-          // ensure folder exists and refresh UI
-          getOrCreateFolderId(TARGET_FOLDER_NAME).then(id => { cachedFolderId = id; refreshSpeciesCount(); buildTaxonomyTree(); }).catch(e => {
-            showDebug("Folder error:\n" + (e && e.message ? e.message : String(e)));
+          // ensure folder and start auto sync
+          getOrCreateFolderId(TARGET_FOLDER_NAME).then(id => {
+            cachedFolderId = id;
+            startAutoSync();
+            refreshSpeciesCount();
+            buildTaxonomyTree();
+          }).catch(e => {
+            // show debug only if folder access fails
+            showDebug("Folder creation/access error:\n" + (e && e.message ? e.message : String(e)));
+            setSyncState(false);
           });
         } else {
-          // show error details only when failure
+          // show debug only on failure
           showDebug("Token response error:\n" + JSON.stringify(resp, null, 2));
-          setStatus("Sign-in failed", "err");
+          setSignedState(false);
+          setSyncState(false);
         }
       }
     });
+    return true;
   }
 
-  // Buttons wiring
-  document.getElementById('btnSignIn').addEventListener('click', async () => {
-    if (!tokenClient) { await initTokenClient(); }
-    if (!tokenClient) { showDebug("Token client not initialized. Check network or script blocking."); return; }
+  // Combined sign & grant
+  document.getElementById('btnSignGrant').addEventListener('click', async () => {
+    if (!tokenClient) {
+      const ok = await initTokenClient();
+      if (!ok) return;
+    }
     try {
       tokenClient.requestAccessToken({ prompt: 'consent' });
-      setStatus("Opening consent screen...", "warn");
     } catch (err) {
-      showDebug("Sign-in error:\n" + (err && err.message ? err.message : String(err)));
-      setStatus("Sign-in error", "err");
+      showDebug("Sign & Grant error:\n" + (err && err.message ? err.message : String(err)));
+      setSignedState(false);
+      setSyncState(false);
     }
   });
 
-  document.getElementById('btnGrant').addEventListener('click', async () => {
-    if (!tokenClient) { await initTokenClient(); }
-    if (!tokenClient) { showDebug("Token client not initialized. Check network or script blocking."); return; }
-    try {
-      tokenClient.requestAccessToken({ prompt: 'consent' });
-      setStatus("Granting Drive access — complete consent if prompted", "warn");
-    } catch (err) {
-      showDebug("Grant error:\n" + (err && err.message ? err.message : String(err)));
-      setStatus("Grant error", "err");
+  // Retry button
+  document.getElementById('btnSignRetry').addEventListener('click', async () => {
+    if (!tokenClient) {
+      const ok = await initTokenClient();
+      if (!ok) return;
     }
-  });
-
-  document.getElementById('btnRetry').addEventListener('click', async () => {
-    if (!tokenClient) { await initTokenClient(); }
-    if (!tokenClient) { showDebug("Token client not initialized. Check network or script blocking."); return; }
     try {
       tokenClient.requestAccessToken({ prompt: 'consent' });
-      setStatus("Retrying sign-in — complete consent if prompted", "warn");
     } catch (err) {
       showDebug("Retry error:\n" + (err && err.message ? err.message : String(err)));
-      setStatus("Retry error", "err");
+      setSignedState(false);
+      setSyncState(false);
     }
   });
 
-  // Navigation
-  document.querySelectorAll('.navBtn').forEach(btn=>{
-    btn.addEventListener('click', ()=> {
-      document.querySelectorAll('.navBtn').forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active');
-      document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-      document.getElementById(btn.dataset.target).classList.add('active');
-    });
-  });
+  // Silent attempt on load
+  (async function startup(){
+    await initTokenClient();
+    if (tokenClient) {
+      try {
+        tokenClient.requestAccessToken({ prompt: '' });
+        // if silent doesn't succeed quickly, keep UI ready for manual actions
+        setTimeout(()=> {
+          if (!accessToken) {
+            setSignedState(false);
+            setSyncState(false);
+          }
+        }, 900);
+      } catch (e) {
+        setSignedState(false);
+        setSyncState(false);
+      }
+    }
+  })();
 
-  document.getElementById('cameraBtn').addEventListener('click', ()=> {
-    document.getElementById('navAdd').click();
-    setTimeout(()=>document.getElementById('speciesName').focus(), 200);
-  });
+  // Auto sync: check folder and refresh count/tree periodically
+  function startAutoSync() {
+    if (autoSyncInterval) clearInterval(autoSyncInterval);
+    setSyncState(true);
+    autoSyncInterval = setInterval(async () => {
+      try {
+        if (!cachedFolderId) {
+          cachedFolderId = await getOrCreateFolderId(TARGET_FOLDER_NAME);
+        }
+        setSyncState(true);
+        refreshSpeciesCount();
+      } catch (e) {
+        setSyncState(false);
+        showDebug("Auto sync error:\n" + (e && e.message ? e.message : String(e)));
+      }
+    }, 60000); // every 60s
+  }
 
-  // Drive helpers (same as before)
+  // Drive helpers
   async function driveFetch(url, opts = {}) {
     if (!accessToken) throw new Error("Please sign in and grant Drive access first.");
     opts.headers = opts.headers || {};
@@ -529,28 +594,24 @@
     return res.json();
   }
 
-  // initial attempt: try to init token client silently (no prompt)
-  (async function startup(){
-    await initTokenClient();
-    // try silent token request if tokenClient ready
-    if (tokenClient) {
-      try {
-        tokenClient.requestAccessToken({ prompt: '' });
-        setStatus('Attempting silent sign-in...', 'warn');
-        // if silent doesn't succeed quickly, keep UI ready for manual actions
-        setTimeout(()=> {
-          if (!accessToken) {
-            setStatus('Not signed in — press Grant or Sign in', 'warn');
-          }
-        }, 900);
-      } catch (e) {
-        // ignore; user will press Grant/Sign in
-        setStatus('Ready — press Grant or Sign in', 'warn');
-      }
-    } else {
-      setStatus('Google Identity not ready — press Grant to try', 'warn');
-    }
-  })();
+  // Navigation wiring
+  document.querySelectorAll('.navBtn').forEach(btn=>{
+    btn.addEventListener('click', ()=> {
+      document.querySelectorAll('.navBtn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+      document.getElementById(btn.dataset.target).classList.add('active');
+    });
+  });
+
+  document.getElementById('cameraBtn').addEventListener('click', ()=> {
+    document.getElementById('navAdd').click();
+    setTimeout(()=>document.getElementById('speciesName').focus(), 200);
+  });
+
+  // initial UI states
+  setSignedState(false);
+  setSyncState(false);
 
   // register service worker (optional)
   if ('serviceWorker' in navigator) {
