@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Ecology & Taxonomy — PWA Demo</title>
+  <title>Exploration of nature by Jeffrey — PWA</title>
 
   <!-- Google Identity Services -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -18,17 +18,30 @@
       --card:#fff;
       --muted:#6b6b6b;
       --radius:12px;
-      --shadow: 0 8px 24px rgba(15, 40, 30, 0.06);
+      --shadow: 0 8px 24px rgba(15,40,30,0.06);
       --nav-height:64px;
+      --safe-bottom:calc(var(--nav-height) + 12px);
+      --titlebar-bg: #e8f7f2; /* light green background for section titles */
+      --titlebar-accent: #2a9d8f; /* green text accent */
     }
     *{box-sizing:border-box}
     html,body{height:100%}
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;background:var(--bg);color:#222;-webkit-font-smoothing:antialiased;padding-bottom:var(--nav-height)}
-    header{background:linear-gradient(90deg,var(--accent),var(--accent-dark));color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;background:var(--bg);color:#222;-webkit-font-smoothing:antialiased;padding-bottom:var(--safe-bottom)}
+    header{background:linear-gradient(90deg,var(--accent),var(--accent-dark));color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:30}
     header h1{font-size:16px;margin:0;font-weight:700}
     #userInfo{font-size:13px;opacity:0.95}
     main{padding:12px;max-width:980px;margin:0 auto}
-    .card{background:var(--card);border-radius:var(--radius);padding:12px;margin-bottom:12px;box-shadow:var(--shadow)}
+    .card{background:var(--card);border-radius:var(--radius);padding:12px;margin-bottom:14px;box-shadow:var(--shadow);overflow:visible}
+    /* Title bar style for section headings inside cards */
+    .card .sectionTitle{
+      background:var(--titlebar-bg);
+      border-radius:8px;
+      padding:8px 10px;
+      color:var(--titlebar-accent);
+      font-weight:700;
+      margin:-12px -12px 10px -12px;
+      display:block;
+    }
     label{display:block;margin:8px 0;font-size:14px}
     input[type="text"], textarea{width:100%;padding:10px;border-radius:10px;border:1px solid #e6e6e6;font-size:14px}
     textarea{min-height:84px;resize:vertical}
@@ -49,18 +62,17 @@
     .modal img{max-width:100%;height:auto;border-radius:8px;display:block}
     .carouselControls{display:flex;gap:8px;justify-content:center;margin-top:8px}
     .smallBtn{background:#eee;color:#333;border:none;padding:6px 10px;border-radius:8px;cursor:pointer}
-    footer{padding:12px;text-align:center;color:#888;font-size:13px}
     .twoCol{display:block}
     @media (min-width:900px){ .twoCol{display:flex;gap:12px} .leftCol{flex:1} .rightCol{width:380px} }
     .cardHeader{display:flex;justify-content:space-between;align-items:center}
     .cardTitle{font-weight:700;color:#1b5e4a;font-size:16px}
     .taxLine{font-size:12px;color:#6b6b6b;margin-top:6px}
-    .debugBox{white-space:pre-wrap;background:#fff;padding:8px;border-radius:8px;margin-top:10px;border:1px solid #eee;font-size:12px}
+    .debugBox{white-space:pre-wrap;background:#fff;padding:8px;border-radius:8px;margin-top:10px;border:1px solid #eee;font-size:12px;display:none}
     .btnClose{float:right;background:#eee;border:none;padding:6px;border-radius:6px}
     .taxonomyFields input{flex:1;min-width:120px;padding:8px;border-radius:8px;border:1px solid #e0e0e0}
     .notice{background:#fff8e6;border-left:4px solid #ffd27a;padding:8px;border-radius:8px;margin-top:8px;color:#6b4b00}
     /* bottom nav */
-    .bottomNav{position:fixed;left:0;right:0;bottom:0;height:var(--nav-height);background:#fff;border-top:1px solid #eee;display:flex;align-items:center;justify-content:space-around;z-index:20}
+    .bottomNav{position:fixed;left:0;right:0;bottom:0;height:var(--nav-height);background:#fff;border-top:1px solid #eee;display:flex;align-items:center;justify-content:space-around;z-index:40}
     .navBtn{flex:1;text-align:center;padding:8px 6px;color:#444;font-weight:600;cursor:pointer}
     .navBtn.active{color:var(--accent)}
     .navIcon{display:block;font-size:18px;margin-bottom:4px}
@@ -72,13 +84,13 @@
 </head>
 <body>
   <header>
-    <h1>Ecology & Taxonomy</h1>
+    <h1>Exploration of nature by Jeffrey</h1>
     <div id="userInfo">Not signed in</div>
   </header>
 
   <main>
-    <!-- Sign-in + debug -->
-    <div class="card" id="signinCard">
+    <!-- Hidden sign-in card (kept for background flows; not shown) -->
+    <div class="card" id="signinCard" style="display:none">
       <div id="g_id_onload"
            data-client_id="58009415485-8qvhrvbasmrq5ugms01dv8vt7pneen6u.apps.googleusercontent.com"
            data-context="signin"
@@ -88,12 +100,10 @@
       <div class="g_id_signin" data-type="standard"></div>
       <div class="muted">Sign in to save records and images to your Google Drive</div>
       <button id="grantAccessBtn" style="display:none;margin-top:8px;padding:8px 12px;border-radius:8px;background:#1f8b6f;color:#fff;border:none">Grant Drive Access</button>
-      <div id="loginDebug" class="debugBox" style="display:none"></div>
-      <div id="folderNotice" class="notice" style="display:none"></div>
+      <div id="loginDebug" class="debugBox"></div>
     </div>
 
     <!-- Pages -->
-    <!-- Home page: Tree + count -->
     <section id="pageHome" class="page active">
       <div class="card">
         <div class="cardHeader">
@@ -111,10 +121,10 @@
       </div>
     </section>
 
-    <!-- Add page: form -->
     <section id="pageAdd" class="page">
       <div class="card">
-        <h3>Add / Save Species Record</h3>
+        <span class="sectionTitle">Add / Save Species Record</span>
+
         <label>Species name
           <input id="speciesName" type="text" placeholder="e.g. Formica rufa">
         </label>
@@ -142,15 +152,13 @@
           <button id="saveBtn">Save Record</button>
           <button id="clearBtn" class="secondary">Clear Form</button>
         </div>
-        <div class="muted">Records and images are saved into a Drive folder named <strong>EcologyApp_Records</strong>.</div>
       </div>
     </section>
 
-    <!-- Browse page: search/list -->
     <section id="pageBrowse" class="page">
       <div class="card">
-        <h3>Search / List Records</h3>
-        <div class="row">
+        <span class="sectionTitle">Search / List Records</span>
+        <div class="row" style="margin-top:10px">
           <input id="searchQuery" type="text" placeholder="Search by name or keyword">
           <button id="searchBtn">Search</button>
           <button id="listBtn" class="secondary">List recent 50</button>
@@ -159,8 +167,8 @@
       </div>
 
       <div class="card">
-        <h3>Record Viewer</h3>
-        <div id="recordViewer">Click an item from the list or tree to view details</div>
+        <span class="sectionTitle">Record Viewer</span>
+        <div id="recordViewer" style="margin-top:10px">Click an item from the list or tree to view details</div>
       </div>
     </section>
   </main>
@@ -184,17 +192,13 @@
     <div id="navBrowse" class="navBtn" data-target="pageBrowse"><span class="navIcon">🔎</span>Browse</div>
   </nav>
 
-  <footer style="display:none">PWA footer</footer>
-
   <script>
-  /*************************************************************************
-   * Single-file app (English)
-   * - Bottom navigation with three pages (Home / Add / Browse)
-   * - Home shows taxonomy tree and species count line: "Jeffrey has explored xxx species"
-   * - Saves records & images into Drive folder "EcologyApp_Records"
-   * - Deletes JSON and its images together
-   * - Uses Google Identity Services (GIS) with a manual "Grant Drive Access" button
-   *************************************************************************/
+  /* Updated single-file app:
+     - Removed folder notice text as requested
+     - Section titles (Add / Search / Viewer) have green background via .sectionTitle
+     - App title changed to "Exploration of nature by Jeffrey"
+     - Attempts silent Google token retrieval; falls back to manual grant button
+  */
 
   const CLIENT_ID = "58009415485-8qvhrvbasmrq5ugms01dv8vt7pneen6u.apps.googleusercontent.com";
   const SCOPES = "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive";
@@ -205,7 +209,7 @@
   let currentModalImages = [];
   let currentModalIndex = 0;
 
-  // Navigation
+  // Navigation wiring
   document.querySelectorAll('.navBtn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.navBtn').forEach(b => b.classList.remove('active'));
@@ -213,62 +217,69 @@
       const target = btn.dataset.target;
       document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
       document.getElementById(target).classList.add('active');
-      // if home, refresh tree & count
       if (target === 'pageHome') {
         if (accessToken) { buildTaxonomyTree(); refreshSpeciesCount(); }
       }
     });
   });
 
-  // Expose handleCredentialResponse for GIS
-  window.handleCredentialResponse = function(resp) {
-    const dbgEl = document.getElementById("loginDebug");
-    dbgEl.style.display = "block";
-    dbgEl.innerText = "Received ID token response:\n" + JSON.stringify(resp, null, 2) + "\n\nPlease press 'Grant Drive Access' to obtain an access token.";
-
+  // Expose handleCredentialResponse for GIS callback
+  window.handleCredentialResponse = async function(resp) {
     tokenClientGlobal = google.accounts.oauth2.initTokenClient({
       client_id: CLIENT_ID,
       scope: SCOPES,
       callback: async (tokenResp) => {
-        dbgEl.innerText += "\n\nToken response:\n" + JSON.stringify(tokenResp, null, 2);
         if (tokenResp && tokenResp.access_token) {
           accessToken = tokenResp.access_token;
           document.getElementById("userInfo").innerText = "Signed in (Drive available)";
-          dbgEl.innerText += "\n\nAccess token obtained.";
+          document.getElementById("loginDebug").style.display = "none";
           document.getElementById("grantAccessBtn").style.display = "none";
           try {
             const fid = await getOrCreateFolderId(TARGET_FOLDER_NAME);
             cachedFolderId = fid;
-            document.getElementById("folderNotice").style.display = "block";
-            document.getElementById("folderNotice").innerText = "Records will be saved in Drive folder: " + TARGET_FOLDER_NAME;
-            // update home count & tree
             refreshSpeciesCount();
             buildTaxonomyTree();
           } catch (e) {
-            document.getElementById("folderNotice").style.display = "block";
-            document.getElementById("folderNotice").innerText = "Could not create/access folder: " + e.message;
+            // silently ignore folder creation error (no folder notice)
+            console.warn("Folder error:", e);
           }
         } else {
-          dbgEl.innerText += "\n\nNo access_token returned. Please press 'Grant Drive Access' again.";
+          showGrantButton();
         }
       }
     });
 
+    // Try silent token request
+    try {
+      tokenClientGlobal.requestAccessToken({ prompt: '' });
+      setTimeout(() => {
+        if (!accessToken) showGrantButton();
+      }, 900);
+    } catch (err) {
+      showGrantButton();
+    }
+  };
+
+  function showGrantButton() {
     const grantBtn = document.getElementById("grantAccessBtn");
     grantBtn.style.display = "inline-block";
     grantBtn.onclick = () => {
       try {
         tokenClientGlobal.requestAccessToken({ prompt: 'consent' });
-        dbgEl.innerText += "\n\nTriggered requestAccessToken; complete the consent screen.";
+        const dbg = document.getElementById("loginDebug");
+        dbg.style.display = "block";
+        dbg.innerText = "Please complete the consent screen to grant Drive access.";
       } catch (err) {
-        dbgEl.innerText += "\n\nError calling requestAccessToken:\n" + (err && err.message ? err.message : String(err));
+        const dbg = document.getElementById("loginDebug");
+        dbg.style.display = "block";
+        dbg.innerText = "Error requesting access token: " + (err && err.message ? err.message : String(err));
       }
     };
-  };
+  }
 
   // Drive helpers
   async function driveFetch(url, opts = {}) {
-    if (!accessToken) throw new Error("Please sign in and grant access");
+    if (!accessToken) throw new Error("Please sign in and grant Drive access first.");
     opts.headers = opts.headers || {};
     opts.headers["Authorization"] = "Bearer " + accessToken;
     const res = await fetch(url, opts);
@@ -373,7 +384,7 @@
     return true;
   }
 
-  // Save record flow
+  // Save record
   document.getElementById("saveBtn").addEventListener("click", async () => {
     try {
       if (!accessToken) return alert("Please sign in and grant Drive access first.");
@@ -414,7 +425,6 @@
       document.getElementById("speciesNote").value = "";
       document.getElementById("speciesImages").value = "";
 
-      // update count & tree
       refreshSpeciesCount();
       buildTaxonomyTree();
     } catch (e) {
@@ -479,12 +489,15 @@
       const div = document.createElement("div");
       div.className = "resultItem";
       div.innerText = `${f.name} (${f.id})`;
-      div.addEventListener("click", () => loadAndShowRecord(f.id));
+      div.addEventListener("click", () => {
+        document.getElementById("navBrowse").click();
+        loadAndShowRecord(f.id);
+      });
       el.appendChild(div);
     });
   }
 
-  // Load record and show viewer (card style) with delete images
+  // Load record and show viewer
   async function loadAndShowRecord(fileId) {
     try {
       const data = await getFileJson(fileId);
@@ -736,21 +749,16 @@
       .style("font-size","12px")
       .on("click", (event,d) => {
         if (d.data.leaf && d.data.fileId) {
-          // switch to Browse page and load record
           document.getElementById("navBrowse").click();
           loadAndShowRecord(d.data.fileId);
         }
       });
   }
 
-  // species count
   async function refreshSpeciesCount() {
     try {
       if (!accessToken) return;
       const q = `mimeType='application/json' and trashed=false`;
-      const url = `https://www.googleapis.com/drive/v3/files?pageSize=1&q=${encodeURIComponent(q)}&fields=files(id),nextPageToken`;
-      // We need total count: use files.list with pageSize=1 and use "files" length is not total; Drive API doesn't return totalCount easily.
-      // Workaround: list up to 1000 and count (sufficient for personal use). We'll request pageSize=1000.
       const url2 = `https://www.googleapis.com/drive/v3/files?pageSize=1000&q=${encodeURIComponent(q)}&fields=files(id)`;
       const res = await driveFetchJson(url2);
       const count = (res.files || []).length;
@@ -761,7 +769,6 @@
     }
   }
 
-  // wire refresh buttons
   document.getElementById("refreshTreeBtn").addEventListener("click", async () => {
     if (!accessToken) return alert("Please sign in and grant Drive access first.");
     await buildTaxonomyTree();
@@ -771,17 +778,16 @@
     await refreshSpeciesCount();
   });
 
-  // small helpers
+  // helpers
   function escapeHtml(s){ return (s||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;"); }
 
-  // register service worker (optional; requires sw.js file)
+  // register service worker (optional)
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').then(()=>{ console.log('sw registered'); }).catch(()=>{ console.log('sw failed'); });
   }
 
-  // initial UI: show Home page
+  // initial UI: show Home
   document.getElementById("navHome").click();
-
   </script>
 </body>
 </html>
