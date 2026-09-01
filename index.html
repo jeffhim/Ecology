@@ -22,9 +22,9 @@
       --muted:#6b6b6b;
       --radius:14px;
       --nav-height:84px;
-      --safe-bottom:calc(var(--nav-height) + 18px);
+      --safe-bottom:calc(var(--nav-height) + 28px);
       --shadow: 0 10px 30px rgba(20,40,30,0.06);
-      --dot-size:12px;
+      --dot-size:9px;
       --toast-bg: rgba(15,80,50,0.95);
     }
 
@@ -64,20 +64,21 @@
       overflow:hidden;
       text-overflow:ellipsis;
     }
-    /* small right-side status labels */
-    .headerStatus{display:flex;gap:12px;align-items:center;font-weight:700}
-    .statusMini{display:flex;align-items:center;gap:6px;font-size:12px;color:#eafaf0}
+    /* very small right-side status labels */
+    .headerStatus{display:flex;gap:10px;align-items:center;font-weight:700}
+    .statusMini{display:flex;align-items:center;gap:6px;font-size:10px;color:#eafaf0}
     .dot{width:var(--dot-size);height:var(--dot-size);border-radius:999px;background:#d9534f;box-shadow:0 2px 6px rgba(0,0,0,0.08)}
     .dot.green{background:#2fb86a}
-    .statusMini span{font-weight:800;letter-spacing:0.2px}
+    .statusMini span{font-weight:700;letter-spacing:0.2px}
 
-    main{max-width:980px;margin:14px auto;padding:0 14px}
+    /* ensure page content never hidden behind nav: extra bottom padding */
+    main{max-width:980px;margin:14px auto;padding:0 14px  calc(var(--nav-height) + 36px);}
 
     .card{
       background:var(--card);
       border-radius:var(--radius);
       padding:14px;
-      margin-bottom:14px;
+      margin-bottom:18px;
       box-shadow:var(--shadow);
       overflow:visible;
     }
@@ -152,7 +153,7 @@
       position:fixed;left:0;right:0;bottom:0;height:var(--nav-height);background:linear-gradient(180deg,#ffffff,#f6fff6);border-top:1px solid #e9f3ea;display:flex;align-items:center;justify-content:space-around;z-index:80;padding:8px 12px;
       box-shadow:0 -6px 20px rgba(10,30,20,0.03);
     }
-    .navBtn{flex:1;text-align:center;color:#3b6b52;font-weight:800;cursor:pointer}
+    .navBtn{flex:1;text-align:center;color:#3b6b52;font-weight:800;cursor:pointer;padding:8px 6px}
     .navBtn.active{color:var(--accent-dark)}
     .navIcon{display:block;font-size:20px;margin-bottom:6px}
 
@@ -178,35 +179,17 @@
     <div class="headerStatus" aria-hidden="false">
       <div class="statusMini" title="Signed in status">
         <div id="signedDot" class="dot red" aria-hidden="true"></div>
-        <span style="font-size:12px">Sign</span>
+        <span style="font-size:10px">Sign</span>
       </div>
       <div class="statusMini" title="Auto sync status">
         <div id="syncDot" class="dot red" aria-hidden="true"></div>
-        <span style="font-size:12px">Sync</span>
+        <span style="font-size:10px">Sync</span>
       </div>
     </div>
   </header>
 
   <main>
-    <!-- Controls -->
-    <div class="card" id="controlsCard">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
-        <div style="font-weight:800;color:#145a3f">Account</div>
-        <div style="font-size:13px;color:#6b6b6b">One-click sign in and grant</div>
-      </div>
-
-      <div class="row" style="margin-top:12px">
-        <button id="btnSignGrant">Sign in & Grant Drive Access</button>
-        <button id="btnSignRetry" class="secondary">Retry</button>
-      </div>
-
-      <div style="margin-top:12px">
-        <div style="font-weight:800;margin-bottom:8px;color:#2f6b4f">Login debug (only shown on failure)</div>
-        <div id="loginDebug" class="debug" aria-live="polite"></div>
-      </div>
-    </div>
-
-    <!-- Home -->
+    <!-- Controls moved to Settings tab only -->
     <section id="pageHome" class="page active">
       <div class="card">
         <div class="sectionTitle">Taxonomy Tree</div>
@@ -226,7 +209,6 @@
       </div>
     </section>
 
-    <!-- Add -->
     <section id="pageAdd" class="page">
       <div class="card">
         <div class="sectionTitle">Add / Save Species Record</div>
@@ -254,7 +236,6 @@
       </div>
     </section>
 
-    <!-- Browse -->
     <section id="pageBrowse" class="page">
       <div class="card">
         <div class="sectionTitle">Search / List Records</div>
@@ -269,6 +250,35 @@
       <div class="card">
         <div class="sectionTitle">Record Viewer</div>
         <div id="recordViewer" style="margin-top:8px">Click an item to view details</div>
+      </div>
+    </section>
+
+    <!-- Settings tab: only place with sign/grant/retry and export -->
+    <section id="pageSettings" class="page">
+      <div class="card">
+        <div class="sectionTitle">Settings</div>
+
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="font-weight:700;color:#145a3f">Account</div>
+          <div class="row">
+            <button id="btnSignGrant">Sign in & Grant Drive Access</button>
+            <button id="btnSignRetry" class="secondary">Retry</button>
+          </div>
+
+          <div style="margin-top:8px">
+            <div style="font-weight:700;color:#145a3f;margin-bottom:6px">Export / Backup</div>
+            <div class="row">
+              <button id="exportLocalBtn" class="ghost">Export local JSON</button>
+              <button id="exportDriveBtn" class="secondary">Export to Drive (signed)</button>
+            </div>
+            <div style="margin-top:8px;color:var(--muted);font-size:13px">Export will download a JSON file of locally saved records. Drive export requires sign-in.</div>
+          </div>
+
+          <div style="margin-top:12px">
+            <div style="font-weight:700;color:#145a3f;margin-bottom:6px">Debug (shown only on failure)</div>
+            <div id="loginDebug" class="debug" aria-live="polite"></div>
+          </div>
+        </div>
       </div>
     </section>
   </main>
@@ -286,18 +296,19 @@
     <div id="navHome" class="navBtn active" data-target="pageHome"><span class="navIcon">🌳</span>Home</div>
     <div id="navAdd" class="navBtn" data-target="pageAdd"><span class="navIcon">➕</span>Add</div>
     <div id="navBrowse" class="navBtn" data-target="pageBrowse"><span class="navIcon">🔎</span>Browse</div>
+    <div id="navSettings" class="navBtn" data-target="pageSettings"><span class="navIcon">⚙️</span>Settings</div>
   </nav>
 
   <script>
   /************************************************************************
-   * Finalized behavior per your requests:
-   * - Title bar shows exactly: "Exploration of the Nature by Jeffrey"
-   * - Two small labels on the right: "Sign" and "Sync" with green/red dots
+   * Adjusted behavior per request:
+   * - Sign-in controls only in Settings tab
+   * - Title exact text preserved
+   * - Small Sign/Sync indicators on header (no extra signed-in text)
    * - Debug area hidden unless login/drive errors occur
-   * - Single combined "Sign in & Grant Drive Access" button
-   * - Silent sign-in attempted on load
-   * - Toast popup when new data saved locally and when uploaded to Drive (auto-hide)
-   * - Pages (Home/Add/Browse) working with bottom nav and central camera button
+   * - Export local JSON and export-to-Drive (Drive requires sign-in)
+   * - Toast notifications for local save and Drive upload
+   * - Bottom nav no longer overlaps content (main has bottom padding)
    ************************************************************************/
 
   const CLIENT_ID = "58009415485-8qvhrvbasmrq5ugms01dv8vt7pneen6u.apps.googleusercontent.com";
@@ -312,7 +323,6 @@
   // UI refs
   const signedDot = document.getElementById('signedDot');
   const syncDot = document.getElementById('syncDot');
-  const userInfo = document.getElementById('userInfo');
   const loginDebug = document.getElementById('loginDebug');
   const toastEl = document.getElementById('toast');
 
@@ -358,6 +368,7 @@
   async function initTokenClient() {
     const ready = await waitForGISReady(5000);
     if (!ready) {
+      // show debug only on failure
       showDebug("Google Identity Services not loaded. Check network or script blocking.");
       setSignedState(false);
       setSyncState(false);
@@ -369,7 +380,6 @@
       callback: (resp) => {
         if (resp && resp.access_token) {
           accessToken = resp.access_token;
-          userInfo.innerText = "Signed in";
           setSignedState(true);
           hideDebug();
           // ensure folder and start auto sync
@@ -383,6 +393,7 @@
             setSyncState(false);
           });
         } else {
+          // show debug only on failure
           showDebug("Token response error:\n" + JSON.stringify(resp, null, 2));
           setSignedState(false);
           setSyncState(false);
@@ -392,7 +403,7 @@
     return true;
   }
 
-  // Combined sign & grant
+  // Combined sign & grant (Settings tab)
   document.getElementById('btnSignGrant').addEventListener('click', async () => {
     if (!tokenClient) {
       const ok = await initTokenClient();
@@ -407,7 +418,7 @@
     }
   });
 
-  // Retry button
+  // Retry (Settings tab)
   document.getElementById('btnSignRetry').addEventListener('click', async () => {
     if (!tokenClient) {
       const ok = await initTokenClient();
@@ -509,17 +520,17 @@
       const note = document.getElementById('speciesNote').value.trim();
       const files = document.getElementById('speciesImages').files;
 
-      // Save locally (example: localStorage)
+      // Save locally (localStorage)
       const record = { species: name, taxonomy, note, createdAt: new Date().toISOString() };
       const localKey = 'exploration_records_v1';
       const existing = JSON.parse(localStorage.getItem(localKey) || '[]');
       existing.push(record);
       localStorage.setItem(localKey, JSON.stringify(existing));
-      showToast('Saved locally');
+      showToast('Saved locally', 2);
 
       // Upload images (if signed in) and JSON to Drive
       if (!accessToken) {
-        showToast('Not signed in — record saved locally only', 4);
+        showToast('Not signed in — saved locally only', 4);
         return;
       }
 
@@ -538,7 +549,7 @@
       const recordWithImages = { ...record, images: imageRefs };
       const uploaded = await uploadJsonRecordToFolder(name, recordWithImages, folderId);
 
-      showToast('Saved to Drive', 4);
+      showToast('Saved to Drive', 3);
       // refresh UI
       refreshSpeciesCount();
       buildTaxonomyTree();
@@ -585,19 +596,52 @@
     return res.json();
   }
 
-  // Navigation wiring
-  document.querySelectorAll('.navBtn').forEach(btn=>{
-    btn.addEventListener('click', ()=> {
-      document.querySelectorAll('.navBtn').forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active');
-      document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-      document.getElementById(btn.dataset.target).classList.add('active');
-    });
+  // Export local JSON (download)
+  document.getElementById('exportLocalBtn').addEventListener('click', () => {
+    const localKey = 'exploration_records_v1';
+    const data = localStorage.getItem(localKey) || '[]';
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `exploration_records_${new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    showToast('Local JSON exported', 3);
   });
 
-  document.getElementById('cameraBtn').addEventListener('click', ()=> {
-    document.getElementById('navAdd').click();
-    setTimeout(()=>document.getElementById('speciesName').focus(), 200);
+  // Export to Drive: upload local JSON file into folder (requires sign-in)
+  document.getElementById('exportDriveBtn').addEventListener('click', async () => {
+    try {
+      if (!accessToken) {
+        showDebug('Please sign in first to export to Drive.');
+        showToast('Sign in required', 3);
+        return;
+      }
+      const localKey = 'exploration_records_v1';
+      const data = localStorage.getItem(localKey) || '[]';
+      const folderId = await getOrCreateFolderId(TARGET_FOLDER_NAME);
+      const metadata = { name: `exploration_records_backup_${Date.now()}.json`, mimeType: "application/json", parents: [folderId] };
+      const blob = new Blob([data], { type: "application/json" });
+      const form = new FormData();
+      form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
+      form.append("file", blob);
+      const res = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
+        method: "POST",
+        headers: { "Authorization": "Bearer " + accessToken },
+        body: form
+      });
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error("Drive export failed: " + res.status + " " + txt);
+      }
+      showToast('Exported to Drive', 3);
+    } catch (e) {
+      showDebug('Export to Drive failed:\n' + (e && e.message ? e.message : String(e)));
+      showToast('Export failed', 3);
+    }
   });
 
   // Minimal tree & count functions (kept)
@@ -699,6 +743,23 @@
     if (!res.ok) throw new Error("Download JSON failed");
     return res.json();
   }
+
+  // Navigation wiring (keeps content visible above nav)
+  document.querySelectorAll('.navBtn').forEach(btn=>{
+    btn.addEventListener('click', ()=> {
+      document.querySelectorAll('.navBtn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+      document.getElementById(btn.dataset.target).classList.add('active');
+      // scroll to top of main so content not hidden by header/nav
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  });
+
+  document.getElementById('cameraBtn').addEventListener('click', ()=> {
+    document.getElementById('navAdd').click();
+    setTimeout(()=>document.getElementById('speciesName').focus(), 200);
+  });
 
   // register service worker (optional)
   if ('serviceWorker' in navigator) {
