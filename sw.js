@@ -3,9 +3,8 @@ const ASSETS = [
   "/",
   "/index.html",
   "/manifest.json",
-  "/app.js",   // 若你把 JS 分檔，否則可省
-  "/styles.css", // 若有外部 CSS
-  "/icon.png"
+  "/icon.png",
+  "/icon-512.png"
 ];
 
 self.addEventListener("install", event => {
