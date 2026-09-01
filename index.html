@@ -1,176 +1,519 @@
 <!DOCTYPE html>
 <html lang="zh-HK">
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Ecology & Taxonomy App</title>
+
+  <!-- PWA manifest -->
+  <link rel="manifest" href="manifest.json" />
+
+  <!-- Google Identity Services -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <!-- D3 for tree -->
   <script src="https://d3js.org/d3.v7.min.js"></script>
+
   <style>
-    body { font-family: Arial; margin: 20px; }
-    textarea, input { display:block; margin:10px 0; width:300px; }
-    button { margin:5px; }
-    #taxonomyTree { border:1px solid #ccc; padding:10px; margin-top:20px; }
-    svg { width: 100%; height: 500px; }
+    :root{
+      --accent:#2a9d8f;
+      --bg:#f5f7f6;
+      --card:#ffffff;
+      --muted:#6b6b6b;
+      --radius:12px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;background:var(--bg);color:#222}
+    header{background:var(--accent);color:#fff;padding:14px 16px;display:flex;align-items:center;justify-content:space-between}
+    header h1{font-size:18px;margin:0}
+    #userInfo{font-size:13px;opacity:0.95}
+    main{padding:14px;max-width:980px;margin:0 auto}
+    .card{background:var(--card);border-radius:var(--radius);padding:14px;margin-bottom:12px;box-shadow:0 6px 18px rgba(0,0,0,0.06)}
+    label{display:block;margin:8px 0;font-size:14px}
+    input[type="text"], textarea{width:100%;padding:10px;border-radius:8px;border:1px solid #e0e0e0;font-size:14px}
+    textarea{min-height:84px;resize:vertical}
+    .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    button{background:var(--accent);color:#fff;border:none;padding:10px 14px;border-radius:8px;cursor:pointer}
+    button.secondary{background:#fff;color:var(--accent);border:1px solid var(--accent)}
+    .muted{color:var(--muted);font-size:13px;margin-top:8px}
+    .imageGrid{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .imageGrid .thumb{width:96px;height:96px;border-radius:8px;overflow:hidden;border:1px solid #e6e6e6;cursor:pointer;background:#f0f0f0;display:flex;align-items:center;justify-content:center}
+    .imageGrid img{width:100%;height:100%;object-fit:cover;display:block}
+    #searchResult{white-space:pre-wrap;margin-top:8px;font-size:14px}
+    #taxonomyTree{min-height:220px;padding:8px;border-radius:8px;background:#fff;border:1px dashed #e6e6e6}
+    .resultItem{padding:8px;border-bottom:1px solid #f0f0f0;cursor:pointer}
+    .resultItem:hover{background:#f7fffb}
+    /* modal */
+    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);z-index:999}
+    .modal.open{display:flex}
+    .modal .box{background:#fff;padding:12px;border-radius:10px;max-width:92%;max-height:92%;overflow:auto}
+    .modal img{max-width:100%;height:auto;border-radius:8px;display:block}
+    footer{padding:12px;text-align:center;color:#888;font-size:13px}
+    @media (min-width:800px){
+      .twoCol{display:flex;gap:12px}
+      .leftCol{flex:1}
+      .rightCol{width:360px}
+    }
   </style>
 </head>
 <body>
-  <h2>生態學與分類學紀錄 App</h2>
+  <header>
+    <h1>Ecology & Taxonomy</h1>
+    <div id="userInfo">未登入</div>
+  </header>
 
-  <!-- Google Sign-In -->
-  <div id="g_id_onload"
-       data-client_id="58009415485-8qvhrvbasmrq5ugms01dv8vt7pneen6u.apps.googleusercontent.com"
-       data-context="signin"
-       data-ux_mode="popup"
-       data-callback="handleCredentialResponse">
+  <main>
+    <div class="card">
+      <div id="g_id_onload"
+           data-client_id="58009415485-8qvhrvbasmrq5ugms01dv8vt7pneen6u.apps.googleusercontent.com"
+           data-context="signin"
+           data-ux_mode="popup"
+           data-callback="handleCredentialResponse">
+      </div>
+      <div class="g_id_signin" data-type="standard"></div>
+      <div class="muted">登入後可將紀錄與圖片儲存到你嘅 Google Drive</div>
+    </div>
+
+    <div class="twoCol">
+      <div class="leftCol">
+        <div class="card">
+          <h3>新增 / 儲存 物種紀錄</h3>
+          <label>物種名稱
+            <input id="speciesName" type="text" placeholder="例如：Formica rufa">
+          </label>
+          <label>分類（用 ; 分隔）
+            <input id="speciesTaxonomy" type="text" placeholder="Kingdom;Phylum;Class;Order;Family;Genus;Species">
+          </label>
+          <label>筆記
+            <textarea id="speciesNote" placeholder="觀察地點、行為、時間等"></textarea>
+          </label>
+          <label>上載圖片（可多張）
+            <input id="speciesImages" type="file" accept="image/*" multiple>
+          </label>
+          <div class="row">
+            <button id="saveBtn">儲存紀錄</button>
+            <button id="clearBtn" class="secondary">清除表單</button>
+          </div>
+          <div class="muted">儲存會建立一個 JSON 檔（包含 metadata 與圖片 fileIds），圖片會另外上載到 Drive。</div>
+        </div>
+
+        <div class="card">
+          <h3>搜尋 / 列表</h3>
+          <div class="row">
+            <input id="searchQuery" type="text" placeholder="以名稱或關鍵字搜尋">
+            <button id="searchBtn">搜尋</button>
+            <button id="listBtn" class="secondary">列出最近 50 個</button>
+          </div>
+          <div id="searchResult"></div>
+        </div>
+      </div>
+
+      <div class="rightCol">
+        <div class="card">
+          <h3>Taxonomy Tree</h3>
+          <div id="taxonomyTree"><svg id="treeSvg" width="320" height="320"></svg></div>
+          <div class="row" style="margin-top:8px">
+            <button id="refreshTreeBtn">刷新樹狀圖</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>檢視 / 編輯 紀錄</h3>
+          <div id="recordViewer">點擊左側列表或樹狀葉節點以檢視紀錄</div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div id="imgModal" class="modal" role="dialog" aria-hidden="true">
+    <div class="box">
+      <button id="closeModal" style="float:right;background:#eee;border:none;padding:6px;border-radius:6px">Close</button>
+      <div id="modalContent"></div>
+    </div>
   </div>
-  <div class="g_id_signin" data-type="standard"></div>
 
-  <!-- 新增物種紀錄 -->
-  <h3>新增物種紀錄</h3>
-  <input type="text" id="speciesName" placeholder="物種名稱">
-  <textarea id="speciesNote" placeholder="筆記"></textarea>
-  <input type="file" id="speciesImages" multiple>
-  <button id="saveBtn">Save to Drive</button>
+  <footer>Ecology App — 測試版</footer>
 
-  <!-- 修改紀錄 -->
-  <h3>修改物種紀錄</h3>
-  <input type="text" id="editFileId" placeholder="Drive 檔案 ID">
-  <textarea id="editNote" placeholder="新筆記"></textarea>
-  <button id="updateBtn">Update Record</button>
-
-  <!-- 搜尋紀錄 -->
-  <h3>搜尋物種</h3>
-  <input type="text" id="searchQuery" placeholder="搜尋關鍵字">
-  <button id="searchBtn">Search</button>
-  <div id="searchResult"></div>
-
-  <!-- Taxonomy Tree -->
-  <h3>Taxonomy Tree</h3>
-  <div id="taxonomyTree"><svg id="treeSvg"></svg></div>
-<script>
+  <script>
+  // -------------------------
+  // Config
+  // -------------------------
+  const CLIENT_ID = "58009415485-8qvhrvbasmrq5ugms01dv8vt7pneen6u.apps.googleusercontent.com";
+  const SCOPES = "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive";
   let accessToken = null;
-  let taxonomyData = { name: "Life", children: [] };
 
+  // -------------------------
+  // GIS callback: 取得 access token
+  // -------------------------
   function handleCredentialResponse(response) {
-    const client = google.accounts.oauth2.initTokenClient({
-      client_id: "58009415485-8qvhrvbasmrq5ugms01dv8vt7pneen6u.apps.googleusercontent.com",
-      scope: "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive",
+    const tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: CLIENT_ID,
+      scope: SCOPES,
       callback: (tokenResponse) => {
-        accessToken = tokenResponse.access_token;
-        alert("成功登入！");
-      },
+        if (tokenResponse && tokenResponse.access_token) {
+          accessToken = tokenResponse.access_token;
+          document.getElementById("userInfo").innerText = "已登入（Drive 可用）";
+          alert("登入成功，可以開始儲存與管理紀錄");
+        } else {
+          alert("未能取得 access token");
+        }
+      }
     });
-    client.requestAccessToken();
+    tokenClient.requestAccessToken();
   }
 
-  // 儲存物種紀錄（文字 + 多圖片）
-  document.getElementById("saveBtn").onclick = async () => {
-    if (!accessToken) return alert("未登入");
-    const name = document.getElementById("speciesName").value;
-    const note = document.getElementById("speciesNote").value;
-    const files = document.getElementById("speciesImages").files;
+  // -------------------------
+  // Helper: fetch with Bearer
+  // -------------------------
+  async function driveFetch(url, opts = {}) {
+    if (!accessToken) throw new Error("請先登入並授權");
+    opts.headers = opts.headers || {};
+    opts.headers["Authorization"] = "Bearer " + accessToken;
+    const res = await fetch(url, opts);
+    if (!res.ok) {
+      const txt = await res.text();
+      throw new Error("Drive API 錯誤: " + res.status + " " + txt);
+    }
+    return res;
+  }
+  async function driveFetchJson(url, opts = {}) {
+    const res = await driveFetch(url, opts);
+    return res.json();
+  }
 
-    // JSON metadata
+  // -------------------------
+  // Upload JSON record
+  // -------------------------
+  async function uploadJsonRecord(name, obj) {
     const metadata = { name: name + ".json", mimeType: "application/json" };
-    const jsonData = new Blob([JSON.stringify({species:name, note:note})], { type: "application/json" });
-
+    const blob = new Blob([JSON.stringify(obj)], { type: "application/json" });
     const form = new FormData();
     form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
-    form.append("file", jsonData);
-
+    form.append("file", blob);
     const res = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
       method: "POST",
       headers: { "Authorization": "Bearer " + accessToken },
       body: form
     });
-    const val = await res.json();
-    alert("物種紀錄已儲存！ID: " + val.id);
+    return res.json();
+  }
 
-    // 上載多張圖片
-    for (let i=0; i<files.length; i++) {
-      const imgMeta = { name: name + "_img" + (i+1) + ".jpg", mimeType: files[i].type };
-      const imgForm = new FormData();
-      imgForm.append("metadata", new Blob([JSON.stringify(imgMeta)], { type: "application/json" }));
-      imgForm.append("file", files[i]);
-
-      await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
-        method: "POST",
-        headers: { "Authorization": "Bearer " + accessToken },
-        body: imgForm
-      });
-    }
-    alert("圖片已全部上載！");
-
-    // 更新 taxonomy tree
-    taxonomyData.children.push({ name: name, children: [] });
-    renderTree(taxonomyData);
-  };  // 修改紀錄
-  document.getElementById("updateBtn").onclick = async () => {
-    if (!accessToken) return alert("未登入");
-    const fileId = document.getElementById("editFileId").value;
-    const newNote = document.getElementById("editNote").value;
-    const file = new Blob([JSON.stringify({note:newNote})], { type: "application/json" });
-
-    const res = await fetch("https://www.googleapis.com/upload/drive/v3/files/" + fileId + "?uploadType=media", {
-      method: "PATCH",
-      headers: { "Authorization": "Bearer " + accessToken, "Content-Type": "application/json" },
-      body: file
+  // -------------------------
+  // Upload image file
+  // -------------------------
+  async function uploadImageFile(file, nameHint) {
+    const meta = { name: nameHint, mimeType: file.type };
+    const form = new FormData();
+    form.append("metadata", new Blob([JSON.stringify(meta)], { type: "application/json" }));
+    form.append("file", file);
+    const res = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
+      method: "POST",
+      headers: { "Authorization": "Bearer " + accessToken },
+      body: form
     });
-    const val = await res.json();
-    alert("紀錄已更新！ID: " + val.id);
-  };
+    return res.json();
+  }
 
-  // 搜尋紀錄
-  document.getElementById("searchBtn").onclick = async () => {
-    const query = document.getElementById("searchQuery").value;
-    const res = await fetch("https://www.googleapis.com/drive/v3/files?q=name contains '" + query + "'&fields=files(id,name)", {
+  // -------------------------
+  // Get JSON content by fileId
+  // -------------------------
+  async function getFileJson(fileId) {
+    const meta = await driveFetchJson(`https://www.googleapis.com/drive/v3/files/${fileId}?fields=id,name,mimeType`);
+    if (!meta.mimeType.includes("json")) throw new Error("檔案不是 JSON");
+    const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
       headers: { "Authorization": "Bearer " + accessToken }
     });
-    const val = await res.json();
-    document.getElementById("searchResult").innerText =
-      val.files.map(f => f.name + " (" + f.id + ")").join("\n");
-  };  // 用 D3.js 畫樹狀圖
-  function renderTree(data) {
-    d3.select("#treeSvg").selectAll("*").remove();
+    if (!res.ok) throw new Error("下載 JSON 失敗");
+    return res.json();
+  }
 
-    const width = 600, height = 400;
-    const svg = d3.select("#treeSvg")
-      .attr("width", width)
-      .attr("height", height);
+  // -------------------------
+  // Fetch image blob and return objectURL
+  // -------------------------
+  async function fetchImageURL(fileId) {
+    const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+      headers: { "Authorization": "Bearer " + accessToken }
+    });
+    if (!res.ok) throw new Error("下載圖片失敗");
+    const blob = await res.blob();
+    return URL.createObjectURL(blob);
+  }
 
+  // -------------------------
+  // UI: Save record (text + multiple images)
+  // -------------------------
+  document.getElementById("saveBtn").addEventListener("click", async () => {
+    try {
+      if (!accessToken) return alert("請先登入並授權");
+      const name = document.getElementById("speciesName").value.trim();
+      if (!name) return alert("請輸入物種名稱");
+      const taxonomy = document.getElementById("speciesTaxonomy").value.trim();
+      const note = document.getElementById("speciesNote").value.trim();
+      const files = document.getElementById("speciesImages").files;
+
+      // 1) upload images first
+      const imageRefs = [];
+      for (let i=0;i<files.length;i++){
+        const f = files[i];
+        const up = await uploadImageFile(f, `${name}_img_${Date.now()}_${i}.${f.name.split('.').pop()}`);
+        imageRefs.push({ id: up.id, name: up.name, mimeType: up.mimeType });
+      }
+
+      // 2) create JSON record
+      const record = {
+        species: name,
+        taxonomy: taxonomy,
+        note: note,
+        images: imageRefs,
+        createdAt: new Date().toISOString()
+      };
+      const uploaded = await uploadJsonRecord(name, record);
+      alert("紀錄已儲存，JSON fileId: " + uploaded.id);
+
+      // clear form
+      document.getElementById("speciesName").value = "";
+      document.getElementById("speciesTaxonomy").value = "";
+      document.getElementById("speciesNote").value = "";
+      document.getElementById("speciesImages").value = "";
+
+    } catch (e) {
+      alert("儲存失敗: " + e.message);
+    }
+  });
+
+  document.getElementById("clearBtn").addEventListener("click", () => {
+    document.getElementById("speciesName").value = "";
+    document.getElementById("speciesTaxonomy").value = "";
+    document.getElementById("speciesNote").value = "";
+    document.getElementById("speciesImages").value = "";
+  });
+
+  // -------------------------
+  // Search & list
+  // -------------------------
+  function renderSearchList(files) {
+    const el = document.getElementById("searchResult");
+    el.innerHTML = "";
+    if (!files || files.length === 0) { el.innerText = "無結果"; return; }
+    files.forEach(f => {
+      const div = document.createElement("div");
+      div.className = "resultItem";
+      div.innerText = `${f.name} (${f.id})`;
+      div.addEventListener("click", () => loadAndShowRecord(f.id));
+      el.appendChild(div);
+    });
+  }
+
+  document.getElementById("searchBtn").addEventListener("click", async () => {
+    try {
+      const q = document.getElementById("searchQuery").value.trim();
+      if (!q) return alert("請輸入搜尋關鍵字");
+      const query = `mimeType='application/json' and name contains '${q.replace("'", "\\'")}'`;
+      const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id,name)`;
+      const res = await driveFetchJson(url);
+      renderSearchList(res.files || []);
+    } catch (e) { alert("搜尋失敗: " + e.message); }
+  });
+
+  document.getElementById("listBtn").addEventListener("click", async () => {
+    try {
+      const q = `mimeType='application/json'`;
+      const url = `https://www.googleapis.com/drive/v3/files?pageSize=50&q=${encodeURIComponent(q)}&fields=files(id,name)`;
+      const res = await driveFetchJson(url);
+      renderSearchList(res.files || []);
+    } catch (e) { alert("列出失敗: " + e.message); }
+  });
+
+  // -------------------------
+  // Load record and show viewer (with image thumbnails and edit options)
+  // -------------------------
+  async function loadAndShowRecord(fileId) {
+    try {
+      const data = await getFileJson(fileId);
+      const viewer = document.getElementById("recordViewer");
+      viewer.innerHTML = "";
+      const title = document.createElement("h4"); title.innerText = data.species || "Unnamed"; viewer.appendChild(title);
+      const meta = document.createElement("div"); meta.className="muted"; meta.innerText = `Taxonomy: ${data.taxonomy || ""}\nCreated: ${data.createdAt || ""}`; viewer.appendChild(meta);
+      const note = document.createElement("pre"); note.innerText = data.note || ""; viewer.appendChild(note);
+
+      // images
+      if (data.images && data.images.length) {
+        const grid = document.createElement("div"); grid.className="imageGrid";
+        for (const img of data.images) {
+          const wrap = document.createElement("div"); wrap.className="thumb";
+          const imgEl = document.createElement("img"); imgEl.alt = img.name || "image";
+          // lazy load image blob
+          fetchImageURL(img.id).then(url => { imgEl.src = url; }).catch(()=>{ imgEl.alt="無法下載"; });
+          wrap.appendChild(imgEl);
+          wrap.addEventListener("click", ()=> openModalWithImage(img.id));
+          grid.appendChild(wrap);
+        }
+        viewer.appendChild(grid);
+      }
+
+      // edit area: update note, add images, delete JSON
+      const editDiv = document.createElement("div"); editDiv.style.marginTop="10px";
+      editDiv.innerHTML = `
+        <label>更新 taxonomy <input id="editTax" type="text" value="${(data.taxonomy||'').replaceAll('"','&quot;')}"></label>
+        <label>更新筆記 <textarea id="editNoteArea" rows="3">${(data.note||'').replaceAll('<','&lt;')}</textarea></label>
+        <label>新增圖片 <input id="editAddImages" type="file" accept="image/*" multiple></label>
+        <div class="row" style="margin-top:8px">
+          <button id="saveEditBtn">儲存修改</button>
+          <button id="deleteJsonBtn" class="secondary">刪除紀錄 (只刪 JSON)</button>
+        </div>
+      `;
+      viewer.appendChild(editDiv);
+
+      document.getElementById("saveEditBtn").addEventListener("click", async () => {
+        try {
+          const newTax = document.getElementById("editTax").value.trim();
+          const newNote = document.getElementById("editNoteArea").value.trim();
+          const addFiles = document.getElementById("editAddImages").files;
+          // upload new images if any
+          if (addFiles && addFiles.length) {
+            for (let i=0;i<addFiles.length;i++){
+              const up = await uploadImageFile(addFiles[i], `${data.species||'img'}_add_${Date.now()}_${i}.${addFiles[i].name.split('.').pop()}`);
+              data.images = data.images || [];
+              data.images.push({ id: up.id, name: up.name, mimeType: up.mimeType });
+            }
+          }
+          data.taxonomy = newTax;
+          data.note = newNote;
+          data.updatedAt = new Date().toISOString();
+          // update JSON file
+          const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
+          const res = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
+            method: "PATCH",
+            headers: { "Authorization": "Bearer " + accessToken, "Content-Type": "application/json" },
+            body: blob
+          });
+          const j = await res.json();
+          alert("已更新紀錄: " + j.id);
+          loadAndShowRecord(fileId);
+        } catch (e) { alert("更新失敗: " + e.message); }
+      });
+
+      document.getElementById("deleteJsonBtn").addEventListener("click", async () => {
+        if (!confirm("確定刪除此 JSON 紀錄？（圖片不會自動刪除）")) return;
+        await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}`, {
+          method: "DELETE",
+          headers: { "Authorization": "Bearer " + accessToken }
+        });
+        alert("已刪除 JSON 紀錄");
+        document.getElementById("recordViewer").innerHTML = "";
+      });
+
+    } catch (e) {
+      alert("載入紀錄失敗: " + e.message);
+    }
+  }
+
+  // -------------------------
+  // Modal for image preview
+  // -------------------------
+  const modal = document.getElementById("imgModal");
+  const modalContent = document.getElementById("modalContent");
+  document.getElementById("closeModal").addEventListener("click", ()=> { modal.classList.remove("open"); modalContent.innerHTML=""; });
+
+  async function openModalWithImage(fileId) {
+    try {
+      modalContent.innerHTML = "<div style='padding:20px'>載入中…</div>";
+      modal.classList.add("open");
+      const url = await fetchImageURL(fileId);
+      modalContent.innerHTML = `<img src="${url}" alt="image">`;
+    } catch (e) {
+      modalContent.innerHTML = "<div style='padding:20px;color:#900'>無法下載圖片</div>";
+    }
+  }
+
+  // -------------------------
+  // Taxonomy tree: build from JSON records and render with D3
+  // -------------------------
+  async function buildTaxonomyTree() {
+    try {
+      const q = `mimeType='application/json'`;
+      const url = `https://www.googleapis.com/drive/v3/files?pageSize=200&q=${encodeURIComponent(q)}&fields=files(id,name)`;
+      const res = await driveFetchJson(url);
+      const files = res.files || [];
+      const nodes = [];
+      for (const f of files) {
+        try {
+          const data = await getFileJson(f.id);
+          const tax = (data.taxonomy || "").split(";").map(s=>s.trim()).filter(Boolean);
+          nodes.push({ id: f.id, name: data.species || f.name, taxonomy: tax });
+        } catch (e) { /* skip */ }
+      }
+      // build tree
+      const root = { name: "Life", children: [] };
+      for (const n of nodes) {
+        let cursor = root;
+        const levels = n.taxonomy.length ? n.taxonomy : ["Unclassified"];
+        for (const lvl of levels) {
+          let child = cursor.children.find(c => c.name === lvl);
+          if (!child) { child = { name: lvl, children: [] }; cursor.children.push(child); }
+          cursor = child;
+        }
+        cursor.children = cursor.children || [];
+        cursor.children.push({ name: n.name, fileId: n.id, leaf: true });
+      }
+      renderD3Tree(root);
+    } catch (e) {
+      console.error("build tree error", e);
+    }
+  }
+
+  function renderD3Tree(data) {
+    const svgEl = d3.select("#treeSvg");
+    svgEl.selectAll("*").remove();
+    const width = +svgEl.attr("width") || 320;
+    const height = +svgEl.attr("height") || 320;
     const root = d3.hierarchy(data);
-    const treeLayout = d3.tree().size([height, width-100]);
+    const treeLayout = d3.tree().size([height-20, width-40]);
     treeLayout(root);
 
-    svg.selectAll('line')
+    // links
+    svgEl.append("g")
+      .selectAll("path")
       .data(root.links())
       .enter()
-      .append('line')
-      .attr('x1', d => d.source.y)
-      .attr('y1', d => d.source.x)
-      .attr('x2', d => d.target.y)
-      .attr('y2', d => d.target.x)
-      .attr('stroke', 'black');
+      .append("path")
+      .attr("d", d => `M${d.source.y+20},${d.source.x}C${d.source.y+60},${d.source.x} ${d.target.y-20},${d.target.x} ${d.target.y},${d.target.x}`)
+      .attr("fill","none").attr("stroke","#9aa").attr("stroke-width",1.2);
 
-    svg.selectAll('circle')
+    // nodes
+    const node = svgEl.append("g")
+      .selectAll("g")
       .data(root.descendants())
       .enter()
-      .append('circle')
-      .attr('cx', d => d.y)
-      .attr('cy', d => d.x)
-      .attr('r', 5)
-      .attr('fill', 'steelblue');
+      .append("g")
+      .attr("transform", d => `translate(${d.y},${d.x})`);
 
-    svg.selectAll('text')
-      .data(root.descendants())
-      .enter()
-      .append('text')
-      .attr('x', d => d.y + 10)
-      .attr('y', d => d.x + 5)
-      .text(d => d.data.name);
+    node.append("circle")
+      .attr("r", d => d.data.leaf ? 5 : 4)
+      .attr("fill", d => d.data.leaf ? "#2a9d8f" : "#fff")
+      .attr("stroke", "#2a9d8f");
+
+    node.append("text")
+      .attr("x", 8)
+      .attr("y", 4)
+      .text(d => d.data.name)
+      .style("font-size","12px")
+      .on("click", (event,d) => {
+        if (d.data.leaf && d.data.fileId) loadAndShowRecord(d.data.fileId);
+      });
   }
-</script>
+
+  document.getElementById("refreshTreeBtn").addEventListener("click", async () => {
+    if (!accessToken) return alert("請先登入");
+    await buildTaxonomyTree();
+  });
+
+  // -------------------------
+  // Init: register service worker for PWA caching
+  // -------------------------
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').then(()=>{ console.log('sw registered'); }).catch(()=>{ console.log('sw failed'); });
+  }
+
+  </script>
 </body>
 </html>
-
-
