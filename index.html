@@ -1,12 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-HK">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Ecology & Taxonomy App</title>
-
-  <!-- PWA manifest (需放獨立檔案 manifest.json) -->
-  <link rel="manifest" href="manifest.json" />
+  <title>Ecology & Taxonomy — PWA Demo</title>
 
   <!-- Google Identity Services -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -14,52 +11,74 @@
   <script src="https://d3js.org/d3.v7.min.js"></script>
 
   <style>
-    :root{--accent:#2a9d8f;--bg:#f5f7f6;--card:#fff;--muted:#6b6b6b;--radius:12px}
+    :root{
+      --accent:#2a9d8f;
+      --accent-dark:#1f7a63;
+      --bg:#f5f7f6;
+      --card:#fff;
+      --muted:#6b6b6b;
+      --radius:12px;
+      --shadow: 0 8px 24px rgba(15, 40, 30, 0.06);
+      --nav-height:64px;
+    }
     *{box-sizing:border-box}
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;background:var(--bg);color:#222}
-    header{background:var(--accent);color:#fff;padding:14px 16px;display:flex;align-items:center;justify-content:space-between}
-    header h1{font-size:18px;margin:0}
+    html,body{height:100%}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;background:var(--bg);color:#222;-webkit-font-smoothing:antialiased;padding-bottom:var(--nav-height)}
+    header{background:linear-gradient(90deg,var(--accent),var(--accent-dark));color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+    header h1{font-size:16px;margin:0;font-weight:700}
     #userInfo{font-size:13px;opacity:0.95}
-    main{padding:14px;max-width:980px;margin:0 auto}
-    .card{background:var(--card);border-radius:var(--radius);padding:14px;margin-bottom:12px;box-shadow:0 6px 18px rgba(0,0,0,0.06)}
+    main{padding:12px;max-width:980px;margin:0 auto}
+    .card{background:var(--card);border-radius:var(--radius);padding:12px;margin-bottom:12px;box-shadow:var(--shadow)}
     label{display:block;margin:8px 0;font-size:14px}
-    input[type="text"], textarea{width:100%;padding:10px;border-radius:8px;border:1px solid #e0e0e0;font-size:14px}
+    input[type="text"], textarea{width:100%;padding:10px;border-radius:10px;border:1px solid #e6e6e6;font-size:14px}
     textarea{min-height:84px;resize:vertical}
     .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-    button{background:var(--accent);color:#fff;border:none;padding:10px 14px;border-radius:8px;cursor:pointer}
+    button{background:var(--accent);color:#fff;border:none;padding:10px 14px;border-radius:10px;cursor:pointer;font-weight:600}
     button.secondary{background:#fff;color:var(--accent);border:1px solid var(--accent)}
     .muted{color:var(--muted);font-size:13px;margin-top:8px}
     .imageGrid{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-    .imageGrid .thumb{width:96px;height:96px;border-radius:8px;overflow:hidden;border:1px solid #e6e6e6;cursor:pointer;background:#f0f0f0;display:flex;align-items:center;justify-content:center}
+    .imageGrid .thumb{width:96px;height:96px;border-radius:10px;overflow:hidden;border:1px solid #e6e6e6;cursor:pointer;background:#f0f0f0;display:flex;align-items:center;justify-content:center}
     .imageGrid img{width:100%;height:100%;object-fit:cover;display:block}
     #searchResult{white-space:pre-wrap;margin-top:8px;font-size:14px}
-    #taxonomyTree{min-height:220px;padding:8px;border-radius:8px;background:#fff;border:1px dashed #e6e6e6}
-    .resultItem{padding:8px;border-bottom:1px solid #f0f0f0;cursor:pointer}
+    #taxonomyTree{min-height:260px;padding:8px;border-radius:8px;background:#fff;border:1px dashed #e6e6e6}
+    .resultItem{padding:10px;border-bottom:1px solid #f0f0f0;cursor:pointer;border-radius:8px;margin-bottom:6px}
     .resultItem:hover{background:#f7fffb}
     .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);z-index:999}
     .modal.open{display:flex}
-    .modal .box{background:#fff;padding:12px;border-radius:10px;max-width:92%;max-height:92%;overflow:auto}
+    .modal .box{background:#fff;padding:12px;border-radius:12px;max-width:92%;max-height:92%;overflow:auto;position:relative}
     .modal img{max-width:100%;height:auto;border-radius:8px;display:block}
+    .carouselControls{display:flex;gap:8px;justify-content:center;margin-top:8px}
+    .smallBtn{background:#eee;color:#333;border:none;padding:6px 10px;border-radius:8px;cursor:pointer}
     footer{padding:12px;text-align:center;color:#888;font-size:13px}
     .twoCol{display:block}
-    @media (min-width:900px){ .twoCol{display:flex;gap:12px} .leftCol{flex:1} .rightCol{width:360px} }
+    @media (min-width:900px){ .twoCol{display:flex;gap:12px} .leftCol{flex:1} .rightCol{width:380px} }
     .cardHeader{display:flex;justify-content:space-between;align-items:center}
-    .cardTitle{font-weight:600;color:#1b5e4a}
+    .cardTitle{font-weight:700;color:#1b5e4a;font-size:16px}
     .taxLine{font-size:12px;color:#6b6b6b;margin-top:6px}
     .debugBox{white-space:pre-wrap;background:#fff;padding:8px;border-radius:8px;margin-top:10px;border:1px solid #eee;font-size:12px}
     .btnClose{float:right;background:#eee;border:none;padding:6px;border-radius:6px}
     .taxonomyFields input{flex:1;min-width:120px;padding:8px;border-radius:8px;border:1px solid #e0e0e0}
-    #grantAccessBtn{display:none;margin-top:8px;padding:8px 12px;border-radius:8px;background:#1f8b6f;color:#fff;border:none}
+    .notice{background:#fff8e6;border-left:4px solid #ffd27a;padding:8px;border-radius:8px;margin-top:8px;color:#6b4b00}
+    /* bottom nav */
+    .bottomNav{position:fixed;left:0;right:0;bottom:0;height:var(--nav-height);background:#fff;border-top:1px solid #eee;display:flex;align-items:center;justify-content:space-around;z-index:20}
+    .navBtn{flex:1;text-align:center;padding:8px 6px;color:#444;font-weight:600;cursor:pointer}
+    .navBtn.active{color:var(--accent)}
+    .navIcon{display:block;font-size:18px;margin-bottom:4px}
+    .countLine{font-size:13px;color:#333;margin-top:6px}
+    /* pages */
+    .page{display:none}
+    .page.active{display:block}
   </style>
 </head>
 <body>
   <header>
     <h1>Ecology & Taxonomy</h1>
-    <div id="userInfo">未登入</div>
+    <div id="userInfo">Not signed in</div>
   </header>
 
   <main>
-    <div class="card">
+    <!-- Sign-in + debug -->
+    <div class="card" id="signinCard">
       <div id="g_id_onload"
            data-client_id="58009415485-8qvhrvbasmrq5ugms01dv8vt7pneen6u.apps.googleusercontent.com"
            data-context="signin"
@@ -67,146 +86,195 @@
            data-callback="handleCredentialResponse">
       </div>
       <div class="g_id_signin" data-type="standard"></div>
-      <div class="muted">登入後可將紀錄與圖片儲存到你嘅 Google Drive</div>
-
-      <!-- 授權按鈕（收到 ID token 後顯示，避免 popup 被阻擋） -->
-      <button id="grantAccessBtn">授權 Drive 存取</button>
-
-      <!-- debug 區（手機可見） -->
+      <div class="muted">Sign in to save records and images to your Google Drive</div>
+      <button id="grantAccessBtn" style="display:none;margin-top:8px;padding:8px 12px;border-radius:8px;background:#1f8b6f;color:#fff;border:none">Grant Drive Access</button>
       <div id="loginDebug" class="debugBox" style="display:none"></div>
+      <div id="folderNotice" class="notice" style="display:none"></div>
     </div>
 
-    <div class="twoCol">
-      <div class="leftCol">
-        <div class="card">
-          <h3>新增 / 儲存 物種紀錄</h3>
-
-          <label>物種名稱
-            <input id="speciesName" type="text" placeholder="例如：Formica rufa">
-          </label>
-
-          <label>分類（分欄填寫）</label>
-          <div id="taxonomyFields" class="taxonomyFields" style="display:flex;gap:8px;flex-wrap:wrap">
-            <input id="taxKingdom" placeholder="Kingdom">
-            <input id="taxPhylum"  placeholder="Phylum">
-            <input id="taxClass"   placeholder="Class">
-            <input id="taxOrder"   placeholder="Order">
-            <input id="taxFamily"  placeholder="Family">
-            <input id="taxGenus"   placeholder="Genus">
-            <input id="taxSpecies" placeholder="Species">
+    <!-- Pages -->
+    <!-- Home page: Tree + count -->
+    <section id="pageHome" class="page active">
+      <div class="card">
+        <div class="cardHeader">
+          <div>
+            <div class="cardTitle">Taxonomy Tree</div>
+            <div class="taxLine">Browse your recorded species</div>
           </div>
-
-          <label>筆記
-            <textarea id="speciesNote" placeholder="觀察地點、行為、時間等"></textarea>
-          </label>
-
-          <label>上載圖片（可多張）
-            <input id="speciesImages" type="file" accept="image/*" multiple>
-          </label>
-
-          <div class="row">
-            <button id="saveBtn">儲存紀錄</button>
-            <button id="clearBtn" class="secondary">清除表單</button>
-          </div>
-          <div class="muted">儲存會建立一個 JSON 檔（包含 metadata 與圖片 fileIds），圖片會另外上載到 Drive。</div>
+          <div id="speciesCountLine" class="countLine">Jeffrey has explored 0 species</div>
         </div>
-
-        <div class="card">
-          <h3>搜尋 / 列表</h3>
-          <div class="row">
-            <input id="searchQuery" type="text" placeholder="以名稱或關鍵字搜尋">
-            <button id="searchBtn">搜尋</button>
-            <button id="listBtn" class="secondary">列出最近 50 個</button>
-          </div>
-          <div id="searchResult"></div>
+        <div id="taxonomyTree" style="margin-top:10px"><svg id="treeSvg" width="100%" height="360"></svg></div>
+        <div class="row" style="margin-top:10px">
+          <button id="refreshTreeBtn">Refresh Tree</button>
+          <button id="countRefreshBtn" class="secondary">Refresh Count</button>
         </div>
       </div>
+    </section>
 
-      <div class="rightCol">
-        <div class="card">
-          <h3>Taxonomy Tree</h3>
-          <div id="taxonomyTree"><svg id="treeSvg" width="320" height="320"></svg></div>
-          <div class="row" style="margin-top:8px">
-            <button id="refreshTreeBtn">刷新樹狀圖</button>
-          </div>
+    <!-- Add page: form -->
+    <section id="pageAdd" class="page">
+      <div class="card">
+        <h3>Add / Save Species Record</h3>
+        <label>Species name
+          <input id="speciesName" type="text" placeholder="e.g. Formica rufa">
+        </label>
+
+        <label>Taxonomy (separate fields)</label>
+        <div id="taxonomyFields" class="taxonomyFields" style="display:flex;gap:8px;flex-wrap:wrap">
+          <input id="taxKingdom" placeholder="Kingdom">
+          <input id="taxPhylum"  placeholder="Phylum">
+          <input id="taxClass"   placeholder="Class">
+          <input id="taxOrder"   placeholder="Order">
+          <input id="taxFamily"  placeholder="Family">
+          <input id="taxGenus"   placeholder="Genus">
+          <input id="taxSpecies" placeholder="Species">
         </div>
 
-        <div class="card">
-          <h3>檢視 / 編輯 紀錄</h3>
-          <div id="recordViewer">點擊左側列表或樹狀葉節點以檢視紀錄</div>
+        <label>Notes
+          <textarea id="speciesNote" placeholder="Location, behavior, time, etc."></textarea>
+        </label>
+
+        <label>Upload images (multiple)
+          <input id="speciesImages" type="file" accept="image/*" multiple>
+        </label>
+
+        <div class="row">
+          <button id="saveBtn">Save Record</button>
+          <button id="clearBtn" class="secondary">Clear Form</button>
         </div>
+        <div class="muted">Records and images are saved into a Drive folder named <strong>EcologyApp_Records</strong>.</div>
       </div>
-    </div>
+    </section>
+
+    <!-- Browse page: search/list -->
+    <section id="pageBrowse" class="page">
+      <div class="card">
+        <h3>Search / List Records</h3>
+        <div class="row">
+          <input id="searchQuery" type="text" placeholder="Search by name or keyword">
+          <button id="searchBtn">Search</button>
+          <button id="listBtn" class="secondary">List recent 50</button>
+        </div>
+        <div id="searchResult" style="margin-top:10px"></div>
+      </div>
+
+      <div class="card">
+        <h3>Record Viewer</h3>
+        <div id="recordViewer">Click an item from the list or tree to view details</div>
+      </div>
+    </section>
   </main>
 
+  <!-- Image modal + carousel -->
   <div id="imgModal" class="modal" role="dialog" aria-hidden="true">
     <div class="box">
       <button id="closeModal" class="btnClose">Close</button>
       <div id="modalContent"></div>
+      <div class="carouselControls" id="carouselControls" style="display:none">
+        <button id="prevImg" class="smallBtn">Prev</button>
+        <button id="nextImg" class="smallBtn">Next</button>
+      </div>
     </div>
   </div>
 
-  <footer>Ecology App — 測試版</footer>
+  <!-- Bottom navigation -->
+  <nav class="bottomNav" role="navigation" aria-label="Main navigation">
+    <div id="navHome" class="navBtn active" data-target="pageHome"><span class="navIcon">🌳</span>Home</div>
+    <div id="navAdd" class="navBtn" data-target="pageAdd"><span class="navIcon">➕</span>Add</div>
+    <div id="navBrowse" class="navBtn" data-target="pageBrowse"><span class="navIcon">🔎</span>Browse</div>
+  </nav>
+
+  <footer style="display:none">PWA footer</footer>
 
   <script>
-  // -------------------------
-  // Config
-  // -------------------------
+  /*************************************************************************
+   * Single-file app (English)
+   * - Bottom navigation with three pages (Home / Add / Browse)
+   * - Home shows taxonomy tree and species count line: "Jeffrey has explored xxx species"
+   * - Saves records & images into Drive folder "EcologyApp_Records"
+   * - Deletes JSON and its images together
+   * - Uses Google Identity Services (GIS) with a manual "Grant Drive Access" button
+   *************************************************************************/
+
   const CLIENT_ID = "58009415485-8qvhrvbasmrq5ugms01dv8vt7pneen6u.apps.googleusercontent.com";
   const SCOPES = "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive";
+  const TARGET_FOLDER_NAME = "EcologyApp_Records";
   let accessToken = null;
   let tokenClientGlobal = null;
+  let cachedFolderId = null;
+  let currentModalImages = [];
+  let currentModalIndex = 0;
 
-  // -------------------------
-  // GIS callback: 取得 ID token，建立 token client，但不立即 requestAccessToken
-  // -------------------------
-  function handleCredentialResponse(resp) {
+  // Navigation
+  document.querySelectorAll('.navBtn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.navBtn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const target = btn.dataset.target;
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById(target).classList.add('active');
+      // if home, refresh tree & count
+      if (target === 'pageHome') {
+        if (accessToken) { buildTaxonomyTree(); refreshSpeciesCount(); }
+      }
+    });
+  });
+
+  // Expose handleCredentialResponse for GIS
+  window.handleCredentialResponse = function(resp) {
     const dbgEl = document.getElementById("loginDebug");
     dbgEl.style.display = "block";
-    dbgEl.innerText = "收到 ID token 回應:\n" + JSON.stringify(resp, null, 2) + "\n\n請按「授權 Drive 存取」以取得 access token。";
+    dbgEl.innerText = "Received ID token response:\n" + JSON.stringify(resp, null, 2) + "\n\nPlease press 'Grant Drive Access' to obtain an access token.";
 
-    // 建立 token client 並儲存到全域變數（但不立即 requestAccessToken）
     tokenClientGlobal = google.accounts.oauth2.initTokenClient({
       client_id: CLIENT_ID,
       scope: SCOPES,
-      callback: (tokenResp) => {
-        dbgEl.innerText += "\n\n取得 tokenResponse:\n" + JSON.stringify(tokenResp, null, 2);
+      callback: async (tokenResp) => {
+        dbgEl.innerText += "\n\nToken response:\n" + JSON.stringify(tokenResp, null, 2);
         if (tokenResp && tokenResp.access_token) {
           accessToken = tokenResp.access_token;
-          document.getElementById("userInfo").innerText = "已登入（Drive 可用）";
-          dbgEl.innerText += "\n\n已取得 access token。";
+          document.getElementById("userInfo").innerText = "Signed in (Drive available)";
+          dbgEl.innerText += "\n\nAccess token obtained.";
           document.getElementById("grantAccessBtn").style.display = "none";
+          try {
+            const fid = await getOrCreateFolderId(TARGET_FOLDER_NAME);
+            cachedFolderId = fid;
+            document.getElementById("folderNotice").style.display = "block";
+            document.getElementById("folderNotice").innerText = "Records will be saved in Drive folder: " + TARGET_FOLDER_NAME;
+            // update home count & tree
+            refreshSpeciesCount();
+            buildTaxonomyTree();
+          } catch (e) {
+            document.getElementById("folderNotice").style.display = "block";
+            document.getElementById("folderNotice").innerText = "Could not create/access folder: " + e.message;
+          }
         } else {
-          dbgEl.innerText += "\n\n未取得 access_token，請再次按「授權 Drive 存取」。";
+          dbgEl.innerText += "\n\nNo access_token returned. Please press 'Grant Drive Access' again.";
         }
       }
     });
 
-    // 顯示授權按鈕，等用戶手動點擊（避免 popup 被阻擋）
     const grantBtn = document.getElementById("grantAccessBtn");
     grantBtn.style.display = "inline-block";
     grantBtn.onclick = () => {
       try {
-        // 用戶手勢觸發 requestAccessToken，並加 prompt: 'consent' 強制顯示授權畫面
         tokenClientGlobal.requestAccessToken({ prompt: 'consent' });
-        dbgEl.innerText += "\n\n已觸發 requestAccessToken，請完成授權畫面。";
+        dbgEl.innerText += "\n\nTriggered requestAccessToken; complete the consent screen.";
       } catch (err) {
-        dbgEl.innerText += "\n\n呼叫 requestAccessToken 時發生錯誤:\n" + (err && err.message ? err.message : String(err));
+        dbgEl.innerText += "\n\nError calling requestAccessToken:\n" + (err && err.message ? err.message : String(err));
       }
     };
-  }
+  };
 
-  // -------------------------
-  // Helper: fetch with Bearer
-  // -------------------------
+  // Drive helpers
   async function driveFetch(url, opts = {}) {
-    if (!accessToken) throw new Error("請先登入並授權");
+    if (!accessToken) throw new Error("Please sign in and grant access");
     opts.headers = opts.headers || {};
     opts.headers["Authorization"] = "Bearer " + accessToken;
     const res = await fetch(url, opts);
     if (!res.ok) {
       const txt = await res.text();
-      throw new Error("Drive API 錯誤: " + res.status + " " + txt);
+      throw new Error("Drive API error: " + res.status + " " + txt);
     }
     return res;
   }
@@ -215,11 +283,49 @@
     return res.json();
   }
 
-  // -------------------------
-  // Upload JSON record
-  // -------------------------
-  async function uploadJsonRecord(name, obj) {
-    const metadata = { name: name + ".json", mimeType: "application/json" };
+  async function getOrCreateFolderId(folderName) {
+    if (cachedFolderId) return cachedFolderId;
+    const q = `mimeType='application/vnd.google-apps.folder' and name='${folderName.replace("'", "\\'")}' and trashed=false`;
+    const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name)`;
+    const res = await driveFetchJson(url);
+    if (res.files && res.files.length) {
+      cachedFolderId = res.files[0].id;
+      return cachedFolderId;
+    }
+    const metadata = { name: folderName, mimeType: "application/vnd.google-apps.folder" };
+    const createRes = await fetch("https://www.googleapis.com/drive/v3/files", {
+      method: "POST",
+      headers: { "Authorization": "Bearer " + accessToken, "Content-Type": "application/json" },
+      body: JSON.stringify(metadata)
+    });
+    if (!createRes.ok) {
+      const txt = await createRes.text();
+      throw new Error("Create folder failed: " + createRes.status + " " + txt);
+    }
+    const j = await createRes.json();
+    cachedFolderId = j.id;
+    return cachedFolderId;
+  }
+
+  async function uploadImageFileToFolder(file, nameHint, folderId) {
+    const meta = { name: nameHint, mimeType: file.type, parents: folderId ? [folderId] : undefined };
+    const form = new FormData();
+    form.append("metadata", new Blob([JSON.stringify(meta)], { type: "application/json" }));
+    form.append("file", file);
+    const res = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
+      method: "POST",
+      headers: { "Authorization": "Bearer " + accessToken },
+      body: form
+    });
+    if (!res.ok) {
+      const txt = await res.text();
+      throw new Error("Upload image failed: " + res.status + " " + txt);
+    }
+    return res.json();
+  }
+
+  async function uploadJsonRecordToFolder(name, obj, folderId) {
+    const metadata = { name: name + ".json", mimeType: "application/json", parents: folderId ? [folderId] : undefined };
     const blob = new Blob([JSON.stringify(obj)], { type: "application/json" });
     const form = new FormData();
     form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
@@ -229,87 +335,63 @@
       headers: { "Authorization": "Bearer " + accessToken },
       body: form
     });
+    if (!res.ok) {
+      const txt = await res.text();
+      throw new Error("Upload JSON failed: " + res.status + " " + txt);
+    }
     return res.json();
   }
 
-  // -------------------------
-  // Upload image file
-  // -------------------------
-  async function uploadImageFile(file, nameHint) {
-    const meta = { name: nameHint, mimeType: file.type };
-    const form = new FormData();
-    form.append("metadata", new Blob([JSON.stringify(meta)], { type: "application/json" }));
-    form.append("file", file);
-    const res = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
-      method: "POST",
-      headers: { "Authorization": "Bearer " + accessToken },
-      body: form
-    });
-    return res.json();
-  }
-
-  // -------------------------
-  // Get JSON content by fileId
-  // -------------------------
   async function getFileJson(fileId) {
     const meta = await driveFetchJson(`https://www.googleapis.com/drive/v3/files/${fileId}?fields=id,name,mimeType`);
-    if (!meta.mimeType.includes("json")) throw new Error("檔案不是 JSON");
+    if (!meta.mimeType.includes("json")) throw new Error("File is not JSON");
     const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
       headers: { "Authorization": "Bearer " + accessToken }
     });
-    if (!res.ok) throw new Error("下載 JSON 失敗");
+    if (!res.ok) throw new Error("Download JSON failed");
     return res.json();
   }
 
-  // -------------------------
-  // Fetch image blob and return objectURL
-  // -------------------------
   async function fetchImageURL(fileId) {
     const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
       headers: { "Authorization": "Bearer " + accessToken }
     });
-    if (!res.ok) throw new Error("下載圖片失敗");
+    if (!res.ok) throw new Error("Download image failed");
     const blob = await res.blob();
     return URL.createObjectURL(blob);
   }
 
-  // -------------------------
-  // Collect taxonomy array from fields
-  // -------------------------
-  function collectTaxonomyArray() {
-    const arr = [
-      document.getElementById("taxKingdom").value.trim(),
-      document.getElementById("taxPhylum").value.trim(),
-      document.getElementById("taxClass").value.trim(),
-      document.getElementById("taxOrder").value.trim(),
-      document.getElementById("taxFamily").value.trim(),
-      document.getElementById("taxGenus").value.trim(),
-      document.getElementById("taxSpecies").value.trim()
-    ].filter(Boolean);
-    return arr;
+  async function deleteDriveFile(fileId) {
+    const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}`, {
+      method: "DELETE",
+      headers: { "Authorization": "Bearer " + accessToken }
+    });
+    if (!res.ok && res.status !== 204) {
+      const txt = await res.text();
+      throw new Error("Delete file failed: " + res.status + " " + txt);
+    }
+    return true;
   }
 
-  // -------------------------
-  // UI: Save record (text + multiple images)
-  // -------------------------
+  // Save record flow
   document.getElementById("saveBtn").addEventListener("click", async () => {
     try {
-      if (!accessToken) return alert("請先登入並授權");
+      if (!accessToken) return alert("Please sign in and grant Drive access first.");
       const name = document.getElementById("speciesName").value.trim();
-      if (!name) return alert("請輸入物種名稱");
+      if (!name) return alert("Please enter species name.");
       const taxonomyArray = collectTaxonomyArray();
       const note = document.getElementById("speciesNote").value.trim();
       const files = document.getElementById("speciesImages").files;
 
-      // 1) upload images first
+      const folderId = await getOrCreateFolderId(TARGET_FOLDER_NAME);
+
       const imageRefs = [];
       for (let i=0;i<files.length;i++){
         const f = files[i];
-        const up = await uploadImageFile(f, `${name}_img_${Date.now()}_${i}.${f.name.split('.').pop()}`);
+        const up = await uploadImageFileToFolder(f, `${name}_img_${Date.now()}_${i}.${f.name.split('.').pop()}`, folderId);
         imageRefs.push({ id: up.id, name: up.name, mimeType: up.mimeType });
       }
 
-      // 2) create JSON record
       const record = {
         species: name,
         taxonomy: taxonomyArray,
@@ -317,10 +399,10 @@
         images: imageRefs,
         createdAt: new Date().toISOString()
       };
-      const uploaded = await uploadJsonRecord(name, record);
-      alert("紀錄已儲存，JSON fileId: " + uploaded.id);
+      const uploaded = await uploadJsonRecordToFolder(name, record, folderId);
+      alert("Record saved. JSON fileId: " + uploaded.id);
 
-      // clear form
+      // clear
       document.getElementById("speciesName").value = "";
       document.getElementById("taxKingdom").value = "";
       document.getElementById("taxPhylum").value = "";
@@ -332,8 +414,11 @@
       document.getElementById("speciesNote").value = "";
       document.getElementById("speciesImages").value = "";
 
+      // update count & tree
+      refreshSpeciesCount();
+      buildTaxonomyTree();
     } catch (e) {
-      alert("儲存失敗: " + e.message);
+      alert("Save failed: " + e.message);
     }
   });
 
@@ -350,13 +435,46 @@
     document.getElementById("speciesImages").value = "";
   });
 
-  // -------------------------
+  function collectTaxonomyArray() {
+    const arr = [
+      document.getElementById("taxKingdom").value.trim(),
+      document.getElementById("taxPhylum").value.trim(),
+      document.getElementById("taxClass").value.trim(),
+      document.getElementById("taxOrder").value.trim(),
+      document.getElementById("taxFamily").value.trim(),
+      document.getElementById("taxGenus").value.trim(),
+      document.getElementById("taxSpecies").value.trim()
+    ].filter(Boolean);
+    return arr;
+  }
+
   // Search & list
-  // -------------------------
+  document.getElementById("searchBtn").addEventListener("click", async () => {
+    try {
+      if (!accessToken) return alert("Please sign in and grant Drive access first.");
+      const q = document.getElementById("searchQuery").value.trim();
+      if (!q) return alert("Please enter a search keyword.");
+      const query = `mimeType='application/json' and name contains '${q.replace("'", "\\'")}' and trashed=false`;
+      const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id,name)`;
+      const res = await driveFetchJson(url);
+      renderSearchList(res.files || []);
+    } catch (e) { alert("Search failed: " + e.message); }
+  });
+
+  document.getElementById("listBtn").addEventListener("click", async () => {
+    try {
+      if (!accessToken) return alert("Please sign in and grant Drive access first.");
+      const q = `mimeType='application/json' and trashed=false`;
+      const url = `https://www.googleapis.com/drive/v3/files?pageSize=50&q=${encodeURIComponent(q)}&fields=files(id,name)`;
+      const res = await driveFetchJson(url);
+      renderSearchList(res.files || []);
+    } catch (e) { alert("List failed: " + e.message); }
+  });
+
   function renderSearchList(files) {
     const el = document.getElementById("searchResult");
     el.innerHTML = "";
-    if (!files || files.length === 0) { el.innerText = "無結果"; return; }
+    if (!files || files.length === 0) { el.innerText = "No results"; return; }
     files.forEach(f => {
       const div = document.createElement("div");
       div.className = "resultItem";
@@ -366,29 +484,7 @@
     });
   }
 
-  document.getElementById("searchBtn").addEventListener("click", async () => {
-    try {
-      const q = document.getElementById("searchQuery").value.trim();
-      if (!q) return alert("請輸入搜尋關鍵字");
-      const query = `mimeType='application/json' and name contains '${q.replace("'", "\\'")}'`;
-      const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id,name)`;
-      const res = await driveFetchJson(url);
-      renderSearchList(res.files || []);
-    } catch (e) { alert("搜尋失敗: " + e.message); }
-  });
-
-  document.getElementById("listBtn").addEventListener("click", async () => {
-    try {
-      const q = `mimeType='application/json'`;
-      const url = `https://www.googleapis.com/drive/v3/files?pageSize=50&q=${encodeURIComponent(q)}&fields=files(id,name)`;
-      const res = await driveFetchJson(url);
-      renderSearchList(res.files || []);
-    } catch (e) { alert("列出失敗: " + e.message); }
-  });
-
-  // -------------------------
-  // Load record and show viewer (card style)
-  // -------------------------
+  // Load record and show viewer (card style) with delete images
   async function loadAndShowRecord(fileId) {
     try {
       const data = await getFileJson(fileId);
@@ -414,15 +510,20 @@
         for (const img of data.images) {
           const wrap = document.createElement("div"); wrap.className="thumb";
           const imgEl = document.createElement("img"); imgEl.alt = img.name || "image";
-          fetchImageURL(img.id).then(url => { imgEl.src = url; }).catch(()=>{ imgEl.alt="無法下載"; });
+          fetchImageURL(img.id).then(url => { imgEl.src = url; }).catch(()=>{ imgEl.alt="Unable to load"; });
           wrap.appendChild(imgEl);
           wrap.addEventListener("click", async () => {
             try {
-              const url = await fetchImageURL(img.id);
-              document.getElementById("modalContent").innerHTML = `<img src="${url}" alt="image">`;
-              document.getElementById("imgModal").classList.add("open");
+              currentModalImages = [];
+              for (const im of data.images) {
+                const url = await fetchImageURL(im.id);
+                currentModalImages.push({ id: im.id, url });
+              }
+              currentModalIndex = data.images.findIndex(x => x.id === img.id);
+              if (currentModalIndex < 0) currentModalIndex = 0;
+              openCarouselAt(currentModalIndex);
             } catch (e) {
-              alert("無法下載圖片");
+              alert("Unable to load images");
             }
           });
           grid.appendChild(wrap);
@@ -433,7 +534,7 @@
       // edit area
       const editDiv = document.createElement("div"); editDiv.style.marginTop="10px";
       editDiv.innerHTML = `
-        <label>更新 taxonomy（分欄）</label>
+        <label>Update taxonomy (separate fields)</label>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
           <input id="editTaxKingdom" placeholder="Kingdom" style="flex:1;min-width:100px">
           <input id="editTaxPhylum" placeholder="Phylum" style="flex:1;min-width:100px">
@@ -443,16 +544,15 @@
           <input id="editTaxGenus" placeholder="Genus" style="flex:1;min-width:100px">
           <input id="editTaxSpecies" placeholder="Species" style="flex:1;min-width:100px">
         </div>
-        <label style="margin-top:8px">更新筆記 <textarea id="editNoteArea" rows="3"></textarea></label>
-        <label>新增圖片 <input id="editAddImages" type="file" accept="image/*" multiple></label>
+        <label style="margin-top:8px">Update notes <textarea id="editNoteArea" rows="3"></textarea></label>
+        <label>Add images <input id="editAddImages" type="file" accept="image/*" multiple></label>
         <div class="row" style="margin-top:8px">
-          <button id="saveEditBtn">儲存修改</button>
-          <button id="deleteJsonBtn" class="secondary">刪除紀錄 (只刪 JSON)</button>
+          <button id="saveEditBtn">Save changes</button>
+          <button id="deleteJsonBtn" class="secondary">Delete record & images</button>
         </div>
       `;
       viewer.appendChild(editDiv);
 
-      // prefill edit taxonomy & note
       const taxArr = data.taxonomy || [];
       document.getElementById("editTaxKingdom").value = taxArr[0] || "";
       document.getElementById("editTaxPhylum").value = taxArr[1] || "";
@@ -477,9 +577,17 @@
           const newNote = document.getElementById("editNoteArea").value.trim();
           const addFiles = document.getElementById("editAddImages").files;
 
+          let parentFolderId = cachedFolderId;
+          if (!parentFolderId) {
+            try {
+              const meta = await driveFetchJson(`https://www.googleapis.com/drive/v3/files/${fileId}?fields=parents`);
+              if (meta.parents && meta.parents.length) parentFolderId = meta.parents[0];
+            } catch (e) { /* ignore */ }
+          }
+
           if (addFiles && addFiles.length) {
             for (let i=0;i<addFiles.length;i++){
-              const up = await uploadImageFile(addFiles[i], `${data.species||'img'}_add_${Date.now()}_${i}.${addFiles[i].name.split('.').pop()}`);
+              const up = await uploadImageFileToFolder(addFiles[i], `${data.species||'img'}_add_${Date.now()}_${i}.${addFiles[i].name.split('.').pop()}`, parentFolderId);
               data.images = data.images || [];
               data.images.push({ id: up.id, name: up.name, mimeType: up.mimeType });
             }
@@ -495,41 +603,74 @@
             headers: { "Authorization": "Bearer " + accessToken, "Content-Type": "application/json" },
             body: blob
           });
+          if (!res.ok) {
+            const txt = await res.text();
+            throw new Error("Update JSON failed: " + res.status + " " + txt);
+          }
           const j = await res.json();
-          alert("已更新紀錄: " + j.id);
+          alert("Record updated: " + j.id);
           loadAndShowRecord(fileId);
-        } catch (e) { alert("更新失敗: " + e.message); }
+          refreshSpeciesCount();
+          buildTaxonomyTree();
+        } catch (e) { alert("Update failed: " + e.message); }
       });
 
       document.getElementById("deleteJsonBtn").addEventListener("click", async () => {
-        if (!confirm("確定刪除此 JSON 紀錄？（圖片不會自動刪除）")) return;
-        await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}`, {
-          method: "DELETE",
-          headers: { "Authorization": "Bearer " + accessToken }
-        });
-        alert("已刪除 JSON 紀錄");
-        document.getElementById("recordViewer").innerHTML = "";
+        if (!confirm("Delete this JSON record and all its images? This cannot be undone.")) return;
+        try {
+          const latest = await getFileJson(fileId);
+          if (latest.images && latest.images.length) {
+            for (const im of latest.images) {
+              try { await deleteDriveFile(im.id); } catch (err) { console.warn("Delete image failed", im.id, err); }
+            }
+          }
+          await deleteDriveFile(fileId);
+          alert("Deleted JSON and its images (if any).");
+          document.getElementById("recordViewer").innerHTML = "";
+          refreshSpeciesCount();
+          buildTaxonomyTree();
+        } catch (e) {
+          alert("Delete failed: " + e.message);
+        }
       });
 
     } catch (e) {
-      alert("載入紀錄失敗: " + e.message);
+      alert("Load failed: " + e.message);
     }
   }
 
-  // -------------------------
-  // Modal close
-  // -------------------------
+  // Carousel modal
+  function openCarouselAt(index) {
+    if (!currentModalImages || currentModalImages.length === 0) return;
+    currentModalIndex = index;
+    const modal = document.getElementById("imgModal");
+    const content = document.getElementById("modalContent");
+    content.innerHTML = `<img src="${currentModalImages[currentModalIndex].url}" alt="image">`;
+    modal.classList.add("open");
+    const controls = document.getElementById("carouselControls");
+    controls.style.display = currentModalImages.length > 1 ? "flex" : "none";
+  }
+  document.getElementById("prevImg").addEventListener("click", () => {
+    if (!currentModalImages.length) return;
+    currentModalIndex = (currentModalIndex - 1 + currentModalImages.length) % currentModalImages.length;
+    document.getElementById("modalContent").innerHTML = `<img src="${currentModalImages[currentModalIndex].url}" alt="image">`;
+  });
+  document.getElementById("nextImg").addEventListener("click", () => {
+    if (!currentModalImages.length) return;
+    currentModalIndex = (currentModalIndex + 1) % currentModalImages.length;
+    document.getElementById("modalContent").innerHTML = `<img src="${currentModalImages[currentModalIndex].url}" alt="image">`;
+  });
   document.getElementById("closeModal").addEventListener("click", ()=> {
     document.getElementById("imgModal").classList.remove("open");
     document.getElementById("modalContent").innerHTML = "";
+    currentModalImages = [];
+    currentModalIndex = 0;
   });
 
-  // -------------------------
-  // Taxonomy tree: build from JSON records and render with D3
-  // -------------------------
+  // Taxonomy tree & species count
   async function buildTaxonomyTree() {
     try {
-      const q = `mimeType='application/json'`;
+      const q = `mimeType='application/json' and trashed=false`;
       const url = `https://www.googleapis.com/drive/v3/files?pageSize=200&q=${encodeURIComponent(q)}&fields=files(id,name)`;
       const res = await driveFetchJson(url);
       const files = res.files || [];
@@ -562,8 +703,8 @@
   function renderD3Tree(data) {
     const svgEl = d3.select("#treeSvg");
     svgEl.selectAll("*").remove();
-    const width = +svgEl.attr("width") || 320;
-    const height = +svgEl.attr("height") || 320;
+    const width = svgEl.node().clientWidth || 320;
+    const height = +svgEl.attr("height") || 360;
     const root = d3.hierarchy(data);
     const treeLayout = d3.tree().size([height-20, width-40]);
     treeLayout(root);
@@ -594,26 +735,53 @@
       .text(d => d.data.name)
       .style("font-size","12px")
       .on("click", (event,d) => {
-        if (d.data.leaf && d.data.fileId) loadAndShowRecord(d.data.fileId);
+        if (d.data.leaf && d.data.fileId) {
+          // switch to Browse page and load record
+          document.getElementById("navBrowse").click();
+          loadAndShowRecord(d.data.fileId);
+        }
       });
   }
 
+  // species count
+  async function refreshSpeciesCount() {
+    try {
+      if (!accessToken) return;
+      const q = `mimeType='application/json' and trashed=false`;
+      const url = `https://www.googleapis.com/drive/v3/files?pageSize=1&q=${encodeURIComponent(q)}&fields=files(id),nextPageToken`;
+      // We need total count: use files.list with pageSize=1 and use "files" length is not total; Drive API doesn't return totalCount easily.
+      // Workaround: list up to 1000 and count (sufficient for personal use). We'll request pageSize=1000.
+      const url2 = `https://www.googleapis.com/drive/v3/files?pageSize=1000&q=${encodeURIComponent(q)}&fields=files(id)`;
+      const res = await driveFetchJson(url2);
+      const count = (res.files || []).length;
+      document.getElementById("speciesCountLine").innerText = `Jeffrey has explored ${count} species`;
+    } catch (e) {
+      console.warn("count refresh failed", e);
+      document.getElementById("speciesCountLine").innerText = `Jeffrey has explored ? species`;
+    }
+  }
+
+  // wire refresh buttons
   document.getElementById("refreshTreeBtn").addEventListener("click", async () => {
-    if (!accessToken) return alert("請先登入");
+    if (!accessToken) return alert("Please sign in and grant Drive access first.");
     await buildTaxonomyTree();
   });
+  document.getElementById("countRefreshBtn").addEventListener("click", async () => {
+    if (!accessToken) return alert("Please sign in and grant Drive access first.");
+    await refreshSpeciesCount();
+  });
 
-  // -------------------------
-  // Init: register service worker for PWA caching
-  // -------------------------
+  // small helpers
+  function escapeHtml(s){ return (s||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;"); }
+
+  // register service worker (optional; requires sw.js file)
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').then(()=>{ console.log('sw registered'); }).catch(()=>{ console.log('sw failed'); });
   }
 
-  // -------------------------
-  // small helpers
-  // -------------------------
-  function escapeHtml(s){ return (s||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;"); }
+  // initial UI: show Home page
+  document.getElementById("navHome").click();
+
   </script>
 </body>
 </html>
