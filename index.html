@@ -189,13 +189,13 @@ textarea{min-height:72px;resize:vertical}
 
       <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-top:10px">
         <label>Location
-          <input id="locationInput" placeholder="Where observed (GPS, park, trail, etc.)">
+          <input id="locationInput" placeholder="Where observed (e.g. park, coordinates)">
         </label>
-        <label>Behaviors
-          <textarea id="behaviourInput" placeholder="Observed behavior (feeding, nesting, flying, etc.)"></textarea>
+        <label>Behaviours
+          <textarea id="behaviourInput" placeholder="Observed behaviours (e.g. feeding, nesting)"></textarea>
         </label>
         <label>Other notes
-          <textarea id="otherNotes" placeholder="Other notes (time, weather, observers, equipment)"></textarea>
+          <textarea id="otherNotesInput" placeholder="Other notes"></textarea>
         </label>
       </div>
 
@@ -553,8 +553,8 @@ document.getElementById('saveBtn').addEventListener('click', async ()=>{
       document.getElementById('taxSpecies').value.trim()
     ].filter(Boolean);
     const location = document.getElementById('locationInput').value.trim();
-    const behaviour = document.getElementById('behaviourInput').value.trim();
-    const other = document.getElementById('otherNotes').value.trim();
+    const behaviours = document.getElementById('behaviourInput').value.trim();
+    const otherNotes = document.getElementById('otherNotesInput').value.trim();
     const files = document.getElementById('speciesImages').files;
 
     // compress and store images in IndexedDB as blobs; store references in record
@@ -573,8 +573,8 @@ document.getElementById('saveBtn').addEventListener('click', async ()=>{
       commonName: common,
       taxonomy,
       location,
-      behaviour,
-      otherNotes: other,
+      behaviours,
+      otherNotes,
       images: imageRefs, // references to IndexedDB blobs
       createdAt: new Date().toISOString(),
       status: 'pending'
@@ -606,7 +606,7 @@ document.getElementById('saveBtn').addEventListener('click', async ()=>{
     document.getElementById('speciesImages').value = '';
     document.getElementById('locationInput').value = '';
     document.getElementById('behaviourInput').value = '';
-    document.getElementById('otherNotes').value = '';
+    document.getElementById('otherNotesInput').value = '';
 
     if(document.getElementById('navBrowse').classList.contains('active')) listLocalRecords();
 
@@ -647,11 +647,12 @@ async function attemptSyncQueue(){
 
       // upload JSON record
       const recToUpload = {
+        id: rec.id,
         scientificName: rec.scientificName,
         commonName: rec.commonName,
         taxonomy: rec.taxonomy,
         location: rec.location,
-        behaviour: rec.behaviour,
+        behaviours: rec.behaviours,
         otherNotes: rec.otherNotes,
         images: imageRefs,
         createdAt: rec.createdAt
@@ -726,7 +727,7 @@ async function buildTaxonomyTree(){
       try{
         const data = await getFileJson(f.id);
         const tax = (data.taxonomy || []);
-        nodes.push({ id: f.id, name: data.scientificName || data.name || f.name, taxonomy: tax });
+        nodes.push({ id: f.id, name: data.scientificName || f.name, taxonomy: tax });
       }catch(e){ /* skip */ }
     }
     const root = { name: "Life", children: [] };
@@ -783,17 +784,10 @@ async function loadAndShowRecord(fileId){
     const data = await getFileJson(fileId);
     const viewer = document.getElementById("recordViewer"); viewer.innerHTML = "";
     const card = document.createElement("div"); card.className="card";
-    card.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center">
-      <div>
-        <div style="font-weight:800;color:#145a3f">${escapeHtml(data.scientificName||'Unnamed')}</div>
-        <div style="color:#6b6b6b">${escapeHtml(data.commonName||'')}</div>
-        <div style="color:#6b6b6b;font-size:13px">${(data.taxonomy||[]).join(' › ')}</div>
-      </div>
-      <div style="font-size:12px;color:#999">${new Date(data.createdAt||'').toLocaleDateString()}</div>
-    </div>
-    <div style="margin-top:8px;color:#333"><strong>Location:</strong> ${escapeHtml(data.location||'')}</div>
-    <div style="margin-top:6px;color:#333"><strong>Behaviors:</strong> ${escapeHtml(data.behaviour||'')}</div>
-    <div style="margin-top:6px;color:#333"><strong>Other notes:</strong> ${escapeHtml(data.otherNotes||'')}</div>`;
+    card.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:800;color:#145a3f">${escapeHtml(data.scientificName||'Unnamed')}</div><div style="color:#6b6b6b">${escapeHtml(data.commonName||'')}</div><div style="color:#6b6b6b">${(data.taxonomy||[]).join(' › ')}</div></div><div style="font-size:12px;color:#999">${new Date(data.createdAt||'').toLocaleDateString()}</div></div>
+      <p style="margin-top:8px;color:#333"><strong>Location:</strong> ${escapeHtml(data.location||'')}</p>
+      <p style="margin-top:4px;color:#333"><strong>Behaviours:</strong> ${escapeHtml(data.behaviours||'')}</p>
+      <p style="margin-top:4px;color:#333"><strong>Other notes:</strong> ${escapeHtml(data.otherNotes||'')}</p>`;
     viewer.appendChild(card);
     if(data.images && data.images.length){
       const grid = document.createElement("div"); grid.className="imageGrid";
@@ -836,14 +830,7 @@ function listLocalRecords(){
   records.slice().reverse().forEach(r=>{
     const div = document.createElement('div'); div.className='card';
     div.style.marginBottom='8px';
-    div.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center">
-      <div>
-        <div style="font-weight:800">${escapeHtml(r.scientificName||'Unnamed')}</div>
-        <div style="color:#6b6b6b;font-size:13px">${escapeHtml(r.commonName||'')}</div>
-        <div style="color:#6b6b6b;font-size:13px">${(r.taxonomy||[]).join(' › ')}</div>
-      </div>
-      <div style="font-size:12px;color:#999">${new Date(r.createdAt).toLocaleString()}</div>
-    </div>`;
+    div.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:800">${escapeHtml(r.scientificName||'Unnamed')}</div><div style="color:#6b6b6b;font-size:13px">${escapeHtml(r.commonName||'')}</div><div style="color:#6b6b6b;font-size:13px">${(r.taxonomy||[]).join(' › ')}</div></div><div style="font-size:12px;color:#999">${new Date(r.createdAt).toLocaleString()}</div></div>`;
     div.addEventListener('click', ()=> showLocalRecord(r.id));
     el.appendChild(div);
   });
@@ -856,17 +843,10 @@ async function showLocalRecord(id){
   if(!r) return alert('Record not found');
   const viewer = document.getElementById('recordViewer'); viewer.innerHTML = '';
   const card = document.createElement('div'); card.className='card';
-  card.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center">
-    <div>
-      <div style="font-weight:800;color:#145a3f">${escapeHtml(r.scientificName||'Unnamed')}</div>
-      <div style="color:#6b6b6b">${escapeHtml(r.commonName||'')}</div>
-      <div style="color:#6b6b6b">${(r.taxonomy||[]).join(' › ')}</div>
-    </div>
-    <div style="font-size:12px;color:#999">${new Date(r.createdAt).toLocaleString()}</div>
-  </div>
-  <div style="margin-top:8px;color:#333"><strong>Location:</strong> ${escapeHtml(r.location||'')}</div>
-  <div style="margin-top:6px;color:#333"><strong>Behaviors:</strong> ${escapeHtml(r.behaviour||'')}</div>
-  <div style="margin-top:6px;color:#333"><strong>Other notes:</strong> ${escapeHtml(r.otherNotes||'')}</div>`;
+  card.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:800;color:#145a3f">${escapeHtml(r.scientificName||'Unnamed')}</div><div style="color:#6b6b6b">${escapeHtml(r.commonName||'')}</div><div style="color:#6b6b6b">${(r.taxonomy||[]).join(' › ')}</div></div><div style="font-size:12px;color:#999">${new Date(r.createdAt).toLocaleString()}</div></div>
+    <p style="margin-top:8px;color:#333"><strong>Location:</strong> ${escapeHtml(r.location||'')}</p>
+    <p style="margin-top:4px;color:#333"><strong>Behaviours:</strong> ${escapeHtml(r.behaviours||'')}</p>
+    <p style="margin-top:4px;color:#333"><strong>Other notes:</strong> ${escapeHtml(r.otherNotes||'')}</p>`;
   viewer.appendChild(card);
   if(r.images && r.images.length){
     const grid = document.createElement('div'); grid.className='imageGrid';
