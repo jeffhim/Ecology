@@ -2,7 +2,7 @@
 <html lang="zh-HK">
 <head>
   <meta charset="utf-8">
-  <title>Google Drive Test</title>
+  <title>Google Drive 測試</title>
   <script src="https://apis.google.com/js/api.js"></script>
 </head>
 <body>
@@ -21,20 +21,18 @@
 
         // 登入按鈕
         document.getElementById("loginBtn").onclick = () => {
-          alert("Login button clicked, starting sign-in...");
           auth.signIn().then(user => {
-            alert("Login success: " + user.getBasicProfile().getName());
+            alert("登入成功：" + user.getBasicProfile().getName());
           }).catch(err => {
-            alert("Login error: " + JSON.stringify(err));
+            alert("登入錯誤：" + JSON.stringify(err));
           });
         };
 
-        // 上傳按鈕
+        // 上載按鈕
         document.getElementById("uploadBtn").onclick = () => {
-          alert("Upload button clicked, preparing file...");
           const accessToken = gapi.auth.getToken().access_token;
           if (!accessToken) {
-            alert("No access token, please login first!");
+            alert("未登入，請先 Login！");
             return;
           }
           const metadata = { name: "test.json", mimeType: "application/json" };
@@ -48,13 +46,13 @@
             headers: new Headers({ "Authorization": "Bearer " + accessToken }),
             body: form
           }).then(res => res.json()).then(val => {
-            alert("File uploaded! ID: " + val.id);
+            alert("檔案已上載！ID: " + val.id);
           }).catch(err => {
-            alert("Upload error: " + JSON.stringify(err));
+            alert("上載錯誤：" + JSON.stringify(err));
           });
         };
       }).catch(err => {
-        alert("Init error: " + JSON.stringify(err));
+        alert("初始化錯誤：" + JSON.stringify(err));
       });
     }
 
