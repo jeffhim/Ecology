@@ -93,9 +93,9 @@ textarea{min-height:72px;resize:vertical}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--nav-height) + 18px);background:var(--toast-bg);color:#fff;padding:12px 18px;border-radius:12px;font-weight:700;box-shadow:0 10px 30px rgba(0,0,0,0.25);z-index:200;opacity:0;transition:opacity .25s ease, transform .25s ease}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(-6px)}
 
-/* bottom nav */
+/* bottom nav (use anchors so CSS fallback works without JS) */
 .bottomNav{position:fixed;left:0;right:0;bottom:0;height:var(--nav-height);background:linear-gradient(180deg,#ffffff,#f6fff6);border-top:1px solid #e9f3ea;display:flex;align-items:center;justify-content:space-around;z-index:80;padding:8px 12px;box-shadow:0 -6px 20px rgba(10,30,20,0.03)}
-.navBtn{flex:1;text-align:center;color:#3b6b52;font-weight:800;cursor:pointer;padding:8px 6px}
+.navBtn{flex:1;text-align:center;color:#3b6b52;font-weight:800;cursor:pointer;padding:8px 6px;text-decoration:none;display:block}
 .navBtn.active{color:var(--accent-dark)}
 .navIcon{display:block;font-size:20px;margin-bottom:6px}
 
@@ -109,6 +109,17 @@ textarea{min-height:72px;resize:vertical}
   .treeCanvas{height:420px}
   #minimap{width:120px;height:90px}
 }
+
+/* ---------- CSS fallback for tabs (works without JS) ---------- */
+/* hide all sections by default */
+section.card{display:none}
+/* show home by default */
+#pageHome{display:block}
+/* when a section is targeted via hash, show it */
+section.card:target{display:block}
+
+/* small visual for active nav when hash matches */
+.navBtn { opacity: 0.95; }
 </style>
 </head>
 <body>
@@ -245,51 +256,41 @@ textarea{min-height:72px;resize:vertical}
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 <nav class="bottomNav" role="navigation" aria-label="Main navigation">
-  <div id="navHome" class="navBtn active" data-target="pageHome"><span class="navIcon">🌳</span>Home</div>
-  <div id="navAdd" class="navBtn" data-target="pageAdd"><span class="navIcon">➕</span>Add</div>
-  <div id="navBrowse" class="navBtn" data-target="pageBrowse"><span class="navIcon">🔎</span>Browse</div>
-  <div id="navSettings" class="navBtn" data-target="pageSettings"><span class="navIcon">⚙️</span>Settings</div>
+  <!-- anchors so CSS fallback works even if JS fails -->
+  <a href="#pageHome" id="navHome" class="navBtn"><span class="navIcon">🌳</span>Home</a>
+  <a href="#pageAdd" id="navAdd" class="navBtn"><span class="navIcon">➕</span>Add</a>
+  <a href="#pageBrowse" id="navBrowse" class="navBtn"><span class="navIcon">🔎</span>Browse</a>
+  <a href="#pageSettings" id="navSettings" class="navBtn"><span class="navIcon">⚙️</span>Settings</a>
 </nav>
 
 <script>
-/************************************************************************
- * Fixed single-file app
- * - Initialization deferred to DOMContentLoaded
- * - External calls wrapped in try/catch to avoid full script failure
- * - All original features preserved: Add/Edit/Delete, IndexedDB images,
- *   localStorage records, sync queue, Drive upload, export, D3 tree top→bottom
- ************************************************************************/
+/* ---------- Safe initialization and full app JS (enhancements) ---------- */
+/* All heavy/externals wrapped in try/catch; DOMContentLoaded used to bind handlers. */
 
-/* ---------- Config ---------- */
 const CLIENT_ID = "58009415485-8qvhrvbasmrq5ugms01dv8vt7pneen6u.apps.googleusercontent.com";
 const SCOPES = "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive";
 const TARGET_FOLDER_NAME = "EcologyApp_Records";
 
-/* ---------- State ---------- */
 let tokenClient = null;
 let accessToken = null;
 let cachedFolderId = null;
 let autoSyncInterval = null;
 
-/* ---------- UI refs ---------- */
 const toastEl = document.getElementById('toast');
 const loginDebug = document.getElementById('loginDebug');
 const syncLogEl = document.getElementById('syncLog');
 const signedDot = document.getElementById('signedDot');
 const syncDot = document.getElementById('syncDot');
 
-/* ---------- Helpers ---------- */
 function showToast(msg, s=3){ toastEl.innerText = msg; toastEl.classList.add('show'); clearTimeout(toastEl._t); toastEl._t=setTimeout(()=>toastEl.classList.remove('show'), s*1000); }
 function appendSyncLog(line){ const now=new Date().toLocaleString(); const entry = `${now} — ${line}`; const prev = syncLogEl.dataset.log ? JSON.parse(syncLogEl.dataset.log) : []; prev.push(entry); syncLogEl.dataset.log = JSON.stringify(prev); syncLogEl.innerHTML = prev.slice().reverse().map(l=>`<div>${escapeHtml(l)}</div>`).join(''); }
 function escapeHtml(s){ return (s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
 function setSignedState(ok){ signedDot.classList.toggle('green', ok); signedDot.classList.toggle('red', !ok); }
 function setSyncState(ok){ syncDot.classList.toggle('green', ok); syncDot.classList.toggle('red', !ok); }
 
-/* ---------- Local storage keys ---------- */
 const LOCAL_KEY = 'exploration_records_v1';
 const SYNC_QUEUE_KEY = 'exploration_sync_queue_v1';
 
-/* ---------- IndexedDB for images ---------- */
 const DB_NAME = 'exploration_images_db_v1';
 const DB_STORE = 'images';
 let dbPromise = null;
@@ -339,13 +340,13 @@ async function idbDelete(id){
   });
 }
 
-/* ---------- Local record helpers ---------- */
 function readLocalRecords(){ try{ return JSON.parse(localStorage.getItem(LOCAL_KEY) || '[]'); }catch(e){ return []; } }
 function writeLocalRecords(arr){ localStorage.setItem(LOCAL_KEY, JSON.stringify(arr)); }
 function readSyncQueue(){ try{ return JSON.parse(localStorage.getItem(SYNC_QUEUE_KEY) || '[]'); }catch(e){ return []; } }
 function writeSyncQueue(q){ localStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify(q)); }
 
-/* ---------- Image compression ---------- */
+function truncate(str, n){ if(!str) return ''; return str.length>n? str.slice(0,n-1)+'…':str; }
+
 async function compressImageFile(file, maxDim = 1200, quality = 0.75){
   return new Promise((resolve,reject)=>{
     const img = new Image();
@@ -371,7 +372,7 @@ async function compressImageFile(file, maxDim = 1200, quality = 0.75){
   });
 }
 
-/* ---------- Drive helpers ---------- */
+/* Drive helpers (same as before) */
 async function waitForGISReady(timeout=4000){
   return new Promise((resolve)=>{
     const start = Date.now();
@@ -470,13 +471,12 @@ async function uploadJsonRecordToFolder(name, obj, folderId){
   return res.json();
 }
 
-/* ---------- Ensure folder and start auto sync ---------- */
 async function ensureFolderAndStartSync(){
   try{
     cachedFolderId = await getOrCreateFolderId(TARGET_FOLDER_NAME);
     setSyncState(true);
     refreshSpeciesCount();
-    renderTree(); // rebuild tree from local records
+    renderTree();
     if(autoSyncInterval) clearInterval(autoSyncInterval);
     autoSyncInterval = setInterval(()=>{ if(navigator.onLine) attemptSyncQueue(); }, 60000);
     if(navigator.onLine) attemptSyncQueue();
@@ -486,24 +486,114 @@ async function ensureFolderAndStartSync(){
   }
 }
 
-/* ---------- Save record (offline-first) with edit support ---------- */
-/* Handlers bound after DOMContentLoaded below */
+/* ---------- Save / Edit logic (bound after DOM ready) ---------- */
+async function saveRecord({ autoUpload = true } = {}){
+  try{
+    const editingId = document.getElementById('saveBtn').dataset.editing || null;
+    const scientific = document.getElementById('speciesName').value.trim();
+    if(!scientific) return alert('Please enter scientific name.');
+    const common = document.getElementById('commonName').value.trim();
+    const taxonomy = [
+      document.getElementById('taxKingdom').value.trim(),
+      document.getElementById('taxPhylum').value.trim(),
+      document.getElementById('taxClass').value.trim(),
+      document.getElementById('taxOrder').value.trim(),
+      document.getElementById('taxFamily').value.trim(),
+      document.getElementById('taxGenus').value.trim(),
+      document.getElementById('taxSpecies').value.trim()
+    ].filter(Boolean);
+    const location = document.getElementById('locationInput').value.trim();
+    const behaviours = document.getElementById('behaviourInput').value.trim();
+    const otherNotes = document.getElementById('otherNotesInput').value.trim();
+    const files = document.getElementById('speciesImages').files;
 
-/* show thumbnails when selecting images */
-document.getElementById('speciesImages').addEventListener('change', async (e)=>{
-  const files = e.target.files;
-  const thumbs = document.getElementById('thumbs');
-  thumbs.innerHTML = '';
-  for(let i=0;i<files.length;i++){
-    const f = files[i];
-    const url = URL.createObjectURL(f);
-    const d = document.createElement('div'); d.className='fileThumb';
-    const img = document.createElement('img'); img.src = url; img.style.width='100%'; img.style.height='100%'; img.style.objectFit='cover';
-    d.appendChild(img); thumbs.appendChild(d);
+    const records = readLocalRecords();
+    let record;
+
+    if(editingId){
+      record = records.find(r=>r.id===editingId);
+      if(!record) return alert('Editing record not found');
+      record.scientificName = scientific;
+      record.commonName = common;
+      record.taxonomy = taxonomy;
+      record.location = location;
+      record.behaviours = behaviours;
+      record.otherNotes = otherNotes;
+      record.updatedAt = new Date().toISOString();
+
+      for(let i=0;i<files.length;i++){
+        const f = files[i];
+        const compressedBlob = await compressImageFile(f, 1200, 0.75);
+        const imgId = 'img_' + Date.now() + '_' + i;
+        await idbPut(imgId, compressedBlob);
+        record.images = record.images || [];
+        record.images.push({ id: imgId, name: f.name, type: compressedBlob.type });
+      }
+
+      writeLocalRecords(records);
+      appendSyncLog(`Edited record ${record.id}`);
+      showToast('Record updated locally', 2);
+
+      if(autoUpload){
+        const q = readSyncQueue();
+        if(!q.includes(record.id)){ q.push(record.id); writeSyncQueue(q); appendSyncLog(`Queued edited record ${record.id}`); }
+        if(navigator.onLine && accessToken) attemptSyncQueue();
+      }
+    } else {
+      const imageRefs = [];
+      for(let i=0;i<files.length;i++){
+        const f = files[i];
+        const compressedBlob = await compressImageFile(f, 1200, 0.75);
+        const imgId = 'img_' + Date.now() + '_' + i;
+        await idbPut(imgId, compressedBlob);
+        imageRefs.push({ id: imgId, name: f.name, type: compressedBlob.type });
+      }
+      record = {
+        id: 'rec_' + Date.now(),
+        scientificName: scientific,
+        commonName: common,
+        taxonomy,
+        location,
+        behaviours,
+        otherNotes,
+        images: imageRefs,
+        createdAt: new Date().toISOString(),
+        status: 'pending'
+      };
+      records.push(record);
+      writeLocalRecords(records);
+      if(autoUpload){
+        const q = readSyncQueue(); q.push(record.id); writeSyncQueue(q);
+        appendSyncLog(`Queued record ${record.id} (${record.scientificName})`);
+      } else {
+        appendSyncLog(`Saved local-only record ${record.id}`);
+      }
+      showToast('Saved locally', 2);
+    }
+
+    clearEditingState();
+
+    document.getElementById('speciesName').value = '';
+    document.getElementById('commonName').value = '';
+    document.getElementById('speciesImages').value = '';
+    document.getElementById('locationInput').value = '';
+    document.getElementById('behaviourInput').value = '';
+    document.getElementById('otherNotesInput').value = '';
+    document.getElementById('thumbs').innerHTML = '';
+
+    renderTree();
+    if(locationHashIs('#pageBrowse') || document.getElementById('navBrowse').classList.contains('active')) listLocalRecords();
+
+  }catch(e){
+    showDebug('Save failed:\n' + (e && e.message ? e.message : String(e)));
+    showToast('Save failed', 3);
   }
-});
+}
 
-/* ---------- Sync queue and upload ---------- */
+/* helper to check current hash */
+function locationHashIs(h){ try{ return location.hash === h; }catch(e){ return false; } }
+
+/* ---------- Sync queue (same as earlier) ---------- */
 async function attemptSyncQueue(){
   if(!accessToken) return;
   const queue = readSyncQueue();
@@ -520,7 +610,6 @@ async function attemptSyncQueue(){
       appendSyncLog(`Uploading ${rec.id} (${rec.scientificName})`);
       const folderId = await getOrCreateFolderId(TARGET_FOLDER_NAME);
 
-      // upload images from IndexedDB
       const imageRefs = [];
       for(let i=0;i<(rec.images||[]).length;i++){
         const imRef = rec.images[i];
@@ -528,11 +617,9 @@ async function attemptSyncQueue(){
         if(!blob) { appendSyncLog(`Image ${imRef.id} missing in IndexedDB`); continue; }
         const up = await uploadImageBlobToFolder(blob, `${rec.scientificName}_img_${Date.now()}_${i}.${(imRef.name||'').split('.').pop()}`, folderId);
         imageRefs.push({ id: up.id, name: up.name, mimeType: up.mimeType });
-        // delete blob after upload to free space
         await idbDelete(imRef.id);
       }
 
-      // upload JSON record
       const recToUpload = {
         id: rec.id,
         scientificName: rec.scientificName,
@@ -546,7 +633,6 @@ async function attemptSyncQueue(){
       };
       const uploaded = await uploadJsonRecordToFolder(rec.scientificName || 'record', recToUpload, folderId);
 
-      // update local record status and remove from queue
       const q = readSyncQueue().filter(x=>x!==recId); writeSyncQueue(q);
       const localUpdated = readLocalRecords().map(r => r.id===recId ? ({...r, status:'uploaded', driveId: uploaded.id}) : r);
       writeLocalRecords(localUpdated);
@@ -567,26 +653,80 @@ async function attemptSyncQueue(){
   appendSyncLog('Sync completed');
 }
 
-/* ---------- Export ---------- */
-document.getElementById('exportLocalBtn').addEventListener('click', ()=>{
-  const data = JSON.stringify(readLocalRecords(), null, 2);
-  const blob = new Blob([data], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `exploration_records_${new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')}.json`;
-  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-  showToast('Local JSON exported', 3);
-});
-
-/* ---------- Browse / List local records with Edit/Delete ---------- */
-document.getElementById('listBtn').addEventListener('click', listLocalRecords);
-document.getElementById('searchBtnLocal').addEventListener('click', ()=>{
-  const q = document.getElementById('searchQuery').value.trim().toLowerCase();
+/* ---------- Browse list / edit / delete ---------- */
+function listLocalRecords(){
   const records = readLocalRecords();
-  const results = records.filter(r => (r.scientificName||'').toLowerCase().includes(q) || (r.commonName||'').toLowerCase().includes(q) || (r.taxonomy||[]).join(' ').toLowerCase().includes(q));
-  renderSearchResults(results);
-});
+  renderSearchResults(records.slice().reverse().slice(0,50));
+}
+
+function renderSearchResults(records){
+  const el = document.getElementById('searchResult'); el.innerHTML = '';
+  if(!records.length){ el.innerText = 'No local records'; return; }
+  records.forEach(r=>{
+    const div = document.createElement('div'); div.className='card';
+    div.style.marginBottom='8px';
+    div.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-weight:800">${escapeHtml(r.scientificName||'Unnamed')}</div>
+          <div style="color:#6b6b6b">${escapeHtml(r.commonName||'')}</div>
+          <div style="color:#6b6b6b;font-size:13px">${(r.taxonomy||[]).join(' › ')}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+          <div style="font-size:12px;color:#999">${new Date(r.createdAt).toLocaleString()}</div>
+          <div style="display:flex;gap:6px;margin-top:6px">
+            <button class="btn small" data-action="edit" data-id="${r.id}">Edit</button>
+            <button class="btn small ghost" data-action="delete" data-id="${r.id}">Delete</button>
+          </div>
+        </div>
+      </div>`;
+    el.appendChild(div);
+  });
+
+  el.querySelectorAll('button[data-action="edit"]').forEach(b=>{
+    b.addEventListener('click', (e)=>{
+      const id = e.currentTarget.dataset.id;
+      startEditRecord(id);
+      // update hash so CSS fallback shows Add page
+      location.hash = '#pageAdd';
+    });
+  });
+  el.querySelectorAll('button[data-action="delete"]').forEach(b=>{
+    b.addEventListener('click', (e)=>{
+      const id = e.currentTarget.dataset.id;
+      confirmAndDeleteRecord(id);
+    });
+  });
+}
+
+async function showLocalRecord(id){
+  const records = readLocalRecords();
+  const r = records.find(x=>x.id===id);
+  if(!r) return alert('Record not found');
+  const viewer = document.getElementById('recordViewer'); viewer.innerHTML = '';
+  const card = document.createElement('div'); card.className='card';
+  card.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:800;color:#145a3f">${escapeHtml(r.scientificName||'Unnamed')}</div><div style="color:#6b6b6b">${escapeHtml(r.commonName||'')}</div><div style="color:#6b6b6b">${(r.taxonomy||[]).join(' › ')}</div></div><div style="font-size:12px;color:#999">${new Date(r.createdAt).toLocaleString()}</div></div>
+    <p style="margin-top:8px;color:#333"><strong>Location:</strong> ${escapeHtml(r.location||'')}</p>
+    <p style="margin-top:4px;color:#333"><strong>Behaviours:</strong> ${escapeHtml(r.behaviours||'')}</p>
+    <p style="margin-top:4px;color:#333"><strong>Other notes:</strong> ${escapeHtml(r.otherNotes||'')}</p>`;
+  viewer.appendChild(card);
+  if(r.images && r.images.length){
+    const grid = document.createElement('div'); grid.className='imageGrid'; grid.style.display='flex'; grid.style.gap='8px'; grid.style.marginTop='8px';
+    for(const im of r.images){
+      const wrap = document.createElement('div'); wrap.className='thumb'; wrap.style.width='96px'; wrap.style.height='96px'; wrap.style.borderRadius='8px'; wrap.style.overflow='hidden'; wrap.style.border='1px solid #eef6ef';
+      const imgEl = document.createElement('img');
+      const blob = await idbGet(im.id);
+      if(blob){
+        imgEl.src = URL.createObjectURL(blob);
+      } else {
+        imgEl.alt = 'Image missing';
+      }
+      imgEl.style.width='100%'; imgEl.style.height='100%'; imgEl.style.objectFit='cover';
+      wrap.appendChild(imgEl); grid.appendChild(wrap);
+    }
+    viewer.appendChild(grid);
+  }
+}
 
 /* ---------- Edit / Delete helpers ---------- */
 function startEditRecord(id){
@@ -594,7 +734,7 @@ function startEditRecord(id){
   const r = records.find(x=>x.id===id);
   if(!r) return showToast('Record not found', 2);
 
-  // Switch to Add page
+  // Switch to Add page (JS enhancement)
   document.querySelectorAll('.navBtn').forEach(b=>b.classList.remove('active'));
   document.getElementById('navAdd').classList.add('active');
   document.querySelectorAll('section.card').forEach(p=>p.style.display='none');
@@ -615,7 +755,6 @@ function startEditRecord(id){
   document.getElementById('behaviourInput').value = r.behaviours || '';
   document.getElementById('otherNotesInput').value = r.otherNotes || '';
 
-  // show thumbnails from IndexedDB (non-destructive)
   const thumbs = document.getElementById('thumbs'); thumbs.innerHTML = '';
   (async ()=>{
     for(const im of (r.images||[])){
@@ -632,7 +771,6 @@ function startEditRecord(id){
     }
   })();
 
-  // mark form as editing and store editing id
   document.getElementById('saveBtn').dataset.editing = id;
   document.getElementById('saveBtn').innerText = 'Save Changes';
   document.getElementById('saveLocalOnlyBtn').dataset.editing = id;
@@ -660,7 +798,7 @@ async function confirmAndDeleteRecord(id){
     showToast('Record deleted', 2);
 
     renderTree();
-    if(document.getElementById('navBrowse').classList.contains('active')) listLocalRecords();
+    if(locationHashIs('#pageBrowse') || document.getElementById('navBrowse').classList.contains('active')) listLocalRecords();
 
   }catch(e){
     showDebug('Delete failed:\n' + (e && e.message ? e.message : String(e)));
@@ -675,34 +813,6 @@ function clearEditingState(){
   document.getElementById('saveLocalOnlyBtn').innerText = 'Save Local Only';
   document.getElementById('thumbs').innerHTML = '';
 }
-
-/* ---------- GSI sign-in (Settings) ---------- */
-document.getElementById('btnSignGrant').addEventListener('click', async () => {
-  if (!tokenClient) {
-    const ok = await initTokenClient();
-    if (!ok) return;
-  }
-  try {
-    tokenClient.requestAccessToken({ prompt: 'consent' });
-  } catch (err) {
-    showDebug("Sign & Grant error:\n" + (err && err.message ? err.message : String(err)));
-    setSignedState(false);
-    setSyncState(false);
-  }
-});
-document.getElementById('btnSignRetry').addEventListener('click', async () => {
-  if (!tokenClient) {
-    const ok = await initTokenClient();
-    if (!ok) return;
-  }
-  try {
-    tokenClient.requestAccessToken({ prompt: 'consent' });
-  } catch (err) {
-    showDebug("Retry error:\n" + (err && err.message ? err.message : String(err)));
-    setSignedState(false);
-    setSyncState(false);
-  }
-});
 
 /* ---------- Tree (D3) top→bottom ---------- */
 const demoData = {
@@ -749,7 +859,6 @@ function buildTreeDataFromLocal(){
   return root;
 }
 
-/* D3 top→bottom tree implementation */
 const svg = d3.select('#treeSvg');
 const inner = svg.append('g').attr('class','innerGroup');
 const miniSvg = d3.select('#miniSvg');
@@ -766,8 +875,6 @@ function collapseAll(d, depth=0, maxDepth=2){
   }
 }
 collapseAll(root, 0, 2);
-
-function truncate(str, n){ if(!str) return ''; return str.length>n? str.slice(0,n-1)+'…':str; }
 
 function renderTree(){
   rootData = buildTreeDataFromLocal();
@@ -806,7 +913,7 @@ function renderTree(){
     renderTree();
     updateMinimap();
     if(d.data.species && d.data.recordId){
-      document.getElementById('navBrowse').click();
+      location.hash = '#pageBrowse';
       setTimeout(()=> showLocalRecord(d.data.recordId), 300);
     }
   });
@@ -821,7 +928,6 @@ function linkPath(d){
   return `M${x1},${y1} C${x1},${midY} ${x2},${midY} ${x2},${y2}`;
 }
 
-/* Zoom behavior (tree only) */
 const zoom = d3.zoom()
   .scaleExtent([0.4, 6])
   .on('zoom', (event) => {
@@ -858,34 +964,6 @@ function fitToScreen(){
   svg.transition().duration(600).call(zoom.transform, t);
 }
 
-/* Search & focus */
-document.getElementById('searchBtn').addEventListener('click', ()=> {
-  const q = document.getElementById('treeSearch').value.trim().toLowerCase();
-  if(!q) return;
-  const found = root.descendants().find(d => (d.data.name||'').toLowerCase().includes(q));
-  if(found){
-    let p = found.parent;
-    while(p){ if(p._children){ p.children = p._children; p._children = null; } p = p.parent; }
-    renderTree();
-    focusNode(found);
-  } else {
-    showToast('No match found', 2);
-  }
-});
-document.getElementById('clearSearch').addEventListener('click', ()=> { document.getElementById('treeSearch').value = ''; });
-
-function focusNode(d){
-  const svgW = svg.node().clientWidth;
-  const svgH = +svg.attr('height');
-  const scale = 1.2;
-  const x = d.x, y = d.y;
-  const tx = svgW/2 - x*scale;
-  const ty = svgH/2 - y*scale;
-  const t = d3.zoomIdentity.translate(tx, ty).scale(scale);
-  svg.transition().duration(600).call(zoom.transform, t);
-}
-
-/* Minimap */
 function updateMinimap(){
   const nodes = root.descendants();
   const maxX = d3.max(nodes, d=>d.x);
@@ -915,48 +993,38 @@ function updateMinimapViewport(transform){
     .attr('height', Math.max(1, y1 - y0));
 }
 
-/* Initial render will be called after DOMContentLoaded */
-
-/* ---------- Online/offline handling ---------- */
-window.addEventListener('online', ()=>{ showToast('Online — attempting sync',2); if(accessToken) attemptSyncQueue(); });
-window.addEventListener('offline', ()=>{ showToast('Offline — records will be saved locally',2); setSyncState(false); });
-
-/* ---------- Prevent page pinch-zoom on iOS Safari (extra) ---------- */
-document.addEventListener('gesturestart', function (e) { e.preventDefault(); });
-
-/* ---------- Navigation wiring and safe initialization ---------- */
+/* ---------- Safe startup: bind handlers after DOM ready ---------- */
 window.addEventListener('DOMContentLoaded', async () => {
-  // Bind navigation buttons (safe: DOM ready)
-  document.querySelectorAll('.navBtn').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
+  // Bind nav anchors to add active class when clicked (enhancement)
+  document.querySelectorAll('.navBtn').forEach(a=>{
+    a.addEventListener('click', (e)=>{
       document.querySelectorAll('.navBtn').forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active');
+      a.classList.add('active');
+      // allow CSS :target to show section; also ensure JS shows it
+      const target = a.getAttribute('href') || '#pageHome';
       document.querySelectorAll('section.card').forEach(p=>p.style.display='none');
-      const target = btn.dataset.target;
-      if(target === 'pageHome') document.getElementById('pageHome').style.display='block';
-      if(target === 'pageAdd') document.getElementById('pageAdd').style.display='block';
-      if(target === 'pageBrowse') document.getElementById('pageBrowse').style.display='block';
-      if(target === 'pageSettings') document.getElementById('pageSettings').style.display='block';
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      const id = target.replace('#','');
+      const el = document.getElementById(id);
+      if(el) el.style.display='block';
       clearEditingState();
-      if(target === 'pageBrowse') listLocalRecords();
+      if(id === 'pageBrowse') listLocalRecords();
     });
   });
 
-  // Bind save buttons now (safe)
+  // Bind save buttons
   document.getElementById('saveBtn').addEventListener('click', async ()=>{ await saveRecord({ autoUpload: true }); });
   document.getElementById('saveLocalOnlyBtn').addEventListener('click', async ()=>{ await saveRecord({ autoUpload: false }); });
 
-  // Default visible page
-  document.querySelectorAll('section.card').forEach(p=>p.style.display='none');
-  document.getElementById('pageHome').style.display='block';
+  // Bind search & list
+  document.getElementById('searchBtnLocal').addEventListener('click', ()=>{
+    const q = document.getElementById('searchQuery').value.trim().toLowerCase();
+    const records = readLocalRecords();
+    const results = records.filter(r => (r.scientificName||'').toLowerCase().includes(q) || (r.commonName||'').toLowerCase().includes(q) || (r.taxonomy||[]).join(' ').toLowerCase().includes(q));
+    renderSearchResults(results);
+  });
+  document.getElementById('listBtn').addEventListener('click', listLocalRecords);
 
-  // Safe initialization of external services and heavy tasks
-  try { await initTokenClient(); } catch(e){ console.warn('GSI init failed', e); }
-  try { renderTree(); fitToScreen(); } catch(e){ console.warn('Tree render failed', e); }
-  try { if(navigator.onLine) attemptSyncQueue(); } catch(e){ console.warn('Sync start failed', e); }
-
-  // Bind other UI handlers that rely on DOM
+  // Bind tree search
   document.getElementById('searchBtn').addEventListener('click', ()=> {
     const q = document.getElementById('treeSearch').value.trim().toLowerCase();
     if(!q) return;
@@ -972,28 +1040,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   });
   document.getElementById('clearSearch').addEventListener('click', ()=> { document.getElementById('treeSearch').value = ''; });
 
-  // Ensure export button bound (already bound above but safe)
-  document.getElementById('exportLocalBtn').addEventListener('click', ()=>{
-    const data = JSON.stringify(readLocalRecords(), null, 2);
-    const blob = new Blob([data], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `exploration_records_${new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')}.json`;
-    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-    showToast('Local JSON exported', 3);
-  });
-
-  // Bind list/search in Browse (safe)
-  document.getElementById('listBtn').addEventListener('click', listLocalRecords);
-  document.getElementById('searchBtnLocal').addEventListener('click', ()=>{
-    const q = document.getElementById('searchQuery').value.trim().toLowerCase();
-    const records = readLocalRecords();
-    const results = records.filter(r => (r.scientificName||'').toLowerCase().includes(q) || (r.commonName||'').toLowerCase().includes(q) || (r.taxonomy||[]).join(' ').toLowerCase().includes(q));
-    renderSearchResults(results);
-  });
-
-  // Bind sign buttons (already bound above but safe)
+  // Bind sign buttons
   document.getElementById('btnSignGrant').addEventListener('click', async () => {
     if (!tokenClient) {
       const ok = await initTokenClient();
@@ -1020,14 +1067,27 @@ window.addEventListener('DOMContentLoaded', async () => {
       setSyncState(false);
     }
   });
+
+  // Export local
+  document.getElementById('exportLocalBtn').addEventListener('click', ()=>{
+    const data = JSON.stringify(readLocalRecords(), null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `exploration_records_${new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')}.json`;
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    showToast('Local JSON exported', 3);
+  });
+
+  // Safe init external services and tree
+  try { await initTokenClient(); } catch(e){ console.warn('GSI init failed', e); }
+  try { renderTree(); fitToScreen(); } catch(e){ console.warn('Tree render failed', e); }
+  try { if(navigator.onLine) attemptSyncQueue(); } catch(e){ console.warn('Sync start failed', e); }
 });
 
-/* ---------- Expose debug helpers ---------- */
+/* expose helpers for debugging */
 window._app = { readLocalRecords, readSyncQueue, attemptSyncQueue, appendSyncLog, startEditRecord, confirmAndDeleteRecord };
-
-/************************************************************************
- * End of fixed single-file app
- ************************************************************************/
 </script>
 </body>
 </html>
