@@ -39,7 +39,8 @@ header{
 h1{font-size:20px;margin:0;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:calc(100% - 160px)}
 .headerStatus{display:flex;gap:10px;align-items:center}
 .statusMini{display:flex;align-items:center;gap:6px;font-size:12px;color:#eafaf0}
-.dot{width:9px;height:9px;border-radius:999px;background:#d9534f}
+.dot{width:10px;height:10px;border-radius:999px;background:#d9534f;box-shadow:0 2px 6px rgba(0,0,0,0.08)}
+.dot.green{background:#2fb86a}
 
 /* layout */
 .container{max-width:1100px;margin:12px auto;padding:12px 14px calc(var(--nav-height) + 28px)}
@@ -84,8 +85,8 @@ textarea{min-height:72px;resize:vertical}
     <h1>Jeffrey's exploration</h1>
   </div>
   <div class="headerStatus">
-    <div class="statusMini"><div id="signedDot" class="dot"></div><span>Sign</span></div>
-    <div class="statusMini"><div id="syncDot" class="dot"></div><span>Sync</span></div>
+    <div class="statusMini"><div id="signedDot" class="dot"></div><span id="signedText">Sign</span></div>
+    <div class="statusMini"><div id="syncDot" class="dot"></div><span id="syncText">Sync</span></div>
   </div>
 </header>
 
@@ -333,11 +334,10 @@ document.getElementById('zoomOut').addEventListener('click', ()=> svg.transition
 document.getElementById('resetView').addEventListener('click', ()=> fitToScreen());
 
 function fitToScreen(){ const nodes = root.descendants(); if(!nodes.length) return; const minX=d3.min(nodes,d=>d.x), maxX=d3.max(nodes,d=>d.x), minY=d3.min(nodes,d=>d.y), maxY=d3.max(nodes,d=>d.y); const contentW=maxX-minX+200, contentH=maxY-minY+200; const svgW=svg.node().clientWidth, svgH=+svg.attr('height'); const scale=Math.min(svgW/contentW, svgH/contentH,1); const tx=(svgW - scale*(minX+maxX))/2; const ty=(svgH - scale*(minY+maxY))/2; const t = d3.zoomIdentity.translate(tx,ty).scale(scale); svg.transition().duration(600).call(zoom.transform, t); }
-
 function updateMinimap(){ const nodes = root.descendants(); if(!nodes.length) return; const maxX=d3.max(nodes,d=>d.x), maxY=d3.max(nodes,d=>d.y), minX=d3.min(nodes,d=>d.x), minY=d3.min(nodes,d=>d.y); miniSvg.attr('viewBox', `${minX} ${minY} ${Math.max(1, maxX-minX)} ${Math.max(1, maxY-minY)}`); miniSvg.selectAll('*').remove(); miniSvg.selectAll('circle').data(nodes).enter().append('circle').attr('cx',d=>d.x).attr('cy',d=>d.y).attr('r',1.2).attr('fill','#cfeee0'); miniSvg.append('rect').attr('id','miniViewport').attr('x',0).attr('y',0).attr('width',10).attr('height',10).attr('fill','rgba(43,184,106,0.12)').attr('stroke','#2fb86a'); updateMinimapViewport(); }
 function updateMinimapViewport(transform){ const t = transform || d3.zoomTransform(svg.node()); const svgW = svg.node().clientWidth, svgH = +svg.attr('height'); const x0=(0 - t.x)/t.k, y0=(0 - t.y)/t.k, x1=(svgW - t.x)/t.k, y1=(svgH - t.y)/t.k; miniSvg.select('#miniViewport').attr('x', x0).attr('y', y0).attr('width', Math.max(1, x1-x0)).attr('height', Math.max(1, y1-y0)); }
 
-/* ---------- Navigation & UI binding (all inside DOMContentLoaded) ---------- */
+/* ---------- Navigation & UI binding ---------- */
 window.addEventListener('DOMContentLoaded', ()=> {
   const navButtons = document.querySelectorAll('.navBtn');
   function showSection(hash){
@@ -348,7 +348,6 @@ window.addEventListener('DOMContentLoaded', ()=> {
     const active = document.querySelector(`a[href="${hash}"]`);
     if(active) active.classList.add('active');
     try{ el.scrollIntoView({behavior:'smooth', block:'start'}); }catch(e){ window.scrollTo({top:0,behavior:'smooth'}); }
-    // tree only on home
     const treeWrap = document.querySelector('.treeWrap');
     if(el && el.id === 'pageHome'){ if(treeWrap) treeWrap.style.display=''; try{ renderTree(); fitToScreen(); }catch(e){} } else { if(treeWrap) treeWrap.style.display='none'; }
     updateSpeciesCount();
@@ -369,7 +368,7 @@ window.addEventListener('DOMContentLoaded', ()=> {
 
   window.addEventListener('hashchange', ()=> { const h = location.hash && document.querySelector(location.hash) ? location.hash : '#pageHome'; showSection(h); });
 
-  // Bind tree search controls
+  // Tree search
   document.getElementById('searchBtn').addEventListener('click', ()=> {
     const q = document.getElementById('treeSearch').value.trim().toLowerCase();
     if(!q) return;
@@ -378,11 +377,11 @@ window.addEventListener('DOMContentLoaded', ()=> {
   });
   document.getElementById('clearSearch').addEventListener('click', ()=> document.getElementById('treeSearch').value = '');
 
-  // Bind Add page save
+  // Add save
   document.getElementById('saveBtnAdd').addEventListener('click', async ()=> { await handleSaveFromAdd({autoUpload:true}); });
   document.getElementById('saveLocalOnlyBtnAdd').addEventListener('click', async ()=> { await handleSaveFromAdd({autoUpload:false}); });
 
-  // Bind Browse controls
+  // Browse controls
   document.getElementById('searchBtnLocal').addEventListener('click', ()=> {
     const q = document.getElementById('searchQuery').value.trim().toLowerCase();
     const records = readLocalRecords();
@@ -391,7 +390,7 @@ window.addEventListener('DOMContentLoaded', ()=> {
   });
   document.getElementById('listBtn').addEventListener('click', listLocalRecords);
 
-  // Bind Settings import/export
+  // Settings import/export
   document.getElementById('exportLocalBtnSettings').addEventListener('click', ()=>{
     const data = JSON.stringify(readLocalRecords(), null, 2);
     const blob = new Blob([data], { type: 'application/json' });
@@ -406,11 +405,15 @@ window.addEventListener('DOMContentLoaded', ()=> {
     try{ const txt = await f.text(); const arr = JSON.parse(txt); if(!Array.isArray(arr)) throw new Error('Invalid file'); writeLocalRecords(arr); showToast('Imported records',2); renderTree(); }catch(err){ showToast('Import failed',3); }
   });
 
-  // Sign buttons (attempt to init GSI; if not available, show toast)
+  // Sign buttons: try to init GSI and request token; update UI on success
   document.getElementById('btnSignGrantSettings').addEventListener('click', async ()=>{
     if(window.google && google.accounts && google.accounts.oauth2){
       try{
-        const client = google.accounts.oauth2.initTokenClient({ client_id: "58009415485-8qvhrvbasmrq5ugms01dv8vt7pneen6u.apps.googleusercontent.com", scope: "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive", callback: (resp)=>{ if(resp && resp.access_token) showToast('Signed in',2); else showToast('Sign failed',2); } });
+        const client = google.accounts.oauth2.initTokenClient({
+          client_id: "58009415485-8qvhrvbasmrq5ugms01dv8vt7pneen6u.apps.googleusercontent.com",
+          scope: "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive",
+          callback: (resp)=>{ if(resp && resp.access_token){ document.getElementById('signedDot').classList.add('green'); document.getElementById('signedText').innerText='Signed'; showToast('Signed in',2); } else { showToast('Sign failed',2); } }
+        });
         client.requestAccessToken({ prompt:'consent' });
       }catch(e){ showToast('Sign init failed',2); }
     } else {
@@ -492,14 +495,42 @@ async function handleSaveFromAdd({ autoUpload = true } = {}){
       const records = readLocalRecords(); const rec = records.find(r=>r.id===editingId); if(!rec) return alert('Record not found');
       rec.scientificName = scientific; rec.commonName = common; rec.taxonomy = taxonomy; rec.location = location; rec.behaviours = behaviours; rec.otherNotes = otherNotes; rec.updatedAt = new Date().toISOString();
       for(let i=0;i<files.length;i++){ const f=files[i]; const compressedBlob = await compressImageFile(f,1200,0.75); const imgId='img_'+Date.now()+'_'+i; await idbPut(imgId, compressedBlob); rec.images = rec.images || []; rec.images.push({id:imgId,name:f.name,type:compressedBlob.type}); }
-      writeLocalRecords(records); showToast('Record updated locally',2); delete document.getElementById('saveBtnAdd').dataset.editing; delete document.getElementById('saveLocalOnlyBtnAdd').dataset.editing; document.getElementById('saveBtnAdd').innerText='Save Record'; document.getElementById('saveLocalOnlyBtnAdd').innerText='Save Local Only'; renderTree(); return;
+      writeLocalRecords(records); showToast('Record updated locally',2);
+      // clear editing state and form
+      delete document.getElementById('saveBtnAdd').dataset.editing;
+      delete document.getElementById('saveLocalOnlyBtnAdd').dataset.editing;
+      document.getElementById('saveBtnAdd').innerText='Save Record';
+      document.getElementById('saveLocalOnlyBtnAdd').innerText='Save Local Only';
+      clearAddForm();
+      renderTree();
+      return;
     }
 
+    // new record
     const imageRefs = [];
     for(let i=0;i<files.length;i++){ const f=files[i]; const compressedBlob = await compressImageFile(f,1200,0.75); const imgId='img_'+Date.now()+'_'+i; await idbPut(imgId, compressedBlob); imageRefs.push({id:imgId,name:f.name,type:compressedBlob.type}); }
     const record = { id:'rec_'+Date.now(), scientificName:scientific, commonName:common, taxonomy, location, behaviours, otherNotes, images:imageRefs, createdAt:new Date().toISOString(), status:'pending' };
-    const records = readLocalRecords(); records.push(record); writeLocalRecords(records); showToast('Saved locally',2); renderTree();
+    const records = readLocalRecords(); records.push(record); writeLocalRecords(records); showToast('Saved locally',2);
+    clearAddForm();
+    renderTree();
   }catch(e){ console.error(e); showToast('Save failed',3); }
+}
+
+function clearAddForm(){
+  document.getElementById('speciesName').value = '';
+  document.getElementById('commonName').value = '';
+  document.getElementById('taxKingdom').value = '';
+  document.getElementById('taxPhylum').value = '';
+  document.getElementById('taxClass').value = '';
+  document.getElementById('taxOrder').value = '';
+  document.getElementById('taxFamily').value = '';
+  document.getElementById('taxGenus').value = '';
+  document.getElementById('taxSpecies').value = '';
+  document.getElementById('locationInput').value = '';
+  document.getElementById('behaviourInput').value = '';
+  document.getElementById('otherNotesInput').value = '';
+  document.getElementById('speciesImages').value = '';
+  document.getElementById('thumbs').innerHTML = '';
 }
 
 /* image compression helper */
