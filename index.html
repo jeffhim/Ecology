@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Exploration of the Nature by Jeffrey</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;800&display=swap" rel="stylesheet">
@@ -16,7 +16,7 @@
   --bg:#eef6f0;
   --card:#ffffff;
   --muted:#6b6b6b;
-  --radius:14px;
+  --radius:12px;
   --nav-height:84px;
   --safe-bottom:calc(var(--nav-height) + 28px);
   --shadow: 0 10px 30px rgba(20,40,30,0.06);
@@ -24,151 +24,108 @@
   --toast-bg: rgba(15,80,50,0.95);
 }
 *{box-sizing:border-box}
-html,body{height:100%}
+html,body{height:100%;touch-action:pan-x pan-y;overscroll-behavior:none}
 body{
   margin:0;
   font-family:"Baloo 2", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-  background:
-    radial-gradient(circle at 10% 10%, rgba(43,160,90,0.03), transparent 20%),
-    radial-gradient(circle at 90% 90%, rgba(43,160,90,0.02), transparent 20%),
-    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40'><rect width='40' height='40' fill='%23eef6f0'/><circle cx='20' cy='20' r='1' fill='%23e6efe6'/></svg>");
+  background:var(--bg);
   color:#0b2b1f;
   -webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;
   padding-bottom:var(--safe-bottom);
 }
 
+/* Header */
 header{
   background:linear-gradient(90deg,var(--accent),var(--accent-dark));
   color:#fff;
-  padding:14px 18px;
+  padding:12px 16px;
   display:flex;
   align-items:center;
   justify-content:space-between;
   box-shadow:0 6px 18px rgba(0,0,0,0.08);
-  position:sticky;
-  top:0;
-  z-index:60;
+  position:sticky;top:0;z-index:60;
 }
 .titleWrap{display:flex;align-items:center;gap:12px;min-width:0}
-h1{
-  font-size:18px;margin:0;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-}
-/* very small right-side status labels */
+h1{font-size:18px;margin:0;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .headerStatus{display:flex;gap:10px;align-items:center;font-weight:700}
 .statusMini{display:flex;align-items:center;gap:6px;font-size:10px;color:#eafaf0}
 .dot{width:var(--dot-size);height:var(--dot-size);border-radius:999px;background:#d9534f;box-shadow:0 2px 6px rgba(0,0,0,0.08)}
 .dot.green{background:#2fb86a}
-.statusMini span{font-weight:700;letter-spacing:0.2px}
 
-/* ensure page content never hidden behind nav: extra bottom padding */
-main{max-width:980px;margin:14px auto;padding:0 14px calc(var(--nav-height) + 36px);}
+/* Layout */
+.container{max-width:1100px;margin:14px auto;padding:0 14px calc(var(--nav-height) + 36px)}
+.card{background:var(--card);border-radius:var(--radius);padding:14px;margin-bottom:18px;box-shadow:var(--shadow);overflow:visible}
+.sectionTitle{display:block;background:linear-gradient(180deg,#f3fff6,#ffffff);border-radius:10px;padding:8px 12px;color:var(--accent-dark);font-weight:800;margin:-14px -14px 12px -14px}
 
-.card{
-  background:var(--card);
-  border-radius:var(--radius);
-  padding:14px;
-  margin-bottom:18px;
-  box-shadow:var(--shadow);
-  overflow:visible;
-}
+/* Tree area */
+.treeWrap{position:relative;border-radius:10px;padding:10px;background:linear-gradient(180deg,#fff,#fbfff9);border:1px dashed #e6efe6}
+#treeControls{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.treeCanvas{width:100%;height:520px;border-radius:8px;background:linear-gradient(180deg,#ffffff,#f7fff8);overflow:hidden;position:relative}
 
-.sectionTitle{
-  display:block;background:linear-gradient(180deg,#f3fff6,#ffffff);border-radius:10px;padding:8px 12px;color:var(--accent-dark);font-weight:800;margin:-14px -14px 12px -14px;
-  box-shadow:inset 0 -1px 0 rgba(0,0,0,0.02);
-}
+/* minimap */
+#minimap{position:absolute;right:12px;bottom:12px;width:160px;height:110px;border-radius:8px;background:rgba(255,255,255,0.95);box-shadow:0 6px 18px rgba(0,0,0,0.08);padding:6px;font-size:12px;z-index:40}
+#minimap svg{width:100%;height:100%}
 
-.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
-button{
-  background:var(--accent);color:#fff;border:none;padding:12px 16px;border-radius:12px;font-weight:800;cursor:pointer;box-shadow:0 6px 18px rgba(43,160,106,0.12);
-}
-button.secondary{background:#fff;color:var(--accent);border:2px solid var(--accent);box-shadow:none;font-weight:800}
-button.ghost{background:transparent;border:2px dashed rgba(15,80,50,0.08);color:var(--accent-dark);font-weight:700}
+/* node styles */
+.node circle{stroke:var(--accent);stroke-width:1.2}
+.node text{fill:#0f4f36;font-weight:700;pointer-events:none}
+.link{fill:none;stroke:#cfeee0;stroke-width:1.6}
 
-input,textarea,select{
-  width:100%;padding:10px;border-radius:10px;border:1px solid #e6efe8;font-size:14px;outline:none;background:linear-gradient(180deg,#fff,#fbfffb);
-}
+/* controls */
+.btn{background:var(--accent);color:#fff;border:none;padding:8px 10px;border-radius:8px;font-weight:800;cursor:pointer}
+.btn.ghost{background:#fff;color:var(--accent);border:2px solid var(--accent)}
+.small{padding:6px 8px;font-size:13px}
+
+/* search */
+.searchWrap{display:flex;gap:8px;align-items:center}
+.searchWrap input{padding:8px;border-radius:8px;border:1px solid #e6efe8;min-width:220px}
+
+/* forms */
+.formGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.formFull{display:block;margin-top:8px}
+label{display:block;font-weight:700;margin-bottom:6px}
+input[type="text"], textarea, select{width:100%;padding:10px;border-radius:8px;border:1px solid #e6efe8;background:linear-gradient(180deg,#fff,#fbfffb);font-size:14px}
 textarea{min-height:72px;resize:vertical}
-
-.statusRow{display:flex;gap:18px;align-items:center}
-.statusItem{display:flex;gap:8px;align-items:center;font-weight:800;color:#234f3a}
-.statusLabel{font-weight:700;color:#145a3f}
-
-.debug{white-space:pre-wrap;background:#0f2b1f;color:#dff6e9;padding:12px;border-radius:10px;font-size:13px;overflow:auto;max-height:260px;display:none;box-shadow:0 8px 20px rgba(10,30,20,0.12);}
-
-/* Tree */
-#taxonomyTree{min-height:260px;padding:8px;border-radius:12px;background:linear-gradient(180deg,#ffffff,#f7fff8);border:1px dashed #e6efe6}
+.fileThumb{width:72px;height:72px;border-radius:8px;border:1px solid #eef6ef;display:flex;align-items:center;justify-content:center;overflow:hidden}
 
 /* toast */
-.toast{
-  position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--nav-height) + 18px);
-  background:var(--toast-bg);color:#fff;padding:12px 18px;border-radius:12px;font-weight:700;box-shadow:0 10px 30px rgba(0,0,0,0.25);z-index:200;opacity:0;transition:opacity .25s ease, transform .25s ease;
-}
-.toast.show{opacity:1;transform:translateX(-50%) translateY(-6px);}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--nav-height) + 18px);background:var(--toast-bg);color:#fff;padding:12px 18px;border-radius:12px;font-weight:700;box-shadow:0 10px 30px rgba(0,0,0,0.25);z-index:200;opacity:0;transition:opacity .25s ease, transform .25s ease}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(-6px)}
 
 /* bottom nav */
-.bottomNav{
-  position:fixed;left:0;right:0;bottom:0;height:var(--nav-height);background:linear-gradient(180deg,#ffffff,#f6fff6);border-top:1px solid #e9f3ea;display:flex;align-items:center;justify-content:space-around;z-index:80;padding:8px 12px;box-shadow:0 -6px 20px rgba(10,30,20,0.03);
-}
+.bottomNav{position:fixed;left:0;right:0;bottom:0;height:var(--nav-height);background:linear-gradient(180deg,#ffffff,#f6fff6);border-top:1px solid #e9f3ea;display:flex;align-items:center;justify-content:space-around;z-index:80;padding:8px 12px;box-shadow:0 -6px 20px rgba(10,30,20,0.03)}
 .navBtn{flex:1;text-align:center;color:#3b6b52;font-weight:800;cursor:pointer;padding:8px 6px}
 .navBtn.active{color:var(--accent-dark)}
 .navIcon{display:block;font-size:20px;margin-bottom:6px}
 
-.page{display:none}
-.page.active{display:block}
+/* misc */
+.syncLog{max-height:160px;overflow:auto;border-radius:8px;padding:8px;background:#fbfff9;border:1px solid #eef6ef;font-size:13px}
+.debug{display:none;background:#0f2b1f;color:#dff6e9;padding:10px;border-radius:8px;margin-top:8px}
 
-.syncLog{max-height:180px;overflow:auto;border-radius:10px;padding:8px;background:#fbfff9;border:1px solid #eef6ef;font-size:13px}
-
-@media (min-width:900px){
-  main{padding:18px}
-  .card{padding:18px}
+/* responsive */
+@media (max-width:900px){
+  .formGrid{grid-template-columns:1fr}
+  .treeCanvas{height:420px}
+  #minimap{width:120px;height:90px}
 }
 </style>
 </head>
 <body>
 <header>
-  <div class="titleWrap" aria-hidden="false">
-    <h1>Exploration of the Nature by Jeffrey</h1>
-  </div>
-
-  <div class="headerStatus" aria-hidden="false">
-    <div class="statusMini" title="Signed in status">
-      <div id="signedDot" class="dot red" aria-hidden="true"></div>
-      <span>Sign</span>
-    </div>
-    <div class="statusMini" title="Auto sync status">
-      <div id="syncDot" class="dot red" aria-hidden="true"></div>
-      <span>Sync</span>
-    </div>
+  <div class="titleWrap"><h1>Exploration of the Nature by Jeffrey</h1></div>
+  <div class="headerStatus">
+    <div class="statusMini"><div id="signedDot" class="dot red"></div><span>Sign</span></div>
+    <div class="statusMini"><div id="syncDot" class="dot red"></div><span>Sync</span></div>
   </div>
 </header>
 
-<main>
-  <!-- Home -->
-  <section id="pageHome" class="page active">
-    <div class="card">
-      <div class="sectionTitle">Taxonomy Tree</div>
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div style="font-weight:800;color:#145a3f">Browse your recorded species</div>
-        <div id="speciesCountLine" style="font-weight:800;color:#0f5b3f">Jeffrey has explored 0 species</div>
-      </div>
+<div class="container">
+  <!-- Add / Save Record -->
+  <section id="pageAdd" class="card">
+    <div class="sectionTitle">Add / Save Species Record</div>
 
-      <div id="taxonomyTree" style="margin-top:12px">
-        <svg id="treeSvg" width="100%" height="320"></svg>
-      </div>
-
-      <div class="row" style="margin-top:12px">
-        <button id="refreshTreeBtn">Refresh Tree</button>
-        <button id="countRefreshBtn" class="secondary">Refresh Count</button>
-      </div>
-    </div>
-  </section>
-
-  <!-- Add -->
-  <section id="pageAdd" class="page">
-    <div class="card">
-      <div class="sectionTitle">Add / Save Species Record</div>
-
+    <div class="formFull">
       <label>Scientific name
         <input id="speciesName" type="text" placeholder="e.g. Formica rufa">
       </label>
@@ -177,7 +134,7 @@ textarea{min-height:72px;resize:vertical}
         <input id="commonName" type="text" placeholder="e.g. Red wood ant">
       </label>
 
-      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px">
+      <div class="formGrid" style="margin-top:10px">
         <label>Kingdom <input id="taxKingdom" placeholder="Kingdom"></label>
         <label>Phylum <input id="taxPhylum" placeholder="Phylum"></label>
         <label>Class <input id="taxClass" placeholder="Class"></label>
@@ -187,86 +144,106 @@ textarea{min-height:72px;resize:vertical}
         <label>Species <input id="taxSpecies" placeholder="Species"></label>
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-top:10px">
+      <div style="margin-top:10px">
         <label>Location
           <input id="locationInput" placeholder="Where observed (e.g. park, coordinates)">
         </label>
-        <label>Behaviours
+        <label style="margin-top:8px">Behaviours
           <textarea id="behaviourInput" placeholder="Observed behaviours (e.g. feeding, nesting)"></textarea>
         </label>
-        <label>Other notes
+        <label style="margin-top:8px">Other notes
           <textarea id="otherNotesInput" placeholder="Other notes"></textarea>
         </label>
       </div>
 
-      <label style="margin-top:8px">Upload images (multiple)
-        <input id="speciesImages" type="file" accept="image/*" multiple>
-      </label>
+      <div style="margin-top:8px">
+        <label>Upload images (multiple)
+          <input id="speciesImages" type="file" accept="image/*" multiple>
+        </label>
+        <div id="thumbs" style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"></div>
+      </div>
 
-      <div class="row" style="margin-top:12px">
-        <button id="saveBtn">Save Record</button>
+      <div style="margin-top:12px;display:flex;gap:8px">
+        <button id="saveBtn" class="btn">Save Record</button>
+        <button id="saveLocalOnlyBtn" class="btn ghost">Save Local Only</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tree -->
+  <section id="pageHome" class="card">
+    <div class="sectionTitle">Taxonomy Tree</div>
+
+    <div id="treeControls">
+      <div class="searchWrap">
+        <input id="treeSearch" placeholder="Search species or taxonomy">
+        <button id="searchBtn" class="btn small">Search</button>
+        <button id="clearSearch" class="btn small ghost">Clear</button>
+      </div>
+
+      <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+        <button id="zoomIn" class="btn small">＋</button>
+        <button id="zoomOut" class="btn small">－</button>
+        <button id="resetView" class="btn small ghost">Reset</button>
+      </div>
+    </div>
+
+    <div class="treeWrap">
+      <div class="treeCanvas">
+        <svg id="treeSvg" width="100%" height="520" style="touch-action: none;"></svg>
+        <div id="minimap" aria-hidden="true"><div style="font-weight:700;margin-bottom:6px">Overview</div><svg id="miniSvg"></svg></div>
       </div>
     </div>
   </section>
 
   <!-- Browse -->
-  <section id="pageBrowse" class="page">
-    <div class="card">
-      <div class="sectionTitle">Search / List Records</div>
-      <div class="row">
-        <input id="searchQuery" type="text" placeholder="Search by name or keyword">
-        <button id="searchBtn">Search</button>
-        <button id="listBtn" class="secondary">List recent 50</button>
-      </div>
-      <div id="searchResult" style="margin-top:12px"></div>
+  <section id="pageBrowse" class="card">
+    <div class="sectionTitle">Search / List Records</div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <input id="searchQuery" type="text" placeholder="Search by name or keyword">
+      <button id="searchBtnLocal" class="btn small">Search</button>
+      <button id="listBtn" class="btn small ghost">List recent 50</button>
     </div>
+    <div id="searchResult" style="margin-top:12px"></div>
 
-    <div class="card">
+    <div style="margin-top:12px" class="card">
       <div class="sectionTitle">Record Viewer</div>
       <div id="recordViewer" style="margin-top:8px">Click an item to view details</div>
     </div>
   </section>
 
   <!-- Settings -->
-  <section id="pageSettings" class="page">
-    <div class="card">
-      <div class="sectionTitle">Settings</div>
+  <section id="pageSettings" class="card">
+    <div class="sectionTitle">Settings</div>
 
-      <div style="display:flex;flex-direction:column;gap:10px">
-        <div style="font-weight:700;color:#145a3f">Account</div>
-        <div class="row">
-          <button id="btnSignGrant">Sign in & Grant Drive Access</button>
-          <button id="btnSignRetry" class="secondary">Retry</button>
-        </div>
-
-        <div style="margin-top:8px">
-          <div style="font-weight:700;color:#145a3f;margin-bottom:6px">Export / Backup</div>
-          <div class="row">
-            <button id="exportLocalBtn" class="ghost">Export local JSON</button>
-            <button id="exportDriveBtn" class="secondary">Export to Drive (signed)</button>
-          </div>
-          <div style="margin-top:8px;color:var(--muted);font-size:13px">Export will download a JSON file of locally saved records. Drive export requires sign-in.</div>
-        </div>
-
-        <div style="margin-top:12px">
-          <div style="font-weight:700;color:#145a3f;margin-bottom:6px">Sync Log</div>
-          <div id="syncLog" class="syncLog">No sync activity yet.</div>
-          <div style="margin-top:8px;color:var(--muted);font-size:13px">Shows queued items, upload attempts and last sync time.</div>
-        </div>
-
-        <div style="margin-top:12px">
-          <div style="font-weight:700;color:#145a3f;margin-bottom:6px">Debug (shown only on failure)</div>
-          <div id="loginDebug" class="debug" aria-live="polite"></div>
-        </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="font-weight:700;color:#145a3f">Account</div>
+      <div style="display:flex;gap:8px">
+        <button id="btnSignGrant" class="btn small">Sign in & Grant Drive Access</button>
+        <button id="btnSignRetry" class="btn small ghost">Retry</button>
       </div>
+
+      <div style="margin-top:8px">
+        <div style="font-weight:700;color:#145a3f;margin-bottom:6px">Export / Backup</div>
+        <div style="display:flex;gap:8px">
+          <button id="exportLocalBtn" class="btn ghost small">Export local JSON</button>
+          <button id="exportDriveBtn" class="btn small">Export to Drive (signed)</button>
+        </div>
+        <div style="margin-top:8px;color:var(--muted);font-size:13px">Export will download a JSON file of locally saved records. Drive export requires sign-in.</div>
+      </div>
+
+      <div style="margin-top:12px">
+        <div style="font-weight:700;color:#145a3f;margin-bottom:6px">Sync Log</div>
+        <div id="syncLog" class="syncLog">No sync activity yet.</div>
+      </div>
+
+      <div id="loginDebug" class="debug" aria-live="polite"></div>
     </div>
   </section>
-</main>
+</div>
 
-<!-- toast -->
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-<!-- bottom nav -->
 <nav class="bottomNav" role="navigation" aria-label="Main navigation">
   <div id="navHome" class="navBtn active" data-target="pageHome"><span class="navIcon">🌳</span>Home</div>
   <div id="navAdd" class="navBtn" data-target="pageAdd"><span class="navIcon">➕</span>Add</div>
@@ -275,45 +252,43 @@ textarea{min-height:72px;resize:vertical}
 </nav>
 
 <script>
-/* CONFIG */
+/************************************************************************
+ * Single-file app with top→bottom taxonomy tree and Edit/Delete support
+ ************************************************************************/
+
+/* ---------- Config ---------- */
 const CLIENT_ID = "58009415485-8qvhrvbasmrq5ugms01dv8vt7pneen6u.apps.googleusercontent.com";
 const SCOPES = "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive";
 const TARGET_FOLDER_NAME = "EcologyApp_Records";
 
-/* STATE */
+/* ---------- State ---------- */
 let tokenClient = null;
 let accessToken = null;
 let cachedFolderId = null;
 let autoSyncInterval = null;
 
-/* UI refs */
+/* ---------- UI refs ---------- */
+const toastEl = document.getElementById('toast');
+const loginDebug = document.getElementById('loginDebug');
+const syncLogEl = document.getElementById('syncLog');
 const signedDot = document.getElementById('signedDot');
 const syncDot = document.getElementById('syncDot');
-const loginDebug = document.getElementById('loginDebug');
-const toastEl = document.getElementById('toast');
-const syncLogEl = document.getElementById('syncLog');
 
+/* ---------- Helpers ---------- */
+function showToast(msg, s=3){ toastEl.innerText = msg; toastEl.classList.add('show'); clearTimeout(toastEl._t); toastEl._t=setTimeout(()=>toastEl.classList.remove('show'), s*1000); }
+function appendSyncLog(line){ const now=new Date().toLocaleString(); const entry = `${now} — ${line}`; const prev = syncLogEl.dataset.log ? JSON.parse(syncLogEl.dataset.log) : []; prev.push(entry); syncLogEl.dataset.log = JSON.stringify(prev); syncLogEl.innerHTML = prev.slice().reverse().map(l=>`<div>${escapeHtml(l)}</div>`).join(''); }
+function escapeHtml(s){ return (s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
 function setSignedState(ok){ signedDot.classList.toggle('green', ok); signedDot.classList.toggle('red', !ok); }
 function setSyncState(ok){ syncDot.classList.toggle('green', ok); syncDot.classList.toggle('red', !ok); }
-function showDebug(text){ loginDebug.style.display='block'; loginDebug.innerText=text; loginDebug.scrollIntoView({behavior:'smooth', block:'center'}); }
-function hideDebug(){ loginDebug.style.display='none'; loginDebug.innerText=''; }
 
-function showToast(message, seconds=3){
-  toastEl.innerText = message;
-  toastEl.classList.add('show');
-  clearTimeout(toastEl._timeout);
-  toastEl._timeout = setTimeout(()=> toastEl.classList.remove('show'), seconds*1000);
-}
-
-/* Storage keys */
+/* ---------- Local storage keys ---------- */
 const LOCAL_KEY = 'exploration_records_v1';
 const SYNC_QUEUE_KEY = 'exploration_sync_queue_v1';
 
-/* IndexedDB for images */
+/* ---------- IndexedDB for images ---------- */
 const DB_NAME = 'exploration_images_db_v1';
 const DB_STORE = 'images';
 let dbPromise = null;
-
 function openDb(){
   if(dbPromise) return dbPromise;
   dbPromise = new Promise((resolve,reject)=>{
@@ -360,38 +335,57 @@ async function idbDelete(id){
   });
 }
 
-/* Local record helpers */
+/* ---------- Local record helpers ---------- */
 function readLocalRecords(){ try{ return JSON.parse(localStorage.getItem(LOCAL_KEY) || '[]'); }catch(e){ return []; } }
 function writeLocalRecords(arr){ localStorage.setItem(LOCAL_KEY, JSON.stringify(arr)); }
 function readSyncQueue(){ try{ return JSON.parse(localStorage.getItem(SYNC_QUEUE_KEY) || '[]'); }catch(e){ return []; } }
 function writeSyncQueue(q){ localStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify(q)); }
 
-/* Sync log */
-function appendSyncLog(line){
-  const now = new Date().toLocaleString();
-  const entry = `${now} — ${line}`;
-  const prev = syncLogEl.dataset.log ? JSON.parse(syncLogEl.dataset.log) : [];
-  prev.push(entry);
-  syncLogEl.dataset.log = JSON.stringify(prev);
-  syncLogEl.innerHTML = prev.slice().reverse().map(l=>`<div>${escapeHtml(l)}</div>`).join('');
-}
-
-/* Wait for GIS */
-function waitForGISReady(timeout=4000){
-  return new Promise(resolve=>{
-    const start = Date.now();
-    (function check(){
-      if(window.google && google.accounts && google.accounts.oauth2) return resolve(true);
-      if(Date.now()-start>timeout) return resolve(false);
-      setTimeout(check,100);
-    })();
+/* ---------- Image compression ---------- */
+async function compressImageFile(file, maxDim = 1200, quality = 0.75){
+  return new Promise((resolve,reject)=>{
+    const img = new Image();
+    const fr = new FileReader();
+    fr.onload = ()=>{ img.src = fr.result; };
+    fr.onerror = ()=> reject(fr.error);
+    img.onload = ()=>{
+      const w = img.width, h = img.height;
+      let nw = w, nh = h;
+      if(Math.max(w,h) > maxDim){
+        if(w > h){ nw = maxDim; nh = Math.round(h * (maxDim / w)); } else { nh = maxDim; nw = Math.round(w * (maxDim / h)); }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = nw; canvas.height = nh;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img,0,0,nw,nh);
+      canvas.toBlob(blob => {
+        resolve(blob);
+      }, 'image/jpeg', quality);
+    };
+    img.onerror = ()=> reject(new Error('Image load error'));
+    fr.readAsDataURL(file);
   });
 }
 
-/* Init token client */
+/* ---------- Drive helpers ---------- */
+async function waitForGISReady(timeout=4000){
+  return new Promise((resolve)=>{
+    const start = Date.now();
+    (function check(){
+      if(window.google && google.accounts && google.accounts.oauth2) return resolve(true);
+      if(Date.now() - start > timeout) return resolve(false);
+      setTimeout(check, 100);
+    })();
+  });
+}
 async function initTokenClient(){
   const ready = await waitForGISReady(5000);
-  if(!ready){ showDebug("Google Identity Services not loaded. Check network or script blocking."); setSignedState(false); setSyncState(false); return false; }
+  if(!ready){
+    showDebug("Google Identity Services not loaded. Check network or script blocking.");
+    setSignedState(false);
+    setSyncState(false);
+    return false;
+  }
   tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: CLIENT_ID,
     scope: SCOPES,
@@ -413,47 +407,9 @@ async function initTokenClient(){
   });
   return true;
 }
+function showDebug(text){ loginDebug.style.display='block'; loginDebug.innerText=text; loginDebug.scrollIntoView({behavior:'smooth', block:'center'}); }
+function hideDebug(){ loginDebug.style.display='none'; loginDebug.innerText=''; }
 
-/* Combined sign & grant (Settings) */
-document.getElementById('btnSignGrant').addEventListener('click', async ()=>{
-  if(!tokenClient){ const ok = await initTokenClient(); if(!ok) return; }
-  try{ tokenClient.requestAccessToken({ prompt: 'consent' }); } catch(err){ showDebug("Sign & Grant error:\n"+(err && err.message? err.message: String(err))); setSignedState(false); setSyncState(false); }
-});
-document.getElementById('btnSignRetry').addEventListener('click', async ()=>{
-  if(!tokenClient){ const ok = await initTokenClient(); if(!ok) return; }
-  try{ tokenClient.requestAccessToken({ prompt: 'consent' }); } catch(err){ showDebug("Retry error:\n"+(err && err.message? err.message: String(err))); setSignedState(false); setSyncState(false); }
-});
-
-/* Silent attempt on load */
-(async function startup(){
-  await initTokenClient();
-  if(tokenClient){
-    try{
-      tokenClient.requestAccessToken({ prompt: '' });
-      setTimeout(()=>{ if(!accessToken){ setSignedState(false); setSyncState(false); } }, 900);
-    }catch(e){ setSignedState(false); setSyncState(false); }
-  }
-  // attempt to sync if online and signed in
-  if(navigator.onLine) attemptSyncQueue();
-})();
-
-/* Ensure folder and start auto sync */
-async function ensureFolderAndStartSync(){
-  try{
-    cachedFolderId = await getOrCreateFolderId(TARGET_FOLDER_NAME);
-    setSyncState(true);
-    refreshSpeciesCount();
-    buildTaxonomyTree();
-    if(autoSyncInterval) clearInterval(autoSyncInterval);
-    autoSyncInterval = setInterval(()=>{ if(navigator.onLine) attemptSyncQueue(); }, 60000);
-    if(navigator.onLine) attemptSyncQueue();
-  }catch(e){
-    setSyncState(false);
-    throw e;
-  }
-}
-
-/* Drive helpers */
 async function driveFetch(url, opts = {}){
   if(!accessToken) throw new Error("Please sign in and grant Drive access first.");
   opts.headers = opts.headers || {};
@@ -482,33 +438,6 @@ async function getOrCreateFolderId(folderName){
   return cachedFolderId;
 }
 
-/* Image compression helper: resize to max dimension and quality */
-async function compressImageFile(file, maxDim = 1200, quality = 0.75){
-  return new Promise((resolve,reject)=>{
-    const img = new Image();
-    const fr = new FileReader();
-    fr.onload = ()=>{ img.src = fr.result; };
-    fr.onerror = ()=> reject(fr.error);
-    img.onload = ()=>{
-      const w = img.width, h = img.height;
-      let nw = w, nh = h;
-      if(Math.max(w,h) > maxDim){
-        if(w > h){ nw = maxDim; nh = Math.round(h * (maxDim / w)); } else { nh = maxDim; nw = Math.round(w * (maxDim / h)); }
-      }
-      const canvas = document.createElement('canvas');
-      canvas.width = nw; canvas.height = nh;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img,0,0,nw,nh);
-      canvas.toBlob(blob => {
-        resolve(blob);
-      }, 'image/jpeg', quality);
-    };
-    img.onerror = ()=> reject(new Error('Image load error'));
-    fr.readAsDataURL(file);
-  });
-}
-
-/* Upload helpers using data from IndexedDB (blobs) */
 async function uploadImageBlobToFolder(blob, nameHint, folderId){
   const meta = { name: nameHint, mimeType: blob.type, parents: folderId ? [folderId] : undefined };
   const form = new FormData();
@@ -537,9 +466,29 @@ async function uploadJsonRecordToFolder(name, obj, folderId){
   return res.json();
 }
 
-/* Save record offline-first: compress images, store blobs in IndexedDB, store record in localStorage and queue */
-document.getElementById('saveBtn').addEventListener('click', async ()=>{
+/* ---------- Ensure folder and start auto sync ---------- */
+async function ensureFolderAndStartSync(){
   try{
+    cachedFolderId = await getOrCreateFolderId(TARGET_FOLDER_NAME);
+    setSyncState(true);
+    refreshSpeciesCount();
+    renderTree(); // rebuild tree from local records
+    if(autoSyncInterval) clearInterval(autoSyncInterval);
+    autoSyncInterval = setInterval(()=>{ if(navigator.onLine) attemptSyncQueue(); }, 60000);
+    if(navigator.onLine) attemptSyncQueue();
+  }catch(e){
+    setSyncState(false);
+    throw e;
+  }
+}
+
+/* ---------- Save record (offline-first) with edit support ---------- */
+document.getElementById('saveBtn').addEventListener('click', async ()=>{ await saveRecord({ autoUpload: true }); });
+document.getElementById('saveLocalOnlyBtn').addEventListener('click', async ()=>{ await saveRecord({ autoUpload: false }); });
+
+async function saveRecord({ autoUpload = true } = {}){
+  try{
+    const editingId = document.getElementById('saveBtn').dataset.editing || null;
     const scientific = document.getElementById('speciesName').value.trim();
     if(!scientific) return alert('Please enter scientific name.');
     const common = document.getElementById('commonName').value.trim();
@@ -557,66 +506,108 @@ document.getElementById('saveBtn').addEventListener('click', async ()=>{
     const otherNotes = document.getElementById('otherNotesInput').value.trim();
     const files = document.getElementById('speciesImages').files;
 
-    // compress and store images in IndexedDB as blobs; store references in record
-    const imageRefs = [];
-    for(let i=0;i<files.length;i++){
-      const f = files[i];
-      const compressedBlob = await compressImageFile(f, 1200, 0.75);
-      const imgId = 'img_' + Date.now() + '_' + i;
-      await idbPut(imgId, compressedBlob);
-      imageRefs.push({ id: imgId, name: f.name, type: compressedBlob.type });
-    }
+    const records = readLocalRecords();
+    let record;
 
-    const record = {
-      id: 'rec_' + Date.now(),
-      scientificName: scientific,
-      commonName: common,
-      taxonomy,
-      location,
-      behaviours,
-      otherNotes,
-      images: imageRefs, // references to IndexedDB blobs
-      createdAt: new Date().toISOString(),
-      status: 'pending'
-    };
+    if(editingId){
+      record = records.find(r=>r.id===editingId);
+      if(!record) return alert('Editing record not found');
+      record.scientificName = scientific;
+      record.commonName = common;
+      record.taxonomy = taxonomy;
+      record.location = location;
+      record.behaviours = behaviours;
+      record.otherNotes = otherNotes;
+      record.updatedAt = new Date().toISOString();
 
-    // save locally
-    const existing = readLocalRecords();
-    existing.push(record);
-    writeLocalRecords(existing);
+      // append new images if any
+      for(let i=0;i<files.length;i++){
+        const f = files[i];
+        const compressedBlob = await compressImageFile(f, 1200, 0.75);
+        const imgId = 'img_' + Date.now() + '_' + i;
+        await idbPut(imgId, compressedBlob);
+        record.images = record.images || [];
+        record.images.push({ id: imgId, name: f.name, type: compressedBlob.type });
+      }
 
-    // add to sync queue
-    const q = readSyncQueue();
-    q.push(record.id);
-    writeSyncQueue(q);
+      writeLocalRecords(records);
+      appendSyncLog(`Edited record ${record.id}`);
+      showToast('Record updated locally', 2);
 
-    appendSyncLog(`Queued record ${record.id} (${record.scientificName})`);
-    showToast('Saved locally', 2);
-
-    // attempt immediate upload if online & signed in
-    if(navigator.onLine && accessToken){
-      attemptSyncQueue();
+      if(autoUpload){
+        const q = readSyncQueue();
+        if(!q.includes(record.id)){ q.push(record.id); writeSyncQueue(q); appendSyncLog(`Queued edited record ${record.id}`); }
+        if(navigator.onLine && accessToken) attemptSyncQueue();
+      }
     } else {
-      setSyncState(false);
+      const imageRefs = [];
+      for(let i=0;i<files.length;i++){
+        const f = files[i];
+        const compressedBlob = await compressImageFile(f, 1200, 0.75);
+        const imgId = 'img_' + Date.now() + '_' + i;
+        await idbPut(imgId, compressedBlob);
+        imageRefs.push({ id: imgId, name: f.name, type: compressedBlob.type });
+      }
+      record = {
+        id: 'rec_' + Date.now(),
+        scientificName: scientific,
+        commonName: common,
+        taxonomy,
+        location,
+        behaviours,
+        otherNotes,
+        images: imageRefs,
+        createdAt: new Date().toISOString(),
+        status: 'pending'
+      };
+      records.push(record);
+      writeLocalRecords(records);
+      if(autoUpload){
+        const q = readSyncQueue(); q.push(record.id); writeSyncQueue(q);
+        appendSyncLog(`Queued record ${record.id} (${record.scientificName})`);
+      } else {
+        appendSyncLog(`Saved local-only record ${record.id}`);
+      }
+      showToast('Saved locally', 2);
     }
 
-    // clear some fields (not taxonomy)
+    // reset editing state and UI
+    clearEditingState();
+
+    // clear form fields
     document.getElementById('speciesName').value = '';
     document.getElementById('commonName').value = '';
     document.getElementById('speciesImages').value = '';
     document.getElementById('locationInput').value = '';
     document.getElementById('behaviourInput').value = '';
     document.getElementById('otherNotesInput').value = '';
+    document.getElementById('thumbs').innerHTML = '';
 
+    // refresh UI
+    renderTree();
     if(document.getElementById('navBrowse').classList.contains('active')) listLocalRecords();
 
   }catch(e){
     showDebug('Save failed:\n' + (e && e.message ? e.message : String(e)));
     showToast('Save failed', 3);
   }
+}
+
+/* show thumbnails when selecting images */
+document.getElementById('speciesImages').addEventListener('change', async (e)=>{
+  const files = e.target.files;
+  const thumbs = document.getElementById('thumbs');
+  thumbs.innerHTML = '';
+  for(let i=0;i<files.length;i++){
+    const f = files[i];
+    const url = URL.createObjectURL(f);
+    const d = document.createElement('div'); d.className='fileThumb';
+    const img = document.createElement('img'); img.src = url; img.style.width='100%'; img.style.height='100%'; img.style.objectFit='cover';
+    d.appendChild(img); thumbs.appendChild(d);
+  }
 });
 
-/* Attempt to sync queue: upload images from IndexedDB then JSON record */
+/* ---------- Sync queue and upload ---------- */
 async function attemptSyncQueue(){
   if(!accessToken) return;
   const queue = readSyncQueue();
@@ -667,7 +658,7 @@ async function attemptSyncQueue(){
       appendSyncLog(`Uploaded ${rec.id} -> Drive file ${uploaded.id}`);
       showToast('Saved to Drive', 3);
       refreshSpeciesCount();
-      buildTaxonomyTree();
+      renderTree();
 
     }catch(e){
       appendSyncLog(`Sync failed for ${recId}: ${(e && e.message) ? e.message : String(e)}`);
@@ -680,7 +671,7 @@ async function attemptSyncQueue(){
   appendSyncLog('Sync completed');
 }
 
-/* Export local JSON */
+/* ---------- Export ---------- */
 document.getElementById('exportLocalBtn').addEventListener('click', ()=>{
   const data = JSON.stringify(readLocalRecords(), null, 2);
   const blob = new Blob([data], { type: 'application/json' });
@@ -692,151 +683,58 @@ document.getElementById('exportLocalBtn').addEventListener('click', ()=>{
   showToast('Local JSON exported', 3);
 });
 
-/* Export to Drive (Settings) */
-document.getElementById('exportDriveBtn').addEventListener('click', async ()=>{
-  try{
-    if(!accessToken){ showDebug('Please sign in first to export to Drive.'); showToast('Sign in required',3); return; }
-    const data = JSON.stringify(readLocalRecords(), null, 2);
-    const folderId = await getOrCreateFolderId(TARGET_FOLDER_NAME);
-    const metadata = { name: `exploration_records_backup_${Date.now()}.json`, mimeType: "application/json", parents: [folderId] };
-    const blob = new Blob([data], { type: "application/json" });
-    const form = new FormData();
-    form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
-    form.append("file", blob);
-    const res = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
-      method: "POST",
-      headers: { "Authorization": "Bearer " + accessToken },
-      body: form
-    });
-    if(!res.ok){ const txt = await res.text(); throw new Error("Drive export failed: " + res.status + " " + txt); }
-    appendSyncLog('Exported local JSON to Drive');
-    showToast('Exported to Drive', 3);
-  }catch(e){ showDebug('Export to Drive failed:\n' + (e && e.message ? e.message : String(e))); showToast('Export failed', 3); }
-});
-
-/* Minimal tree & count functions (kept) */
-async function buildTaxonomyTree(){
-  try{
-    if(!accessToken) return;
-    const q = `mimeType='application/json' and trashed=false`;
-    const url = `https://www.googleapis.com/drive/v3/files?pageSize=200&q=${encodeURIComponent(q)}&fields=files(id,name)`;
-    const res = await driveFetchJson(url);
-    const files = res.files || [];
-    const nodes = [];
-    for(const f of files){
-      try{
-        const data = await getFileJson(f.id);
-        const tax = (data.taxonomy || []);
-        nodes.push({ id: f.id, name: data.scientificName || f.name, taxonomy: tax });
-      }catch(e){ /* skip */ }
-    }
-    const root = { name: "Life", children: [] };
-    for(const n of nodes){
-      let cursor = root;
-      const levels = n.taxonomy.length ? n.taxonomy : ["Unclassified"];
-      for(const lvl of levels){
-        let child = cursor.children.find(c=>c.name===lvl);
-        if(!child){ child = { name: lvl, children: [] }; cursor.children.push(child); }
-        cursor = child;
-      }
-      cursor.children = cursor.children || [];
-      cursor.children.push({ name: n.name, fileId: n.id, leaf: true });
-    }
-    renderD3Tree(root);
-  }catch(e){ showDebug('Tree build error:\n' + (e && e.message ? e.message : String(e))); }
-}
-
-function renderD3Tree(data){
-  const svgEl = d3.select("#treeSvg"); svgEl.selectAll("*").remove();
-  const width = svgEl.node().clientWidth || 320; const height = +svgEl.attr("height") || 320;
-  const root = d3.hierarchy(data); const treeLayout = d3.tree().size([height-20, width-40]); treeLayout(root);
-  svgEl.append("g").selectAll("path").data(root.links()).enter().append("path")
-    .attr("d", d => `M${d.source.y+20},${d.source.x}C${d.source.y+60},${d.source.x} ${d.target.y-20},${d.target.x} ${d.target.y},${d.target.x}`)
-    .attr("fill","none").attr("stroke","#cfeee0").attr("stroke-width",1.6);
-  const node = svgEl.append("g").selectAll("g").data(root.descendants()).enter().append("g").attr("transform", d => `translate(${d.y},${d.x})`);
-  node.append("circle").attr("r", d => d.data.leaf ? 6 : 5).attr("fill", d => d.data.leaf ? "var(--accent)" : "#fff").attr("stroke", "var(--accent)");
-  node.append("text").attr("x", 10).attr("y", 4).text(d => d.data.name).style("font-size","13px").style("fill","#0f4f36")
-    .on("click", (event,d) => { if(d.data.leaf && d.data.fileId){ document.getElementById("navBrowse").click(); loadAndShowRecord(d.data.fileId); }});
-}
-
-async function refreshSpeciesCount(){
-  try{
-    if(!accessToken) return;
-    const q = `mimeType='application/json' and trashed=false`;
-    const url2 = `https://www.googleapis.com/drive/v3/files?pageSize=1000&q=${encodeURIComponent(q)}&fields=files(id)`;
-    const res = await driveFetchJson(url2);
-    const count = (res.files || []).length;
-    document.getElementById("speciesCountLine").innerText = `Jeffrey has explored ${count} species`;
-  }catch(e){ showDebug('Count error:\n' + (e && e.message ? e.message : String(e))); document.getElementById("speciesCountLine").innerText = `Jeffrey has explored ? species`; }
-}
-
-async function getFileJson(fileId){
-  const meta = await driveFetchJson(`https://www.googleapis.com/drive/v3/files/${fileId}?fields=id,name,mimeType`);
-  if(!meta.mimeType.includes("json")) throw new Error("File is not JSON");
-  const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, { headers: { "Authorization": "Bearer " + accessToken }});
-  if(!res.ok) throw new Error("Download JSON failed");
-  return res.json();
-}
-
-/* Load & show record (from Drive) */
-async function loadAndShowRecord(fileId){
-  try{
-    const data = await getFileJson(fileId);
-    const viewer = document.getElementById("recordViewer"); viewer.innerHTML = "";
-    const card = document.createElement("div"); card.className="card";
-    card.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:800;color:#145a3f">${escapeHtml(data.scientificName||'Unnamed')}</div><div style="color:#6b6b6b">${escapeHtml(data.commonName||'')}</div><div style="color:#6b6b6b">${(data.taxonomy||[]).join(' › ')}</div></div><div style="font-size:12px;color:#999">${new Date(data.createdAt||'').toLocaleDateString()}</div></div>
-      <p style="margin-top:8px;color:#333"><strong>Location:</strong> ${escapeHtml(data.location||'')}</p>
-      <p style="margin-top:4px;color:#333"><strong>Behaviours:</strong> ${escapeHtml(data.behaviours||'')}</p>
-      <p style="margin-top:4px;color:#333"><strong>Other notes:</strong> ${escapeHtml(data.otherNotes||'')}</p>`;
-    viewer.appendChild(card);
-    if(data.images && data.images.length){
-      const grid = document.createElement("div"); grid.className="imageGrid";
-      for(const im of data.images){
-        const wrap = document.createElement("div"); wrap.className="thumb";
-        const imgEl = document.createElement("img"); imgEl.alt = im.name || "image";
-        fetchImageURL(im.id).then(url=>{ imgEl.src = url; }).catch(()=>{ imgEl.alt="Unable to load"; });
-        wrap.appendChild(imgEl); grid.appendChild(wrap);
-      }
-      viewer.appendChild(grid);
-    }
-  }catch(e){ showDebug('Load failed:\n' + (e && e.message ? e.message : String(e))); alert('Load failed: ' + (e && e.message ? e.message : String(e))); }
-}
-
-/* fetch image blob from Drive */
-async function fetchImageURL(fileId){
-  const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, { headers: { "Authorization": "Bearer " + accessToken }});
-  if(!res.ok) throw new Error("Download image failed");
-  const blob = await res.blob();
-  return URL.createObjectURL(blob);
-}
-
-/* Navigation wiring */
-document.querySelectorAll('.navBtn').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    document.querySelectorAll('.navBtn').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-    document.getElementById(btn.dataset.target).classList.add('active');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    if(btn.dataset.target === 'pageBrowse') listLocalRecords();
-  });
-});
-
-/* List local records in Browse */
-function listLocalRecords(){
-  const el = document.getElementById('searchResult'); el.innerHTML = '';
+/* ---------- Browse / List local records with Edit/Delete ---------- */
+document.getElementById('listBtn').addEventListener('click', listLocalRecords);
+document.getElementById('searchBtnLocal').addEventListener('click', ()=>{
+  const q = document.getElementById('searchQuery').value.trim().toLowerCase();
   const records = readLocalRecords();
+  const results = records.filter(r => (r.scientificName||'').toLowerCase().includes(q) || (r.commonName||'').toLowerCase().includes(q) || (r.taxonomy||[]).join(' ').toLowerCase().includes(q));
+  renderSearchResults(results);
+});
+
+function listLocalRecords(){
+  const records = readLocalRecords();
+  renderSearchResults(records.slice().reverse().slice(0,50));
+}
+
+function renderSearchResults(records){
+  const el = document.getElementById('searchResult'); el.innerHTML = '';
   if(!records.length){ el.innerText = 'No local records'; return; }
-  records.slice().reverse().forEach(r=>{
+  records.forEach(r=>{
     const div = document.createElement('div'); div.className='card';
     div.style.marginBottom='8px';
-    div.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:800">${escapeHtml(r.scientificName||'Unnamed')}</div><div style="color:#6b6b6b;font-size:13px">${escapeHtml(r.commonName||'')}</div><div style="color:#6b6b6b;font-size:13px">${(r.taxonomy||[]).join(' › ')}</div></div><div style="font-size:12px;color:#999">${new Date(r.createdAt).toLocaleString()}</div></div>`;
-    div.addEventListener('click', ()=> showLocalRecord(r.id));
+    div.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-weight:800">${escapeHtml(r.scientificName||'Unnamed')}</div>
+          <div style="color:#6b6b6b">${escapeHtml(r.commonName||'')}</div>
+          <div style="color:#6b6b6b;font-size:13px">${(r.taxonomy||[]).join(' › ')}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+          <div style="font-size:12px;color:#999">${new Date(r.createdAt).toLocaleString()}</div>
+          <div style="display:flex;gap:6px;margin-top:6px">
+            <button class="btn small" data-action="edit" data-id="${r.id}">Edit</button>
+            <button class="btn small ghost" data-action="delete" data-id="${r.id}">Delete</button>
+          </div>
+        </div>
+      </div>`;
     el.appendChild(div);
+  });
+
+  el.querySelectorAll('button[data-action="edit"]').forEach(b=>{
+    b.addEventListener('click', (e)=>{
+      const id = e.currentTarget.dataset.id;
+      startEditRecord(id);
+    });
+  });
+  el.querySelectorAll('button[data-action="delete"]').forEach(b=>{
+    b.addEventListener('click', (e)=>{
+      const id = e.currentTarget.dataset.id;
+      confirmAndDeleteRecord(id);
+    });
   });
 }
 
-/* Show local record details */
 async function showLocalRecord(id){
   const records = readLocalRecords();
   const r = records.find(x=>x.id===id);
@@ -849,9 +747,9 @@ async function showLocalRecord(id){
     <p style="margin-top:4px;color:#333"><strong>Other notes:</strong> ${escapeHtml(r.otherNotes||'')}</p>`;
   viewer.appendChild(card);
   if(r.images && r.images.length){
-    const grid = document.createElement('div'); grid.className='imageGrid';
+    const grid = document.createElement('div'); grid.className='imageGrid'; grid.style.display='flex'; grid.style.gap='8px'; grid.style.marginTop='8px';
     for(const im of r.images){
-      const wrap = document.createElement('div'); wrap.className='thumb';
+      const wrap = document.createElement('div'); wrap.className='thumb'; wrap.style.width='96px'; wrap.style.height='96px'; wrap.style.borderRadius='8px'; wrap.style.overflow='hidden'; wrap.style.border='1px solid #eef6ef';
       const imgEl = document.createElement('img');
       const blob = await idbGet(im.id);
       if(blob){
@@ -859,28 +757,414 @@ async function showLocalRecord(id){
       } else {
         imgEl.alt = 'Image missing';
       }
+      imgEl.style.width='100%'; imgEl.style.height='100%'; imgEl.style.objectFit='cover';
       wrap.appendChild(imgEl); grid.appendChild(wrap);
     }
     viewer.appendChild(grid);
   }
 }
 
-/* Utility */
-function escapeHtml(s){ return (s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+/* ---------- Edit / Delete helpers ---------- */
+function startEditRecord(id){
+  const records = readLocalRecords();
+  const r = records.find(x=>x.id===id);
+  if(!r) return showToast('Record not found', 2);
 
-/* Online/offline handling */
+  // Switch to Add page
+  document.querySelectorAll('.navBtn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('navAdd').classList.add('active');
+  document.querySelectorAll('section.card').forEach(p=>p.style.display='none');
+  document.getElementById('pageAdd').style.display='block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  // Fill form fields
+  document.getElementById('speciesName').value = r.scientificName || '';
+  document.getElementById('commonName').value = r.commonName || '';
+  document.getElementById('taxKingdom').value = r.taxonomy[0] || '';
+  document.getElementById('taxPhylum').value = r.taxonomy[1] || '';
+  document.getElementById('taxClass').value = r.taxonomy[2] || '';
+  document.getElementById('taxOrder').value = r.taxonomy[3] || '';
+  document.getElementById('taxFamily').value = r.taxonomy[4] || '';
+  document.getElementById('taxGenus').value = r.taxonomy[5] || '';
+  document.getElementById('taxSpecies').value = r.taxonomy[6] || '';
+  document.getElementById('locationInput').value = r.location || '';
+  document.getElementById('behaviourInput').value = r.behaviours || '';
+  document.getElementById('otherNotesInput').value = r.otherNotes || '';
+
+  // show thumbnails from IndexedDB (non-destructive)
+  const thumbs = document.getElementById('thumbs'); thumbs.innerHTML = '';
+  (async ()=>{
+    for(const im of (r.images||[])){
+      const blob = await idbGet(im.id);
+      const d = document.createElement('div'); d.className='fileThumb';
+      if(blob){
+        const url = URL.createObjectURL(blob);
+        const img = document.createElement('img'); img.src = url; img.style.width='100%'; img.style.height='100%'; img.style.objectFit='cover';
+        d.appendChild(img);
+      } else {
+        d.innerText = 'missing';
+      }
+      thumbs.appendChild(d);
+    }
+  })();
+
+  // mark form as editing and store editing id
+  document.getElementById('saveBtn').dataset.editing = id;
+  document.getElementById('saveBtn').innerText = 'Save Changes';
+  document.getElementById('saveLocalOnlyBtn').dataset.editing = id;
+  document.getElementById('saveLocalOnlyBtn').innerText = 'Save Local Only (Edit)';
+}
+
+async function confirmAndDeleteRecord(id){
+  if(!confirm('Delete this record and its local images? This cannot be undone.')) return;
+  try{
+    const records = readLocalRecords();
+    const rec = records.find(r=>r.id===id);
+    if(!rec) { showToast('Record not found',2); return; }
+
+    for(const im of (rec.images||[])){
+      try{ await idbDelete(im.id); }catch(e){ /* ignore individual failures */ }
+    }
+
+    const updated = records.filter(r=>r.id!==id);
+    writeLocalRecords(updated);
+
+    const q = readSyncQueue().filter(x=>x!==id);
+    writeSyncQueue(q);
+
+    appendSyncLog(`Deleted record ${id}`);
+    showToast('Record deleted', 2);
+
+    renderTree();
+    if(document.getElementById('navBrowse').classList.contains('active')) listLocalRecords();
+
+  }catch(e){
+    showDebug('Delete failed:\n' + (e && e.message ? e.message : String(e)));
+    showToast('Delete failed', 3);
+  }
+}
+
+function clearEditingState(){
+  delete document.getElementById('saveBtn').dataset.editing;
+  delete document.getElementById('saveLocalOnlyBtn').dataset.editing;
+  document.getElementById('saveBtn').innerText = 'Save Record';
+  document.getElementById('saveLocalOnlyBtn').innerText = 'Save Local Only';
+  document.getElementById('thumbs').innerHTML = '';
+}
+
+/* ---------- GSI sign-in (Settings) ---------- */
+document.getElementById('btnSignGrant').addEventListener('click', async () => {
+  if (!tokenClient) {
+    const ok = await initTokenClient();
+    if (!ok) return;
+  }
+  try {
+    tokenClient.requestAccessToken({ prompt: 'consent' });
+  } catch (err) {
+    showDebug("Sign & Grant error:\n" + (err && err.message ? err.message : String(err)));
+    setSignedState(false);
+    setSyncState(false);
+  }
+});
+document.getElementById('btnSignRetry').addEventListener('click', async () => {
+  if (!tokenClient) {
+    const ok = await initTokenClient();
+    if (!ok) return;
+  }
+  try {
+    tokenClient.requestAccessToken({ prompt: 'consent' });
+  } catch (err) {
+    showDebug("Retry error:\n" + (err && err.message ? err.message : String(err)));
+    setSignedState(false);
+    setSyncState(false);
+  }
+});
+
+/* Silent attempt on load */
+(async function startup(){
+  await initTokenClient();
+  if(tokenClient){
+    try{
+      tokenClient.requestAccessToken({ prompt: '' });
+      setTimeout(()=>{ if(!accessToken){ setSignedState(false); setSyncState(false); } }, 900);
+    }catch(e){ setSignedState(false); setSyncState(false); }
+  }
+  if(navigator.onLine) attemptSyncQueue();
+})();
+
+/* ---------- Tree (D3) top→bottom ---------- */
+const demoData = {
+  name: "Life",
+  children: [
+    { name: "Animalia", children: [
+      { name: "Arthropoda", children: [
+        { name: "Insecta", children: [
+          { name: "Hymenoptera", children: [
+            { name: "Formicidae", children: [
+              { name: "Formica rufa", species:true },
+              { name: "Camponotus", children: [{name:"Camponotus pennsylvanicus", species:true}] }
+            ]},
+            { name: "Apidae", children: [{name:"Apis mellifera", species:true}]}
+          ]}
+        ]}
+      ]},
+    ]},
+    { name: "Plantae", children: [
+      { name: "Magnoliophyta", children: [
+        { name: "Rosopsida", children: [
+          { name: "Rosales", children: [{ name: "Rosaceae", children: [{ name: "Rosa", children: [{ name: "Rosa rubiginosa", species:true }] }]}]
+        ]}
+      ]}
+    ]}
+  ]
+};
+
+function buildTreeDataFromLocal(){
+  const records = readLocalRecords();
+  const root = { name: "Life", children: [] };
+  for(const r of records){
+    const levels = r.taxonomy && r.taxonomy.length ? r.taxonomy : ["Unclassified"];
+    let cursor = root;
+    for(const lvl of levels){
+      let child = cursor.children.find(c => c.name === lvl);
+      if(!child){ child = { name: lvl, children: [] }; cursor.children.push(child); }
+      cursor = child;
+    }
+    cursor.children = cursor.children || [];
+    cursor.children.push({ name: r.scientificName || r.id, species: true, recordId: r.id });
+  }
+  if(root.children.length === 0) return demoData;
+  return root;
+}
+
+/* D3 top→bottom tree implementation */
+const svg = d3.select('#treeSvg');
+const inner = svg.append('g').attr('class','innerGroup');
+const miniSvg = d3.select('#miniSvg');
+const baseFontSize = 13;
+let nodeVertical = 40;
+let nodeHorizontal = 160;
+
+// We'll use size([width, height]) where x is horizontal and y is vertical in D3's default.
+// For top→bottom, we'll treat d.x as horizontal and d.y as vertical when rendering.
+const treeLayout = d3.tree();
+
+let rootData = buildTreeDataFromLocal();
+let root = d3.hierarchy(rootData);
+
+function collapseAll(d, depth=0, maxDepth=2){
+  if(d.children){
+    d.children.forEach(c=>collapseAll(c, depth+1, maxDepth));
+    if(depth>=maxDepth){ d._children = d.children; d.children = null; }
+  }
+}
+collapseAll(root, 0, 2);
+
+function renderTree(){
+  rootData = buildTreeDataFromLocal();
+  root = d3.hierarchy(rootData);
+  collapseAll(root, 0, 2);
+
+  // compute layout size based on svg
+  const svgW = svg.node().clientWidth;
+  const svgH = +svg.attr('height');
+  treeLayout.size([svgW - 40, svgH - 40]); // width, height
+  treeLayout(root);
+
+  // After layout, d.x is horizontal (0..width), d.y is vertical (0..height)
+  // Links and nodes will use (d.x, d.y) coordinates; root at top (small y)
+
+  const links = inner.selectAll('.link').data(root.links(), d=>d.target.data.name + '_' + d.target.depth);
+  links.join(
+    enter => enter.append('path').attr('class','link').attr('d', d => linkPath(d)),
+    update => update.attr('d', d => linkPath(d)),
+    exit => exit.remove()
+  );
+
+  const nodes = inner.selectAll('.node').data(root.descendants(), d=>d.data.name + '_' + d.depth);
+  const nodeEnter = nodes.enter().append('g').attr('class','node').attr('transform', d=>`translate(${d.x},${d.y})`);
+  nodeEnter.append('circle').attr('r', d=> d.children || d._children ? 6 : 5).attr('fill', d=> d.children || d._children ? 'var(--accent)' : '#fff').attr('stroke','var(--accent)');
+  nodeEnter.append('text')
+    .attr('x', 0).attr('y', -10)
+    .attr('text-anchor','middle')
+    .text(d => truncate(d.data.name, 28))
+    .attr('title', d => d.data.name)
+    .style('font-size', baseFontSize + 'px');
+
+  nodes.merge(nodeEnter).transition().duration(200).attr('transform', d=>`translate(${d.x},${d.y})`);
+  nodes.select('text').text(d => truncate(d.data.name, 28)).attr('title', d=>d.data.name);
+
+  inner.selectAll('.node').on('click', (event,d) => {
+    event.stopPropagation();
+    if(d.children){ d._children = d.children; d.children = null; }
+    else { d.children = d._children; d._children = null; }
+    renderTree();
+    updateMinimap();
+    if(d.data.species && d.data.recordId){
+      document.getElementById('navBrowse').click();
+      setTimeout(()=> showLocalRecord(d.data.recordId), 300);
+    }
+  });
+
+  updateMinimap();
+}
+
+function linkPath(d){
+  // curved path from parent (x1,y1) to child (x2,y2) top→bottom
+  const x1 = d.source.x, y1 = d.source.y;
+  const x2 = d.target.x, y2 = d.target.y;
+  const midY = (y1 + y2) / 2;
+  return `M${x1},${y1} C${x1},${midY} ${x2},${midY} ${x2},${y2}`;
+}
+
+/* Zoom behavior (tree only) */
+const zoom = d3.zoom()
+  .scaleExtent([0.4, 6])
+  .on('zoom', (event) => {
+    inner.attr('transform', event.transform);
+    const k = Math.max(0.6, Math.min(2.5, event.transform.k));
+    svg.selectAll('.node text').style('font-size', (baseFontSize / k) + 'px');
+    updateMinimapViewport(event.transform);
+  });
+
+svg.call(zoom).on("dblclick.zoom", null);
+['touchstart','touchmove','touchend','wheel'].forEach(ev=>{
+  svg.node().addEventListener(ev, e => { e.stopPropagation(); }, {passive:false});
+});
+
+document.getElementById('zoomIn').addEventListener('click', ()=> svg.transition().call(zoom.scaleBy, 1.2));
+document.getElementById('zoomOut').addEventListener('click', ()=> svg.transition().call(zoom.scaleBy, 1/1.2));
+document.getElementById('resetView').addEventListener('click', ()=> fitToScreen());
+
+function fitToScreen(){
+  const nodes = root.descendants();
+  if(!nodes.length) return;
+  const minX = d3.min(nodes, d=>d.x);
+  const maxX = d3.max(nodes, d=>d.x);
+  const minY = d3.min(nodes, d=>d.y);
+  const maxY = d3.max(nodes, d=>d.y);
+  const contentW = maxX - minX + 200;
+  const contentH = maxY - minY + 200;
+  const svgW = svg.node().clientWidth;
+  const svgH = +svg.attr('height');
+  const scale = Math.min(svgW / contentW, svgH / contentH, 1);
+  const tx = (svgW - scale * (minX + maxX)) / 2;
+  const ty = (svgH - scale * (minY + maxY)) / 2;
+  const t = d3.zoomIdentity.translate(tx, ty).scale(scale);
+  svg.transition().duration(600).call(zoom.transform, t);
+}
+
+/* Search & focus */
+document.getElementById('searchBtn').addEventListener('click', ()=> {
+  const q = document.getElementById('treeSearch').value.trim().toLowerCase();
+  if(!q) return;
+  const found = root.descendants().find(d => (d.data.name||'').toLowerCase().includes(q));
+  if(found){
+    let p = found.parent;
+    while(p){ if(p._children){ p.children = p._children; p._children = null; } p = p.parent; }
+    renderTree();
+    focusNode(found);
+  } else {
+    showToast('No match found', 2);
+  }
+});
+document.getElementById('clearSearch').addEventListener('click', ()=> { document.getElementById('treeSearch').value = ''; });
+
+function focusNode(d){
+  const svgW = svg.node().clientWidth;
+  const svgH = +svg.attr('height');
+  const scale = 1.2;
+  const x = d.x, y = d.y;
+  const tx = svgW/2 - x*scale;
+  const ty = svgH/2 - y*scale;
+  const t = d3.zoomIdentity.translate(tx, ty).scale(scale);
+  svg.transition().duration(600).call(zoom.transform, t);
+}
+
+/* Minimap */
+function updateMinimap(){
+  const nodes = root.descendants();
+  const maxX = d3.max(nodes, d=>d.x);
+  const maxY = d3.max(nodes, d=>d.y);
+  const minX = d3.min(nodes, d=>d.x);
+  const minY = d3.min(nodes, d=>d.y);
+  miniSvg.attr('viewBox', `${minX} ${minY} ${Math.max(1, maxX-minX)} ${Math.max(1, maxY-minY)}`);
+  miniSvg.selectAll('*').remove();
+  miniSvg.selectAll('circle').data(nodes).enter().append('circle')
+    .attr('cx', d=>d.x).attr('cy', d=>d.y).attr('r', 1.2).attr('fill','#cfeee0');
+  miniSvg.append('rect').attr('id','miniViewport').attr('x',0).attr('y',0).attr('width',10).attr('height',10).attr('fill','rgba(43,184,106,0.12)').attr('stroke','#2fb86a');
+  updateMinimapViewport();
+}
+
+function updateMinimapViewport(transform){
+  const t = transform || d3.zoomTransform(svg.node());
+  const svgW = svg.node().clientWidth;
+  const svgH = +svg.attr('height');
+  const x0 = (0 - t.x) / t.k;
+  const y0 = (0 - t.y) / t.k;
+  const x1 = (svgW - t.x) / t.k;
+  const y1 = (svgH - t.y) / t.k;
+  miniSvg.select('#miniViewport')
+    .attr('x', x0)
+    .attr('y', y0)
+    .attr('width', Math.max(1, x1 - x0))
+    .attr('height', Math.max(1, y1 - y0));
+}
+
+/* Initial render */
+renderTree();
+fitToScreen();
+
+/* ---------- Online/offline handling ---------- */
 window.addEventListener('online', ()=>{ showToast('Online — attempting sync',2); if(accessToken) attemptSyncQueue(); });
 window.addEventListener('offline', ()=>{ showToast('Offline — records will be saved locally',2); setSyncState(false); });
 
-/* register service worker (optional) */
-if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(()=>{/* ignore */}); }
+/* ---------- Utility: refresh species count (Drive) ---------- */
+async function refreshSpeciesCount(){
+  try{
+    if(!accessToken) return;
+    const q = `mimeType='application/json' and trashed=false`;
+    const url2 = `https://www.googleapis.com/drive/v3/files?pageSize=1000&q=${encodeURIComponent(q)}&fields=files(id)`;
+    const res = await driveFetchJson(url2);
+    const count = (res.files || []).length;
+    // update UI if needed
+  }catch(e){
+    // ignore
+  }
+}
 
-/* initial UI */
-setSignedState(false); setSyncState(false);
+/* ---------- Prevent page pinch-zoom on iOS Safari (extra) ---------- */
+document.addEventListener('gesturestart', function (e) { e.preventDefault(); });
 
-/* Expose some functions for debugging in console (optional) */
-window._app = { readLocalRecords, readSyncQueue, attemptSyncQueue, appendSyncLog };
+/* ---------- Navigation wiring ---------- */
+document.querySelectorAll('.navBtn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.navBtn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('section.card').forEach(p=>p.style.display='none');
+    const target = btn.dataset.target;
+    if(target === 'pageHome') document.getElementById('pageHome').style.display='block';
+    if(target === 'pageAdd') document.getElementById('pageAdd').style.display='block';
+    if(target === 'pageBrowse') document.getElementById('pageBrowse').style.display='block';
+    if(target === 'pageSettings') document.getElementById('pageSettings').style.display='block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    clearEditingState();
+    if(target === 'pageBrowse') listLocalRecords();
+  });
+});
 
+/* show initial pages */
+document.getElementById('pageHome').style.display='block';
+document.getElementById('pageAdd').style.display='none';
+document.getElementById('pageBrowse').style.display='none';
+document.getElementById('pageSettings').style.display='none';
+
+/* ---------- Expose debug helpers ---------- */
+window._app = { readLocalRecords, readSyncQueue, attemptSyncQueue, appendSyncLog, startEditRecord, confirmAndDeleteRecord };
+
+/************************************************************************
+ * End of single-file app
+ ************************************************************************/
 </script>
 </body>
 </html>
