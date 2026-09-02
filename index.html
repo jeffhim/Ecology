@@ -35,8 +35,15 @@ header{
   color:#fff;padding:calc(8px + var(--safe-top)) 18px 12px 18px;display:flex;align-items:center;justify-content:space-between;height:calc(var(--header-height) + var(--safe-top));
   box-shadow:0 6px 18px rgba(0,0,0,0.08);
 }
-.titleWrap{display:flex;align-items:center;gap:12px;flex:1}
-h1{font-size:20px;margin:0;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:calc(100% - 160px)}
+.titleWrap{display:flex;align-items:center;gap:12px;flex:1;min-width:0}
+h1{
+  font-size:18px;margin:0;font-weight:800;
+  /* allow wrapping so full title always visible */
+  white-space:normal;
+  line-height:1.05;
+  word-break:break-word;
+  max-width:calc(100% - 160px);
+}
 .headerStatus{display:flex;gap:10px;align-items:center}
 .statusMini{display:flex;align-items:center;gap:6px;font-size:12px;color:#eafaf0}
 .dot{width:10px;height:10px;border-radius:999px;background:#d9534f;box-shadow:0 2px 6px rgba(0,0,0,0.08)}
@@ -73,6 +80,9 @@ textarea{min-height:72px;resize:vertical}
 .navBtn{flex:1;text-align:center;color:#3b6b52;font-weight:800;cursor:pointer;padding:8px 6px;text-decoration:none;display:block}
 .navBtn.active{color:var(--accent-dark)}
 .navIcon{display:block;font-size:20px;margin-bottom:6px}
+
+/* ensure no transforms on body/html that could move bottom nav */
+html, body { transform: none !important; }
 
 /* responsive */
 @media (max-width:900px){ .formGrid{grid-template-columns:1fr} .treeCanvas{height:420px} #minimap{width:120px;height:90px} }
@@ -226,8 +236,11 @@ textarea{min-height:72px;resize:vertical}
 <script>
 /* ---------- Storage & IDB helpers ---------- */
 const LOCAL_KEY = 'exploration_records_v1';
+const SYNC_QUEUE_KEY = 'exploration_sync_queue_v1';
 function readLocalRecords(){ try{ return JSON.parse(localStorage.getItem(LOCAL_KEY) || '[]'); }catch(e){ return []; } }
 function writeLocalRecords(arr){ localStorage.setItem(LOCAL_KEY, JSON.stringify(arr)); }
+function readSyncQueue(){ try{ return JSON.parse(localStorage.getItem(SYNC_QUEUE_KEY) || '[]'); }catch(e){ return []; } }
+function writeSyncQueue(q){ localStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify(q)); }
 
 /* IDB for images */
 function openDb(){
@@ -275,6 +288,133 @@ function showToast(msg, s=3){
   clearTimeout(t._t); t._t = setTimeout(()=> t.classList.remove('show'), s*1000);
 }
 function escapeHtml(s){ return (s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+function appendSyncLog(line){ const el = document.getElementById('syncLog'); const now = new Date().toLocaleString(); const entry = `${now} — ${line}`; const prev = el.dataset.log ? JSON.parse(el.dataset.log) : []; prev.push(entry); el.dataset.log = JSON.stringify(prev); el.innerHTML = prev.slice().reverse().map(l=>`<div>${escapeHtml(l)}</div>`).join(''); }
+
+/* ---------- Drive helpers (uses GSI token) ---------- */
+let tokenClient = null;
+let accessToken = null;
+let cachedFolderId = null;
+const CLIENT_ID = "58009415485-8qvhrvbasmrq5ugms01dv8vt7pneen6u.apps.googleusercontent.com";
+const SCOPES = "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive";
+
+async function initTokenClientIfNeeded(){
+  if(tokenClient) return tokenClient;
+  if(!(window.google && google.accounts && google.accounts.oauth2)) return null;
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: SCOPES,
+    callback: (resp) => {
+      if(resp && resp.access_token){
+        accessToken = resp.access_token;
+        document.getElementById('signedDot').classList.add('green');
+        document.getElementById('signedText').innerText = 'Signed';
+        appendSyncLog('Signed in to Google');
+        // try to sync queued items immediately
+        attemptSyncQueue();
+      } else {
+        showToast('Sign failed',2);
+      }
+    }
+  });
+  return tokenClient;
+}
+
+async function requestDriveToken(){
+  const client = await initTokenClientIfNeeded();
+  if(!client) { showToast('Google Identity not available',3); return; }
+  try{ client.requestAccessToken({ prompt: 'consent' }); }catch(e){ showToast('Sign request failed',2); }
+}
+
+async function driveFetch(url, opts = {}){
+  if(!accessToken) throw new Error('No access token');
+  opts.headers = opts.headers || {};
+  opts.headers['Authorization'] = 'Bearer ' + accessToken;
+  return fetch(url, opts);
+}
+
+async function getOrCreateFolderId(folderName){
+  if(cachedFolderId) return cachedFolderId;
+  const q = `mimeType='application/vnd.google-apps.folder' and name='${folderName.replace(/'/g,"\\'")}' and trashed=false`;
+  const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name)`;
+  const res = await driveFetch(url);
+  if(!res.ok) throw new Error('Drive list failed');
+  const j = await res.json();
+  if(j.files && j.files.length){ cachedFolderId = j.files[0].id; return cachedFolderId; }
+  // create
+  const createRes = await fetch('https://www.googleapis.com/drive/v3/files', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: folderName, mimeType: 'application/vnd.google-apps.folder' })
+  });
+  if(!createRes.ok) throw new Error('Create folder failed');
+  const cj = await createRes.json();
+  cachedFolderId = cj.id;
+  return cachedFolderId;
+}
+
+async function uploadJsonRecordToFolder(name, obj, folderId){
+  const metadata = { name: `${name}.json`, mimeType: 'application/json', parents: folderId ? [folderId] : undefined };
+  const blob = new Blob([JSON.stringify(obj)], { type: 'application/json' });
+  const form = new FormData();
+  form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+  form.append('file', blob);
+  const r = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', { method: 'POST', headers: { 'Authorization': 'Bearer ' + accessToken }, body: form });
+  if(!r.ok) throw new Error('Upload JSON failed');
+  return r.json();
+}
+
+async function uploadImageBlobToFolder(blob, nameHint, folderId){
+  const meta = { name: nameHint, mimeType: blob.type, parents: folderId ? [folderId] : undefined };
+  const form = new FormData();
+  form.append('metadata', new Blob([JSON.stringify(meta)], { type: 'application/json' }));
+  form.append('file', blob);
+  const r = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', { method: 'POST', headers: { 'Authorization': 'Bearer ' + accessToken }, body: form });
+  if(!r.ok) throw new Error('Upload image failed');
+  return r.json();
+}
+
+/* ---------- Sync queue processing ---------- */
+let autoSyncInterval = null;
+async function attemptSyncQueue(){
+  if(!accessToken) { document.getElementById('syncDot').classList.remove('green'); document.getElementById('syncText').innerText = 'Sync'; return; }
+  const queue = readSyncQueue();
+  if(!queue.length){ document.getElementById('syncDot').classList.add('green'); document.getElementById('syncText').innerText = 'Synced'; appendSyncLog('Sync queue empty'); return; }
+  appendSyncLog(`Starting sync of ${queue.length} item(s)`);
+  try{
+    const folderId = await getOrCreateFolderId('EcologyApp_Records');
+    for(const recId of [...queue]){
+      const records = readLocalRecords();
+      const rec = records.find(r=>r.id===recId);
+      if(!rec){ writeSyncQueue(readSyncQueue().filter(x=>x!==recId)); appendSyncLog(`Removed missing record ${recId}`); continue; }
+      // upload images first
+      const imageRefs = [];
+      for(let i=0;i<(rec.images||[]).length;i++){
+        const imRef = rec.images[i];
+        const blob = await idbGet(imRef.id);
+        if(!blob){ appendSyncLog(`Image ${imRef.id} missing`); continue; }
+        const up = await uploadImageBlobToFolder(blob, `${rec.scientificName || rec.id}_img_${Date.now()}_${i}.${(imRef.name||'').split('.').pop()}`, folderId);
+        imageRefs.push({ id: up.id, name: up.name, mimeType: up.mimeType });
+        try{ await idbDelete(imRef.id); }catch(e){}
+      }
+      const recToUpload = { id: rec.id, scientificName: rec.scientificName, commonName: rec.commonName, taxonomy: rec.taxonomy, location: rec.location, behaviours: rec.behaviours, otherNotes: rec.otherNotes, images: imageRefs, createdAt: rec.createdAt };
+      const uploaded = await uploadJsonRecordToFolder(rec.scientificName || rec.id, recToUpload, folderId);
+      // mark uploaded
+      const updated = readLocalRecords().map(r => r.id===recId ? ({...r, status:'uploaded', driveId: uploaded.id}) : r);
+      writeLocalRecords(updated);
+      const newQueue = readSyncQueue().filter(x=>x!==recId);
+      writeSyncQueue(newQueue);
+      appendSyncLog(`Uploaded ${recId} -> ${uploaded.id}`);
+    }
+    document.getElementById('syncDot').classList.add('green');
+    document.getElementById('syncText').innerText = 'Synced';
+    appendSyncLog('Sync completed');
+  }catch(e){
+    console.error('Sync error', e);
+    appendSyncLog('Sync failed: ' + (e && e.message ? e.message : String(e)));
+    document.getElementById('syncDot').classList.remove('green');
+    document.getElementById('syncText').innerText = 'Sync';
+  }
+}
 
 /* ---------- D3 tree (kept minimal) ---------- */
 const svg = d3.select('#treeSvg');
@@ -407,20 +547,14 @@ window.addEventListener('DOMContentLoaded', ()=> {
 
   // Sign buttons: try to init GSI and request token; update UI on success
   document.getElementById('btnSignGrantSettings').addEventListener('click', async ()=>{
-    if(window.google && google.accounts && google.accounts.oauth2){
-      try{
-        const client = google.accounts.oauth2.initTokenClient({
-          client_id: "58009415485-8qvhrvbasmrq5ugms01dv8vt7pneen6u.apps.googleusercontent.com",
-          scope: "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive",
-          callback: (resp)=>{ if(resp && resp.access_token){ document.getElementById('signedDot').classList.add('green'); document.getElementById('signedText').innerText='Signed'; showToast('Signed in',2); } else { showToast('Sign failed',2); } }
-        });
-        client.requestAccessToken({ prompt:'consent' });
-      }catch(e){ showToast('Sign init failed',2); }
-    } else {
-      showToast('Google Identity not available in this browser',3);
-    }
+    await initTokenClientIfNeeded();
+    if(tokenClient) tokenClient.requestAccessToken({ prompt: 'consent' });
+    else showToast('Google Identity not available',3);
   });
-  document.getElementById('btnSignRetrySettings').addEventListener('click', ()=> showToast('Retry pressed',2));
+  document.getElementById('btnSignRetrySettings').addEventListener('click', ()=> {
+    if(tokenClient) tokenClient.requestAccessToken({ prompt: 'consent' });
+    else showToast('No token client',2);
+  });
 
   // Thumbs preview
   document.getElementById('speciesImages').addEventListener('change', (e)=>{
@@ -432,14 +566,9 @@ window.addEventListener('DOMContentLoaded', ()=> {
   const speciesNameInput = document.getElementById('speciesName');
   speciesNameInput.addEventListener('input', ()=>{
     const val = speciesNameInput.value.trim();
-    if(!val) return;
     const parts = val.split(/\s+/);
-    if(parts.length >= 1){
-      document.getElementById('taxGenus').value = parts[0] || '';
-    }
-    if(parts.length >= 2){
-      document.getElementById('taxSpecies').value = parts[1] || '';
-    }
+    document.getElementById('taxGenus').value = parts[0] || '';
+    document.getElementById('taxSpecies').value = parts[1] || '';
   });
 
   // initial render
@@ -447,6 +576,9 @@ window.addEventListener('DOMContentLoaded', ()=> {
   showSection(initial);
   try{ renderTree(); fitToScreen(); }catch(e){}
   updateSpeciesCount();
+
+  // auto sync interval (attempt every 60s if signed)
+  setInterval(()=>{ if(accessToken) attemptSyncQueue(); }, 60000);
 });
 
 /* ---------- Browse / Edit / Delete / Save implementations ---------- */
@@ -473,8 +605,10 @@ function populateEditForm(id){
   document.getElementById('taxClass').value = r.taxonomy[2] || '';
   document.getElementById('taxOrder').value = r.taxonomy[3] || '';
   document.getElementById('taxFamily').value = r.taxonomy[4] || '';
-  document.getElementById('taxGenus').value = r.taxonomy[5] || r.taxonomy[0] || '';
-  document.getElementById('taxSpecies').value = r.taxonomy[6] || r.scientificName && r.scientificName.split(/\s+/)[1] || '';
+  // try to preserve genus/species mapping
+  const parts = (r.scientificName || '').split(/\s+/);
+  document.getElementById('taxGenus').value = r.taxonomy[5] || parts[0] || '';
+  document.getElementById('taxSpecies').value = r.taxonomy[6] || parts[1] || '';
   document.getElementById('locationInput').value = r.location || '';
   document.getElementById('behaviourInput').value = r.behaviours || '';
   document.getElementById('otherNotesInput').value = r.otherNotes || '';
@@ -493,6 +627,7 @@ async function confirmAndDeleteRecord(id){
   const updated = records.filter(r=>r.id!==id); writeLocalRecords(updated); showToast('Record deleted',2); renderTree(); if(location.hash==='#pageBrowse') listLocalRecords();
 }
 
+/* Save (new or edit). If signed, queue for sync and attempt immediately */
 async function handleSaveFromAdd({ autoUpload = true } = {}){
   try{
     const editingId = document.getElementById('saveBtnAdd').dataset.editing || null;
@@ -524,6 +659,8 @@ async function handleSaveFromAdd({ autoUpload = true } = {}){
       document.getElementById('saveLocalOnlyBtnAdd').innerText='Save Local Only';
       clearAddForm();
       renderTree();
+      // queue for sync if signed
+      if(accessToken){ const q = readSyncQueue(); if(!q.includes(rec.id)){ q.push(rec.id); writeSyncQueue(q); appendSyncLog(`Queued edited ${rec.id}`); attemptSyncQueue(); } }
       return;
     }
 
@@ -532,6 +669,12 @@ async function handleSaveFromAdd({ autoUpload = true } = {}){
     for(let i=0;i<files.length;i++){ const f=files[i]; const compressedBlob = await compressImageFile(f,1200,0.75); const imgId='img_'+Date.now()+'_'+i; await idbPut(imgId, compressedBlob); imageRefs.push({id:imgId,name:f.name,type:compressedBlob.type}); }
     const record = { id:'rec_'+Date.now(), scientificName:scientific, commonName:common, taxonomy, location, behaviours, otherNotes, images:imageRefs, createdAt:new Date().toISOString(), status:'pending' };
     const records = readLocalRecords(); records.push(record); writeLocalRecords(records); showToast('Saved locally',2);
+    // queue for sync if signed
+    if(accessToken){
+      const q = readSyncQueue(); q.push(record.id); writeSyncQueue(q); appendSyncLog(`Queued ${record.id}`); attemptSyncQueue();
+    } else {
+      appendSyncLog(`Saved local-only ${record.id}`);
+    }
     clearAddForm();
     renderTree();
   }catch(e){ console.error(e); showToast('Save failed',3); }
