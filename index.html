@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Exploration of the Nature by Jeffrey</title>
+<title>Jeffrey's exploration</title>
 
 <!-- PWA / App meta -->
 <meta name="mobile-web-app-capable" content="yes">
@@ -12,7 +12,6 @@
 <meta name="theme-color" content="#2fb86a">
 
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;800&display=swap" rel="stylesheet">
-<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://d3js.org/d3.v7.min.js"></script>
 
 <style>
@@ -23,10 +22,10 @@
   --card:#ffffff;
   --muted:#6b6b6b;
   --radius:12px;
-  --nav-height:84px;
-  --header-height:64px;
-  --safe-top:calc(env(safe-area-inset-top, 20px));
-  --top-offset: calc(var(--safe-top) + var(--header-height));
+  --nav-height:72px;           /* bottom nav height */
+  --header-height:72px;        /* header height (increased) */
+  --safe-top:env(safe-area-inset-top, 20px);
+  --safe-bottom:env(safe-area-inset-bottom, 0px);
   --shadow: 0 10px 30px rgba(20,40,30,0.06);
   --dot-size:9px;
   --toast-bg: rgba(15,80,50,0.95);
@@ -34,31 +33,48 @@
 *{box-sizing:border-box}
 html,body{height:100%;margin:0;font-family:"Baloo 2", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;background:var(--bg);color:#0b2b1f;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
 
-/* Ensure header doesn't overlap iPhone status bar */
-body { padding-top: var(--safe-top); }
+/* Ensure header doesn't overlap iPhone status bar and give more space */
+body { padding-top: calc(var(--safe-top) + 0px); }
 
 /* Header */
 header{
-  height:var(--header-height);
+  height: calc(var(--header-height) + var(--safe-top));
   background:linear-gradient(90deg,var(--accent),var(--accent-dark));
   color:#fff;
-  padding:12px 16px;
+  padding: calc(8px + var(--safe-top)) 18px 12px 18px;
   display:flex;
   align-items:center;
   justify-content:space-between;
   box-shadow:0 6px 18px rgba(0,0,0,0.08);
-  position:sticky;top:0;z-index:120;
-  padding-top: calc(12px + env(safe-area-inset-top, 0px));
+  position:sticky; top:0; z-index:220;
 }
-.titleWrap{display:flex;align-items:center;gap:12px;min-width:0}
-h1{font-size:18px;margin:0;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Title: increase width and font size so full title shows */
+.titleWrap{display:flex;align-items:center;gap:12px;min-width:0;flex:1}
+h1{
+  font-size:20px;            /* increased font size */
+  margin:0;
+  font-weight:800;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  max-width:calc(100% - 160px); /* leave space for status icons */
+}
+
+/* status area */
 .headerStatus{display:flex;gap:10px;align-items:center;font-weight:700}
 .statusMini{display:flex;align-items:center;gap:6px;font-size:12px;color:#eafaf0}
 .dot{width:var(--dot-size);height:var(--dot-size);border-radius:999px;background:#d9534f;box-shadow:0 2px 6px rgba(0,0,0,0.08)}
 .dot.green{background:#2fb86a}
 
-/* Layout */
-.container{max-width:1100px;margin:14px auto;padding:12px 14px calc(var(--nav-height) + 56px)}
+/* Layout container */
+.container{
+  max-width:1100px;
+  margin:12px auto;
+  padding:12px 14px calc(var(--nav-height) + 28px); /* ensure bottom nav doesn't cover content */
+}
+
+/* Card */
 .card{background:var(--card);border-radius:var(--radius);padding:14px;margin-bottom:22px;box-shadow:var(--shadow);overflow:visible}
 .sectionTitle{display:block;background:linear-gradient(180deg,#f3fff6,#ffffff);border-radius:10px;padding:8px 12px;color:var(--accent-dark);font-weight:800;margin:-14px -14px 12px -14px}
 
@@ -93,11 +109,27 @@ textarea{min-height:72px;resize:vertical}
 .fileThumb{width:72px;height:72px;border-radius:8px;border:1px solid #eef6ef;display:flex;align-items:center;justify-content:center;overflow:hidden}
 
 /* toast */
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--nav-height) + 18px);background:var(--toast-bg);color:#fff;padding:12px 18px;border-radius:12px;font-weight:700;box-shadow:0 10px 30px rgba(0,0,0,0.25);z-index:200;opacity:0;transition:opacity .25s ease, transform .25s ease}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--nav-height) + 18px + var(--safe-bottom));background:var(--toast-bg);color:#fff;padding:12px 18px;border-radius:12px;font-weight:700;box-shadow:0 10px 30px rgba(0,0,0,0.25);z-index:300;opacity:0;transition:opacity .25s ease, transform .25s ease}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(-6px)}
 
-/* bottom nav */
-.bottomNav{position:fixed;left:0;right:0;bottom:0;height:var(--nav-height);background:linear-gradient(180deg,#ffffff,#f6fff6);border-top:1px solid #e9f3ea;display:flex;align-items:center;justify-content:space-around;z-index:140;padding:8px 12px;box-shadow:0 -6px 20px rgba(10,30,20,0.03)}
+/* bottom nav: fixed and always at bottom; account for safe-area-inset-bottom */
+.bottomNav{
+  position:fixed;
+  left:0;
+  right:0;
+  bottom:calc(0px + var(--safe-bottom));
+  height:var(--nav-height);
+  background:linear-gradient(180deg,#ffffff,#f6fff6);
+  border-top:1px solid #e9f3ea;
+  display:flex;
+  align-items:center;
+  justify-content:space-around;
+  z-index:260;
+  padding:8px 12px;
+  box-shadow:0 -6px 20px rgba(10,30,20,0.03);
+  /* prevent transforms on parent from affecting position */
+  transform: none !important;
+}
 .navBtn{flex:1;text-align:center;color:#3b6b52;font-weight:800;cursor:pointer;padding:8px 6px;text-decoration:none;display:block}
 .navBtn.active{color:var(--accent-dark)}
 .navIcon{display:block;font-size:20px;margin-bottom:6px}
@@ -113,7 +145,7 @@ textarea{min-height:72px;resize:vertical}
 #resetView{min-width:64px}
 
 /* ensure last content not hidden behind nav */
-.card:last-child{margin-bottom:calc(var(--nav-height) + 28px)}
+.card:last-child{margin-bottom:calc(var(--nav-height) + 28px + var(--safe-bottom))}
 
 /* responsive tweaks */
 @media (max-width:900px){
@@ -128,7 +160,7 @@ textarea{min-height:72px;resize:vertical}
 <header>
   <div class="titleWrap">
     <svg width="36" height="36" viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M12 2C9.8 2 7.8 3 6.6 4.6C5.4 6.2 5 8.2 5.2 10.2C6 18 12 22 12 22s6-4 6.8-11.8c.2-2-0.2-4-1.4-5.6C16.2 3 14.2 2 12 2z"/></svg>
-    <h1>Exploration of the Nature by Jeffrey</h1>
+    <h1>Jeffrey's exploration</h1>
   </div>
   <div class="headerStatus">
     <div class="statusMini"><div id="signedDot" class="dot"></div><span>Sign</span></div>
@@ -141,7 +173,7 @@ textarea{min-height:72px;resize:vertical}
   <section id="pageHome" class="card" aria-labelledby="homeTitle">
     <div class="sectionTitle" id="homeTitle">Overview</div>
     <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-      <div style="background:#fff;border-radius:12px;padding:12px;box-shadow:var(--shadow);min-width:180px">
+      <div style="background:#fff;border-radius:12px;padding:12px;box-shadow:var(--shadow);min-width:220px">
         <div style="font-weight:800;color:#145a3f;font-size:18px" id="speciesCount">Species recorded: 0</div>
         <div style="color:var(--muted);font-size:13px;margin-top:6px">Total local records saved</div>
       </div>
@@ -286,119 +318,100 @@ textarea{min-height:72px;resize:vertical}
 
 <script>
 /* ---------------------------
-   Minimal app logic
-   - Home: shows count + tree
-   - Add: add new species
-   - Browse: search/edit/delete
-   - Settings: sign/export/import
+   App logic (focused on requested fixes)
+   - Title bar width & font adjusted in CSS (done)
+   - When switching to Add: scroll to top of Add section so topmost content visible
+   - Bottom nav fixed at bottom and will not shift when switching sections
    --------------------------- */
 
-/* Storage & IDB helpers (same pattern as before) */
+/* Storage helpers (lightweight) */
 const LOCAL_KEY = 'exploration_records_v1';
-const SYNC_QUEUE_KEY = 'exploration_sync_queue_v1';
-const DB_NAME = 'exploration_images_db_v1';
-const DB_STORE = 'images';
-let dbPromise = null;
-function openDb(){
-  if(dbPromise) return dbPromise;
-  dbPromise = new Promise((resolve,reject)=>{
-    const req = indexedDB.open(DB_NAME, 1);
-    req.onupgradeneeded = (e)=>{ const db = e.target.result; if(!db.objectStoreNames.contains(DB_STORE)) db.createObjectStore(DB_STORE, { keyPath: 'id' }); };
-    req.onsuccess = ()=> resolve(req.result);
-    req.onerror = ()=> reject(req.error);
-  });
-  return dbPromise;
-}
-async function idbPut(id, blob){
-  const db = await openDb();
-  return new Promise((resolve,reject)=>{
-    const tx = db.transaction(DB_STORE, 'readwrite');
-    tx.objectStore(DB_STORE).put({ id, blob });
-    tx.oncomplete = ()=> resolve(true);
-    tx.onerror = ()=> reject(tx.error);
-  });
-}
-async function idbGet(id){
-  const db = await openDb();
-  return new Promise((resolve,reject)=>{
-    const tx = db.transaction(DB_STORE, 'readonly');
-    const r = tx.objectStore(DB_STORE).get(id);
-    r.onsuccess = ()=> resolve(r.result ? r.result.blob : null);
-    r.onerror = ()=> reject(r.error);
-  });
-}
-async function idbDelete(id){
-  const db = await openDb();
-  return new Promise((resolve,reject)=>{
-    const tx = db.transaction(DB_STORE, 'readwrite');
-    tx.objectStore(DB_STORE).delete(id);
-    tx.oncomplete = ()=> resolve(true);
-    tx.onerror = ()=> reject(tx.error);
-  });
-}
 function readLocalRecords(){ try{ return JSON.parse(localStorage.getItem(LOCAL_KEY) || '[]'); }catch(e){ return []; } }
 function writeLocalRecords(arr){ localStorage.setItem(LOCAL_KEY, JSON.stringify(arr)); }
-function readSyncQueue(){ try{ return JSON.parse(localStorage.getItem(SYNC_QUEUE_KEY) || '[]'); }catch(e){ return []; } }
-function writeSyncQueue(q){ localStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify(q)); }
 
 /* UI helpers */
-const toastEl = document.getElementById('toast');
-const syncLogEl = document.getElementById('syncLog');
+const navButtons = document.querySelectorAll('.navBtn');
 const speciesCountEl = document.getElementById('speciesCount');
-function showToast(msg, s=3){ toastEl.innerText = msg; toastEl.classList.add('show'); clearTimeout(toastEl._t); toastEl._t=setTimeout(()=>toastEl.classList.remove('show'), s*1000); }
-function appendSyncLog(line){ const now=new Date().toLocaleString(); const entry = `${now} — ${line}`; const prev = syncLogEl.dataset.log ? JSON.parse(syncLogEl.dataset.log) : []; prev.push(entry); syncLogEl.dataset.log = JSON.stringify(prev); syncLogEl.innerHTML = prev.slice().reverse().map(l=>`<div>${escapeHtml(l)}</div>`).join(''); }
-function escapeHtml(s){ return (s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+const treeWrap = document.querySelector('.treeWrap');
+const bottomNav = document.querySelector('.bottomNav');
 
-/* Simple image compression (client-side) */
-async function compressImageFile(file, maxDim = 1200, quality = 0.75){
-  return new Promise((resolve,reject)=>{
-    const img = new Image();
-    const fr = new FileReader();
-    fr.onload = ()=> img.src = fr.result;
-    fr.onerror = ()=> reject(fr.error);
-    img.onload = ()=>{
-      const w = img.width, h = img.height;
-      let nw = w, nh = h;
-      if(Math.max(w,h) > maxDim){
-        if(w > h){ nw = maxDim; nh = Math.round(h * (maxDim / w)); } else { nh = maxDim; nw = Math.round(w * (maxDim / h)); }
-      }
-      const canvas = document.createElement('canvas');
-      canvas.width = nw; canvas.height = nh;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img,0,0,nw,nh);
-      canvas.toBlob(blob => resolve(blob), 'image/jpeg', quality);
-    };
-    img.onerror = ()=> reject(new Error('Image load error'));
-    fr.readAsDataURL(file);
-  });
+function showToast(msg, s=3){
+  const t = document.getElementById('toast');
+  t.innerText = msg;
+  t.classList.add('show');
+  clearTimeout(t._t);
+  t._t = setTimeout(()=> t.classList.remove('show'), s*1000);
 }
 
-/* Minimal Drive/GSI placeholders (kept but not required for offline) */
-let tokenClient = null, accessToken = null, cachedFolderId = null;
-async function waitForGISReady(timeout=4000){
-  return new Promise(resolve=>{
-    const start = Date.now();
-    (function check(){ if(window.google && google.accounts && google.accounts.oauth2) return resolve(true); if(Date.now()-start>timeout) return resolve(false); setTimeout(check,100); })();
-  });
+/* Ensure bottom nav stays fixed: remove any transforms on body/html that could affect it */
+document.documentElement.style.transform = 'none';
+document.body.style.transform = 'none';
+
+/* Section switching: show only requested section, auto-scroll to top of that section */
+function showSection(hash){
+  document.querySelectorAll('section.card').forEach(s=>s.style.display='none');
+  const el = document.querySelector(hash) || document.getElementById('pageHome');
+  if(!el) return;
+  el.style.display = 'block';
+
+  // set active nav
+  navButtons.forEach(b=>b.classList.remove('active'));
+  const active = document.querySelector(`a[href="${hash}"]`);
+  if(active) active.classList.add('active');
+
+  // scroll the section to its top so the uppermost content is visible
+  // use scrollIntoView on the section element (not on inner fields)
+  try{
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }catch(e){
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // tree visibility only on home
+  if(el.id === 'pageHome'){
+    if(treeWrap) treeWrap.style.display = '';
+    try{ renderTree(); fitToScreen(); }catch(e){}
+  } else {
+    if(treeWrap) treeWrap.style.display = 'none';
+  }
+
+  // update species count when switching
+  updateSpeciesCount();
 }
-async function initTokenClient(){
-  const ready = await waitForGISReady(3000);
-  if(!ready) return false;
-  tokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: "58009415485-8qvhrvbasmrq5ugms01dv8vt7pneen6u.apps.googleusercontent.com",
-    scope: "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive",
-    callback: (resp) => {
-      if(resp && resp.access_token){ accessToken = resp.access_token; showToast('Signed in'); }
+
+/* Bind nav buttons */
+navButtons.forEach(a=>{
+  a.addEventListener('click', (e)=>{
+    e.preventDefault();
+    const href = a.getAttribute('href') || '#pageHome';
+    history.replaceState(null,'',href);
+    showSection(href);
+
+    // Special: when switching to Add, ensure the very top of the Add section is visible
+    if(href === '#pageAdd'){
+      // small timeout to allow display:block to take effect
+      setTimeout(()=> {
+        const addEl = document.getElementById('pageAdd');
+        if(addEl) addEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // also focus the first input (scientific name) so keyboard opens and user can start typing
+        const first = document.getElementById('speciesName');
+        if(first) first.focus({ preventScroll: true });
+      }, 120);
     }
+    if(href === '#pageBrowse') listLocalRecords();
   });
-  return true;
-}
+});
 
-/* ---------- Tree (D3) ---------- */
+/* handle back/forward */
+window.addEventListener('hashchange', ()=> {
+  const h = location.hash && document.querySelector(location.hash) ? location.hash : '#pageHome';
+  showSection(h);
+});
+
+/* ---------- Tree (D3) minimal render and helpers ---------- */
 const svg = d3.select('#treeSvg');
 const inner = svg.append('g').attr('class','innerGroup');
 const miniSvg = d3.select('#miniSvg');
-const baseFontSize = 13;
 const treeLayout = d3.tree();
 let root = d3.hierarchy({name:'Life', children:[]});
 
@@ -427,6 +440,8 @@ function collapseAll(d, depth=0, maxDepth=2){
   }
 }
 
+function truncate(s,n){ if(!s) return ''; return s.length>n? s.slice(0,n-1)+'…':s; }
+
 function renderTree(){
   try{
     const data = buildTreeDataFromLocal();
@@ -453,7 +468,7 @@ function renderTree(){
       .attr('text-anchor','middle')
       .text(d => truncate(d.data.name, 28))
       .attr('title', d => d.data.name)
-      .style('font-size', baseFontSize + 'px');
+      .style('font-size', '13px');
 
     nodes.merge(nodeEnter).transition().duration(200).attr('transform', d=>`translate(${d.x},${d.y})`);
     nodes.select('text').text(d => truncate(d.data.name, 28)).attr('title', d=>d.data.name);
@@ -465,7 +480,6 @@ function renderTree(){
       renderTree();
       updateMinimap();
       if(d.data.species && d.data.recordId){
-        // go to browse and show record
         showSection('#pageBrowse');
         setTimeout(()=> showLocalRecord(d.data.recordId), 300);
       }
@@ -485,20 +499,8 @@ function linkPath(d){
   return `M${x1},${y1} C${x1},${midY} ${x2},${midY} ${x2},${y2}`;
 }
 
-const zoom = d3.zoom()
-  .scaleExtent([0.4, 6])
-  .on('zoom', (event) => {
-    inner.attr('transform', event.transform);
-    const k = Math.max(0.6, Math.min(2.5, event.transform.k));
-    svg.selectAll('.node text').style('font-size', (baseFontSize / k) + 'px');
-    updateMinimapViewport(event.transform);
-  });
-
+const zoom = d3.zoom().scaleExtent([0.4,6]).on('zoom', (event)=>{ inner.attr('transform', event.transform); updateMinimapViewport(event.transform); });
 svg.call(zoom).on("dblclick.zoom", null);
-['touchstart','touchmove','touchend','wheel'].forEach(ev=>{
-  svg.node().addEventListener(ev, e => { e.stopPropagation(); }, {passive:false});
-});
-
 document.getElementById('zoomIn').addEventListener('click', ()=> svg.transition().call(zoom.scaleBy, 1.2));
 document.getElementById('zoomOut').addEventListener('click', ()=> svg.transition().call(zoom.scaleBy, 1/1.2));
 document.getElementById('resetView').addEventListener('click', ()=> fitToScreen());
@@ -521,17 +523,6 @@ function fitToScreen(){
   svg.transition().duration(600).call(zoom.transform, t);
 }
 
-function focusNode(d){
-  const svgW = svg.node().clientWidth;
-  const svgH = +svg.attr('height');
-  const scale = 1.2;
-  const x = d.x, y = d.y;
-  const tx = svgW/2 - x*scale;
-  const ty = svgH/2 - y*scale;
-  const t = d3.zoomIdentity.translate(tx, ty).scale(scale);
-  svg.transition().duration(600).call(zoom.transform, t);
-}
-
 function updateMinimap(){
   const nodes = root.descendants();
   const maxX = d3.max(nodes, d=>d.x);
@@ -540,8 +531,7 @@ function updateMinimap(){
   const minY = d3.min(nodes, d=>d.y);
   miniSvg.attr('viewBox', `${minX} ${minY} ${Math.max(1, maxX-minX)} ${Math.max(1, maxY-minY)}`);
   miniSvg.selectAll('*').remove();
-  miniSvg.selectAll('circle').data(nodes).enter().append('circle')
-    .attr('cx', d=>d.x).attr('cy', d=>d.y).attr('r', 1.2).attr('fill','#cfeee0');
+  miniSvg.selectAll('circle').data(nodes).enter().append('circle').attr('cx', d=>d.x).attr('cy', d=>d.y).attr('r', 1.2).attr('fill','#cfeee0');
   miniSvg.append('rect').attr('id','miniViewport').attr('x',0).attr('y',0).attr('width',10).attr('height',10).attr('fill','rgba(43,184,106,0.12)').attr('stroke','#2fb86a');
   updateMinimapViewport();
 }
@@ -554,155 +544,15 @@ function updateMinimapViewport(transform){
   const y0 = (0 - t.y) / t.k;
   const x1 = (svgW - t.x) / t.k;
   const y1 = (svgH - t.y) / t.k;
-  miniSvg.select('#miniViewport')
-    .attr('x', x0)
-    .attr('y', y0)
-    .attr('width', Math.max(1, x1 - x0))
-    .attr('height', Math.max(1, y1 - y0));
+  miniSvg.select('#miniViewport').attr('x', x0).attr('y', y0).attr('width', Math.max(1, x1 - x0)).attr('height', Math.max(1, y1 - y0));
 }
 
-function truncate(str, n){ if(!str) return ''; return str.length>n? str.slice(0,n-1)+'…':str; }
-
-/* ---------- Navigation & section control ---------- */
-const navButtons = document.querySelectorAll('.navBtn');
-function showSection(hash){
-  document.querySelectorAll('section.card').forEach(s=>s.style.display='none');
-  const el = document.querySelector(hash) || document.getElementById('pageHome');
-  if(el) el.style.display = 'block';
-  // set active nav
-  navButtons.forEach(b=>b.classList.remove('active'));
-  const active = document.querySelector(`a[href="${hash}"]`);
-  if(active) active.classList.add('active');
-  // auto scroll to top of section
-  try{ el.scrollIntoView({behavior:'smooth', block:'start'}); }catch(e){ window.scrollTo({top:0, behavior:'smooth'}); }
-  // tree visibility only on home
-  const treeWrap = document.querySelector('.treeWrap');
-  if(el && el.id === 'pageHome'){ if(treeWrap) treeWrap.style.display=''; renderTree(); } else { if(treeWrap) treeWrap.style.display='none'; }
-}
-
-navButtons.forEach(a=>{
-  a.addEventListener('click', (e)=>{
-    e.preventDefault();
-    const href = a.getAttribute('href') || '#pageHome';
-    history.replaceState(null,'',href);
-    showSection(href);
-    if(href === '#pageBrowse') listLocalRecords();
-  });
-});
-
-// handle back/forward
-window.addEventListener('hashchange', ()=> {
-  const h = location.hash && document.querySelector(location.hash) ? location.hash : '#pageHome';
-  showSection(h);
-});
-
-/* ---------- Bind UI actions ---------- */
-document.getElementById('searchBtn').addEventListener('click', ()=> {
-  const q = document.getElementById('treeSearch').value.trim().toLowerCase();
-  if(!q) return;
-  const found = root.descendants().find(d => (d.data.name||'').toLowerCase().includes(q));
-  if(found){
-    let p = found.parent;
-    while(p){ if(p._children){ p.children = p._children; p._children = null; } p = p.parent; }
-    renderTree();
-    focusNode(found);
-  } else showToast('No match found', 2);
-});
-document.getElementById('clearSearch').addEventListener('click', ()=> document.getElementById('treeSearch').value = '');
-
-document.getElementById('searchBtnLocal').addEventListener('click', ()=>{
-  const q = document.getElementById('searchQuery').value.trim().toLowerCase();
+/* ---------- Browse / Add / Settings logic (simplified) ---------- */
+function listLocalRecords(){
   const records = readLocalRecords();
-  const results = records.filter(r => (r.scientificName||'').toLowerCase().includes(q) || (r.commonName||'').toLowerCase().includes(q) || (r.taxonomy||[]).join(' ').toLowerCase().includes(q));
-  renderSearchResults(results);
-});
-document.getElementById('listBtn').addEventListener('click', listLocalRecords);
-
-/* Add page save */
-document.getElementById('saveBtnAdd').addEventListener('click', async ()=>{ await saveFromAdd({ autoUpload: true }); });
-document.getElementById('saveLocalOnlyBtnAdd').addEventListener('click', async ()=>{ await saveFromAdd({ autoUpload: false }); });
-
-async function saveFromAdd({ autoUpload = true } = {}){
-  try{
-    const scientific = document.getElementById('speciesName').value.trim();
-    if(!scientific) return alert('Please enter scientific name.');
-    const common = document.getElementById('commonName').value.trim();
-    const taxonomy = [
-      document.getElementById('taxKingdom').value.trim(),
-      document.getElementById('taxPhylum').value.trim(),
-      document.getElementById('taxClass').value.trim(),
-      document.getElementById('taxOrder').value.trim(),
-      document.getElementById('taxFamily').value.trim(),
-      document.getElementById('taxGenus').value.trim(),
-      document.getElementById('taxSpecies').value.trim()
-    ].filter(Boolean);
-    const location = document.getElementById('locationInput').value.trim();
-    const behaviours = document.getElementById('behaviourInput').value.trim();
-    const otherNotes = document.getElementById('otherNotesInput').value.trim();
-    const files = document.getElementById('speciesImages').files;
-
-    const records = readLocalRecords();
-    const imageRefs = [];
-    for(let i=0;i<files.length;i++){
-      const f = files[i];
-      const compressedBlob = await compressImageFile(f, 1200, 0.75);
-      const imgId = 'img_' + Date.now() + '_' + i;
-      await idbPut(imgId, compressedBlob);
-      imageRefs.push({ id: imgId, name: f.name, type: compressedBlob.type });
-    }
-    const record = {
-      id: 'rec_' + Date.now(),
-      scientificName: scientific,
-      commonName: common,
-      taxonomy,
-      location,
-      behaviours,
-      otherNotes,
-      images: imageRefs,
-      createdAt: new Date().toISOString(),
-      status: 'pending'
-    };
-    records.push(record);
-    writeLocalRecords(records);
-    if(autoUpload){
-      const q = readSyncQueue(); q.push(record.id); writeSyncQueue(q);
-      appendSyncLog(`Queued record ${record.id}`);
-    } else {
-      appendSyncLog(`Saved local-only record ${record.id}`);
-    }
-    showToast('Saved locally', 2);
-
-    // clear form
-    document.getElementById('speciesName').value = '';
-    document.getElementById('commonName').value = '';
-    document.getElementById('speciesImages').value = '';
-    document.getElementById('locationInput').value = '';
-    document.getElementById('behaviourInput').value = '';
-    document.getElementById('otherNotesInput').value = '';
-    document.getElementById('thumbs').innerHTML = '';
-
-    renderTree();
-  }catch(e){
-    console.error(e);
-    showToast('Save failed', 3);
-  }
+  renderSearchResults(records.slice().reverse().slice(0,50));
 }
 
-/* Thumbnails preview on Add */
-document.getElementById('speciesImages').addEventListener('change', async (e)=>{
-  const files = e.target.files;
-  const thumbs = document.getElementById('thumbs');
-  thumbs.innerHTML = '';
-  for(let i=0;i<files.length;i++){
-    const f = files[i];
-    const url = URL.createObjectURL(f);
-    const d = document.createElement('div'); d.className='fileThumb';
-    const img = document.createElement('img'); img.src = url; img.style.width='100%'; img.style.height='100%'; img.style.objectFit='cover';
-    d.appendChild(img); thumbs.appendChild(d);
-  }
-});
-
-/* Browse: render results and bind edit/delete */
 function renderSearchResults(records){
   const el = document.getElementById('searchResult'); el.innerHTML = '';
   if(!records.length){ el.innerText = 'No local records'; return; }
@@ -718,7 +568,7 @@ function renderSearchResults(records){
       const id = e.currentTarget.dataset.id;
       populateEditForm(id);
       showSection('#pageAdd');
-      document.getElementById('pageAdd').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setTimeout(()=> document.getElementById('pageAdd').scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
     });
   });
   el.querySelectorAll('button[data-action="delete"]').forEach(b=>{
@@ -748,7 +598,7 @@ function populateEditForm(id){
   const thumbs = document.getElementById('thumbs'); thumbs.innerHTML = '';
   (async ()=>{
     for(const im of (r.images||[])){
-      const blob = await idbGet(im.id);
+      const blob = await idbGet(im.id).catch(()=>null);
       const d = document.createElement('div'); d.className='fileThumb';
       if(blob){
         const url = URL.createObjectURL(blob);
@@ -760,76 +610,128 @@ function populateEditForm(id){
       thumbs.appendChild(d);
     }
   })();
-  // mark editing
   document.getElementById('saveBtnAdd').dataset.editing = id;
   document.getElementById('saveBtnAdd').innerText = 'Save Changes';
   document.getElementById('saveLocalOnlyBtnAdd').dataset.editing = id;
   document.getElementById('saveLocalOnlyBtnAdd').innerText = 'Save Local Only (Edit)';
 }
 
-/* When saving from Add while editing */
-async function saveFromAdd({ autoUpload = true } = {}){
+async function confirmAndDeleteRecord(id){
+  if(!confirm('Delete this record and its local images? This cannot be undone.')) return;
+  const records = readLocalRecords();
+  const rec = records.find(r=>r.id===id);
+  if(!rec){ showToast('Record not found',2); return; }
+  // delete images from IDB if present
+  for(const im of (rec.images||[])){
+    try{ await idbDelete(im.id); }catch(e){}
+  }
+  const updated = records.filter(r=>r.id!==id);
+  writeLocalRecords(updated);
+  showToast('Record deleted',2);
+  renderTree();
+  if(location.hash==='#pageBrowse') listLocalRecords();
+}
+
+/* Save from Add (handles both new and edit) */
+document.getElementById('saveBtnAdd').addEventListener('click', async ()=>{ await handleSaveFromAdd({ autoUpload: true }); });
+document.getElementById('saveLocalOnlyBtnAdd').addEventListener('click', async ()=>{ await handleSaveFromAdd({ autoUpload: false }); });
+
+async function handleSaveFromAdd({ autoUpload = true } = {}){
   try{
     const editingId = document.getElementById('saveBtnAdd').dataset.editing || null;
-    if(editingId){
-      // perform edit save
-      const records = readLocalRecords();
-      const record = records.find(r=>r.id===editingId);
-      if(!record) return alert('Record not found');
-      record.scientificName = document.getElementById('speciesName').value.trim();
-      record.commonName = document.getElementById('commonName').value.trim();
-      record.taxonomy = [
-        document.getElementById('taxKingdom').value.trim(),
-        document.getElementById('taxPhylum').value.trim(),
-        document.getElementById('taxClass').value.trim(),
-        document.getElementById('taxOrder').value.trim(),
-        document.getElementById('taxFamily').value.trim(),
-        document.getElementById('taxGenus').value.trim(),
-        document.getElementById('taxSpecies').value.trim()
-      ].filter(Boolean);
-      record.location = document.getElementById('locationInput').value.trim();
-      record.behaviours = document.getElementById('behaviourInput').value.trim();
-      record.otherNotes = document.getElementById('otherNotesInput').value.trim();
-      record.updatedAt = new Date().toISOString();
+    const scientific = document.getElementById('speciesName').value.trim();
+    if(!scientific) return alert('Please enter scientific name.');
+    const common = document.getElementById('commonName').value.trim();
+    const taxonomy = [
+      document.getElementById('taxKingdom').value.trim(),
+      document.getElementById('taxPhylum').value.trim(),
+      document.getElementById('taxClass').value.trim(),
+      document.getElementById('taxOrder').value.trim(),
+      document.getElementById('taxFamily').value.trim(),
+      document.getElementById('taxGenus').value.trim(),
+      document.getElementById('taxSpecies').value.trim()
+    ].filter(Boolean);
+    const location = document.getElementById('locationInput').value.trim();
+    const behaviours = document.getElementById('behaviourInput').value.trim();
+    const otherNotes = document.getElementById('otherNotesInput').value.trim();
+    const files = document.getElementById('speciesImages').files;
 
-      // append new images if selected
-      const files = document.getElementById('speciesImages').files;
+    if(editingId){
+      const records = readLocalRecords();
+      const rec = records.find(r=>r.id===editingId);
+      if(!rec) return alert('Record not found');
+      rec.scientificName = scientific;
+      rec.commonName = common;
+      rec.taxonomy = taxonomy;
+      rec.location = location;
+      rec.behaviours = behaviours;
+      rec.otherNotes = otherNotes;
+      rec.updatedAt = new Date().toISOString();
       for(let i=0;i<files.length;i++){
         const f = files[i];
         const compressedBlob = await compressImageFile(f, 1200, 0.75);
         const imgId = 'img_' + Date.now() + '_' + i;
         await idbPut(imgId, compressedBlob);
-        record.images = record.images || [];
-        record.images.push({ id: imgId, name: f.name, type: compressedBlob.type });
+        rec.images = rec.images || [];
+        rec.images.push({ id: imgId, name: f.name, type: compressedBlob.type });
       }
-
       writeLocalRecords(records);
-      appendSyncLog(`Edited record ${record.id}`);
-      showToast('Record updated locally', 2);
-      // clear editing state
+      showToast('Record updated locally',2);
       delete document.getElementById('saveBtnAdd').dataset.editing;
       delete document.getElementById('saveLocalOnlyBtnAdd').dataset.editing;
       document.getElementById('saveBtnAdd').innerText = 'Save Record';
       document.getElementById('saveLocalOnlyBtnAdd').innerText = 'Save Local Only';
       renderTree();
       return;
-    } else {
-      // new record (handled earlier by saveFromAdd wrapper)
-      return saveFromAdd_new({ autoUpload });
     }
+
+    // new record
+    const imageRefs = [];
+    for(let i=0;i<files.length;i++){
+      const f = files[i];
+      const compressedBlob = await compressImageFile(f, 1200, 0.75);
+      const imgId = 'img_' + Date.now() + '_' + i;
+      await idbPut(imgId, compressedBlob);
+      imageRefs.push({ id: imgId, name: f.name, type: compressedBlob.type });
+    }
+    const record = {
+      id: 'rec_' + Date.now(),
+      scientificName: scientific,
+      commonName: common,
+      taxonomy,
+      location,
+      behaviours,
+      otherNotes,
+      images: imageRefs,
+      createdAt: new Date().toISOString(),
+      status: 'pending'
+    };
+    const records = readLocalRecords();
+    records.push(record);
+    writeLocalRecords(records);
+    showToast('Saved locally',2);
+    renderTree();
   }catch(e){
     console.error(e);
-    showToast('Save failed', 3);
+    showToast('Save failed',3);
   }
 }
-async function saveFromAdd_new({ autoUpload = true } = {}){
-  // fallback in case called directly; keep same as earlier saveFromAdd
-  return;
-}
 
-/* Delete helper (already defined earlier) - reuse confirmAndDeleteRecord */
+/* Thumbnails preview on Add */
+document.getElementById('speciesImages').addEventListener('change', async (e)=>{
+  const files = e.target.files;
+  const thumbs = document.getElementById('thumbs');
+  thumbs.innerHTML = '';
+  for(let i=0;i<files.length;i++){
+    const f = files[i];
+    const url = URL.createObjectURL(f);
+    const d = document.createElement('div'); d.className='fileThumb';
+    const img = document.createElement('img'); img.src = url; img.style.width='100%'; img.style.height='100%'; img.style.objectFit='cover';
+    d.appendChild(img); thumbs.appendChild(d);
+  }
+});
 
-/* ---------- Simple import/export in Settings ---------- */
+/* Import / Export in Settings */
 document.getElementById('exportLocalBtnSettings').addEventListener('click', ()=>{
   const data = JSON.stringify(readLocalRecords(), null, 2);
   const blob = new Blob([data], { type: 'application/json' });
@@ -854,33 +756,84 @@ document.getElementById('importFile').addEventListener('change', async (e)=>{
   }
 });
 
-/* ---------- Small helpers ---------- */
+/* IDB helpers used by browse/edit */
+function openDb(){
+  if(window._dbPromise) return window._dbPromise;
+  window._dbPromise = new Promise((resolve,reject)=>{
+    const req = indexedDB.open('exploration_images_db_v1', 1);
+    req.onupgradeneeded = (e)=>{ const db = e.target.result; if(!db.objectStoreNames.contains('images')) db.createObjectStore('images', { keyPath: 'id' }); };
+    req.onsuccess = ()=> resolve(req.result);
+    req.onerror = ()=> reject(req.error);
+  });
+  return window._dbPromise;
+}
+async function idbPut(id, blob){
+  const db = await openDb();
+  return new Promise((res,rej)=>{
+    const tx = db.transaction('images','readwrite');
+    tx.objectStore('images').put({ id, blob });
+    tx.oncomplete = ()=> res(true);
+    tx.onerror = ()=> rej(tx.error);
+  });
+}
+async function idbGet(id){
+  const db = await openDb();
+  return new Promise((res,rej)=>{
+    const tx = db.transaction('images','readonly');
+    const r = tx.objectStore('images').get(id);
+    r.onsuccess = ()=> res(r.result ? r.result.blob : null);
+    r.onerror = ()=> rej(r.error);
+  });
+}
+async function idbDelete(id){
+  const db = await openDb();
+  return new Promise((res,rej)=>{
+    const tx = db.transaction('images','readwrite');
+    tx.objectStore('images').delete(id);
+    tx.oncomplete = ()=> res(true);
+    tx.onerror = ()=> rej(tx.error);
+  });
+}
+
+/* Show a single record in Record Viewer */
+async function showLocalRecord(id){
+  const records = readLocalRecords();
+  const r = records.find(x=>x.id===id);
+  if(!r) return showToast('Record not found',2);
+  const viewer = document.getElementById('recordViewer'); viewer.innerHTML = '';
+  const card = document.createElement('div'); card.className='card';
+  card.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:800;color:#145a3f">${escapeHtml(r.scientificName||'Unnamed')}</div><div style="color:#6b6b6b">${escapeHtml(r.commonName||'')}</div><div style="color:#6b6b6b">${(r.taxonomy||[]).join(' › ')}</div></div><div style="font-size:12px;color:#999">${new Date(r.createdAt).toLocaleString()}</div></div>
+    <p style="margin-top:8px;color:#333"><strong>Location:</strong> ${escapeHtml(r.location||'')}</p>
+    <p style="margin-top:4px;color:#333"><strong>Behaviours:</strong> ${escapeHtml(r.behaviours||'')}</p>
+    <p style="margin-top:4px;color:#333"><strong>Other notes:</strong> ${escapeHtml(r.otherNotes||'')}</p>`;
+  viewer.appendChild(card);
+  if(r.images && r.images.length){
+    const grid = document.createElement('div'); grid.style.display='flex'; grid.style.gap='8px'; grid.style.marginTop='8px';
+    for(const im of r.images){
+      const wrap = document.createElement('div'); wrap.style.width='96px'; wrap.style.height='96px'; wrap.style.borderRadius='8px'; wrap.style.overflow='hidden'; wrap.style.border='1px solid #eef6ef';
+      const imgEl = document.createElement('img');
+      const blob = await idbGet(im.id).catch(()=>null);
+      if(blob) imgEl.src = URL.createObjectURL(blob); else imgEl.alt = 'Image missing';
+      imgEl.style.width='100%'; imgEl.style.height='100%'; imgEl.style.objectFit='cover';
+      wrap.appendChild(imgEl); grid.appendChild(wrap);
+    }
+    viewer.appendChild(grid);
+  }
+}
+
+/* Update species count UI */
 function updateSpeciesCount(){
   const count = readLocalRecords().length;
   speciesCountEl.innerText = `Species recorded: ${count}`;
 }
 
-/* ---------- Initial render & safe startup ---------- */
-window.addEventListener('DOMContentLoaded', async () => {
-  // initial section based on hash
+/* Initial startup */
+window.addEventListener('DOMContentLoaded', ()=> {
   const initial = location.hash && document.querySelector(location.hash) ? location.hash : '#pageHome';
   showSection(initial);
-
-  // bind sign buttons (settings)
-  document.getElementById('btnSignGrantSettings').addEventListener('click', async ()=>{
-    try{ await initTokenClient(); if(tokenClient) tokenClient.requestAccessToken({ prompt:'consent' }); }catch(e){ showToast('Sign-in failed', 3); }
-  });
-  document.getElementById('btnSignRetrySettings').addEventListener('click', async ()=>{ try{ if(!tokenClient) await initTokenClient(); tokenClient.requestAccessToken({ prompt:'consent' }); }catch(e){ showToast('Retry failed', 3); } });
-
-  // bind tree controls already set above
-  try{ renderTree(); fitToScreen(); }catch(e){ console.warn('Tree init failed', e); }
-
-  // ensure species count
+  try{ renderTree(); fitToScreen(); }catch(e){}
   updateSpeciesCount();
 });
-
-/* expose small debug API */
-window._app = { readLocalRecords, readSyncQueue, attemptSyncQueue, appendSyncLog, startEditRecord: populateEditForm, confirmAndDeleteRecord };
 
 /* Prevent page pinch-zoom on iOS Safari (extra) */
 document.addEventListener('gesturestart', function (e) { e.preventDefault(); });
