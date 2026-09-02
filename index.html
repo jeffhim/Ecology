@@ -17,73 +17,129 @@
 
 <style>
 :root{
-  --accent:#2fb86a; --accent-dark:#238a55; --bg:#eef6f0; --card:#fff;
-  --muted:#6b6b6b; --radius:12px; --nav-height:84px; --safe-bottom:calc(var(--nav-height)+28px);
-  --shadow:0 10px 30px rgba(20,40,30,0.06); --dot-size:9px; --toast-bg:rgba(15,80,50,0.95);
+  --accent:#2fb86a;
+  --accent-dark:#238a55;
+  --bg:#eef6f0;
+  --card:#ffffff;
+  --muted:#6b6b6b;
+  --radius:12px;
+  --nav-height:84px;
+  --safe-bottom:calc(var(--nav-height) + 36px);
+  --shadow: 0 10px 30px rgba(20,40,30,0.06);
+  --dot-size:9px;
+  --toast-bg: rgba(15,80,50,0.95);
 }
 *{box-sizing:border-box}
-html,body{height:100%;margin:0;font-family:"Baloo 2",system-ui,-apple-system,"Segoe UI",Roboto,Arial;background:var(--bg);color:#0b2b1f}
-.container{max-width:1100px;margin:14px auto;padding:0 14px calc(var(--nav-height)+36px)}
-.card{background:var(--card);border-radius:var(--radius);padding:14px;margin-bottom:18px;box-shadow:var(--shadow);overflow:visible}
-.sectionTitle{display:block;background:linear-gradient(180deg,#f3fff6,#fff);border-radius:10px;padding:8px 12px;color:var(--accent-dark);font-weight:800;margin:-14px -14px 12px -14px}
+html,body{height:100%;margin:0;font-family:"Baloo 2", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;background:var(--bg);color:#0b2b1f;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+.container{max-width:1100px;margin:14px auto;padding:0 14px calc(var(--nav-height) + 56px)} /* extra bottom padding to avoid nav overlap */
+.card{background:var(--card);border-radius:var(--radius);padding:14px;margin-bottom:22px;box-shadow:var(--shadow);overflow:visible}
+.sectionTitle{display:block;background:linear-gradient(180deg,#f3fff6,#ffffff);border-radius:10px;padding:8px 12px;color:var(--accent-dark);font-weight:800;margin:-14px -14px 12px -14px}
 
-/* layout & tree */
+/* Header */
+header{
+  background:linear-gradient(90deg,var(--accent),var(--accent-dark));
+  color:#fff;
+  padding:12px 16px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  box-shadow:0 6px 18px rgba(0,0,0,0.08);
+  position:sticky;top:0;z-index:60;
+}
+.titleWrap{display:flex;align-items:center;gap:12px;min-width:0}
+h1{font-size:18px;margin:0;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.headerStatus{display:flex;gap:10px;align-items:center;font-weight:700}
+.statusMini{display:flex;align-items:center;gap:6px;font-size:10px;color:#eafaf0}
+.dot{width:var(--dot-size);height:var(--dot-size);border-radius:999px;background:#d9534f;box-shadow:0 2px 6px rgba(0,0,0,0.08)}
+.dot.green{background:#2fb86a}
+
+/* Tree area */
 .treeWrap{position:relative;border-radius:10px;padding:10px;background:linear-gradient(180deg,#fff,#fbfff9);border:1px dashed #e6efe6}
-.treeCanvas{width:100%;height:520px;border-radius:8px;background:linear-gradient(180deg,#fff,#f7fff8);overflow:hidden;position:relative}
-#minimap{position:absolute;right:12px;bottom:12px;width:160px;height:110px;border-radius:8px;background:rgba(255,255,255,0.95);padding:6px;font-size:12px;z-index:40}
+.treeCanvas{width:100%;height:520px;border-radius:8px;background:linear-gradient(180deg,#ffffff,#f7fff8);overflow:hidden;position:relative}
+
+/* minimap */
+#minimap{position:absolute;right:12px;bottom:12px;width:160px;height:110px;border-radius:8px;background:rgba(255,255,255,0.95);box-shadow:0 6px 18px rgba(0,0,0,0.08);padding:6px;font-size:12px;z-index:40}
+#minimap svg{width:100%;height:100%}
+
+/* node styles */
+.node circle{stroke:var(--accent);stroke-width:1.2}
+.node text{fill:#0f4f36;font-weight:700;pointer-events:none}
+.link{fill:none;stroke:#cfeee0;stroke-width:1.6}
 
 /* controls */
 .btn{background:var(--accent);color:#fff;border:none;padding:8px 10px;border-radius:8px;font-weight:800;cursor:pointer}
 .btn.ghost{background:#fff;color:var(--accent);border:2px solid var(--accent)}
 .small{padding:6px 8px;font-size:13px}
 
+/* search */
+.searchWrap{display:flex;gap:8px;align-items:center}
+.searchWrap input{padding:8px;border-radius:8px;border:1px solid #e6efe8;min-width:220px}
+
 /* forms */
 .formGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.formFull{display:block;margin-top:8px}
 label{display:block;font-weight:700;margin-bottom:6px}
-input[type="text"],textarea,select{width:100%;padding:10px;border-radius:8px;border:1px solid #e6efe8;background:linear-gradient(180deg,#fff,#fbfffb);font-size:14px}
+input[type="text"], textarea, select{width:100%;padding:10px;border-radius:8px;border:1px solid #e6efe8;background:linear-gradient(180deg,#fff,#fbfffb);font-size:14px}
 textarea{min-height:72px;resize:vertical}
 .fileThumb{width:72px;height:72px;border-radius:8px;border:1px solid #eef6ef;display:flex;align-items:center;justify-content:center;overflow:hidden}
 
-/* nav & toast */
-.bottomNav{position:fixed;left:0;right:0;bottom:0;height:var(--nav-height);background:linear-gradient(180deg,#fff,#f6fff6);border-top:1px solid #e9f3ea;display:flex;align-items:center;justify-content:space-around;z-index:80;padding:8px 12px;box-shadow:0 -6px 20px rgba(10,30,20,0.03)}
+/* toast */
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--nav-height) + 18px);background:var(--toast-bg);color:#fff;padding:12px 18px;border-radius:12px;font-weight:700;box-shadow:0 10px 30px rgba(0,0,0,0.25);z-index:200;opacity:0;transition:opacity .25s ease, transform .25s ease}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(-6px)}
+
+/* bottom nav */
+.bottomNav{position:fixed;left:0;right:0;bottom:0;height:var(--nav-height);background:linear-gradient(180deg,#ffffff,#f6fff6);border-top:1px solid #e9f3ea;display:flex;align-items:center;justify-content:space-around;z-index:120;padding:8px 12px;box-shadow:0 -6px 20px rgba(10,30,20,0.03)}
 .navBtn{flex:1;text-align:center;color:#3b6b52;font-weight:800;cursor:pointer;padding:8px 6px;text-decoration:none;display:block}
 .navBtn.active{color:var(--accent-dark)}
 .navIcon{display:block;font-size:20px;margin-bottom:6px}
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--nav-height)+18px);background:var(--toast-bg);color:#fff;padding:12px 18px;border-radius:12px;font-weight:700;box-shadow:0 10px 30px rgba(0,0,0,0.25);z-index:200;opacity:0;transition:opacity .25s,transform .25s}
-.toast.show{opacity:1;transform:translateX(-50%) translateY(-6px)}
 
 /* misc */
 .syncLog{max-height:160px;overflow:auto;border-radius:8px;padding:8px;background:#fbfff9;border:1px solid #eef6ef;font-size:13px}
 .debug{display:none;background:#0f2b1f;color:#dff6e9;padding:10px;border-radius:8px;margin-top:8px}
 
-/* responsive */
-@media (max-width:900px){ .formGrid{grid-template-columns:1fr} .treeCanvas{height:420px} #minimap{width:120px;height:90px} }
+/* Tree controls responsive: allow wrap and avoid cutoff */
+#treeControls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;width:100%;box-sizing:border-box;padding-right:12px}
+#treeControls .leftControls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+#treeControls .rightControls{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+#resetView{min-width:64px}
 
-/* CSS fallback for tabs (works without JS) */
-section.card{display:none}
-#pageHome{display:block}
-section.card:target{display:block}
+/* ensure last content not hidden behind nav */
+.card:last-child{margin-bottom:calc(var(--nav-height) + 28px)}
+
+/* responsive tweaks */
+@media (max-width:900px){
+  .formGrid{grid-template-columns:1fr}
+  .treeCanvas{height:420px}
+  #minimap{width:120px;height:90px}
+  #treeControls input{min-width:140px}
+}
 </style>
 </head>
 <body>
-<header style="background:linear-gradient(90deg,var(--accent),var(--accent-dark));color:#fff;padding:12px 16px;position:sticky;top:0;z-index:60;box-shadow:0 6px 18px rgba(0,0,0,0.08)">
-  <div style="display:flex;align-items:center;gap:12px">
-    <svg width="36" height="36" viewBox="0 0 24 24" style="flex:0 0 36px"><path fill="#fff" d="M12 2C9.8 2 7.8 3 6.6 4.6C5.4 6.2 5 8.2 5.2 10.2C6 18 12 22 12 22s6-4 6.8-11.8c.2-2-0.2-4-1.4-5.6C16.2 3 14.2 2 12 2z"/></svg>
-    <h1 style="font-size:18px;margin:0;font-weight:800">Exploration of the Nature by Jeffrey</h1>
+<header>
+  <div class="titleWrap">
+    <svg width="36" height="36" viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M12 2C9.8 2 7.8 3 6.6 4.6C5.4 6.2 5 8.2 5.2 10.2C6 18 12 22 12 22s6-4 6.8-11.8c.2-2-0.2-4-1.4-5.6C16.2 3 14.2 2 12 2z"/></svg>
+    <h1>Exploration of the Nature by Jeffrey</h1>
   </div>
-  <div style="display:flex;gap:10px;align-items:center">
-    <div style="display:flex;align-items:center;gap:6px;font-size:12px"><div id="signedDot" style="width:9px;height:9px;border-radius:999px;background:#d9534f"></div><span style="color:#eafaf0;font-weight:700">Sign</span></div>
-    <div style="display:flex;align-items:center;gap:6px;font-size:12px"><div id="syncDot" style="width:9px;height:9px;border-radius:999px;background:#d9534f"></div><span style="color:#eafaf0;font-weight:700">Sync</span></div>
+  <div class="headerStatus">
+    <div class="statusMini"><div id="signedDot" class="dot"></div><span>Sign</span></div>
+    <div class="statusMini"><div id="syncDot" class="dot"></div><span>Sync</span></div>
   </div>
 </header>
 
 <div class="container">
   <!-- Add / Save Record -->
-  <section id="pageAdd" class="card">
-    <div class="sectionTitle">Add / Save Species Record</div>
+  <section id="pageAdd" class="card" aria-labelledby="addTitle">
+    <div class="sectionTitle" id="addTitle">Add / Save Species Record</div>
+
     <div class="formFull">
-      <label>Scientific name<input id="speciesName" type="text" placeholder="e.g. Formica rufa"></label>
-      <label style="margin-top:8px">Common name<input id="commonName" type="text" placeholder="e.g. Red wood ant"></label>
+      <label>Scientific name
+        <input id="speciesName" type="text" placeholder="e.g. Formica rufa" autocomplete="off">
+      </label>
+
+      <label style="margin-top:8px">Common name
+        <input id="commonName" type="text" placeholder="e.g. Red wood ant" autocomplete="off">
+      </label>
 
       <div class="formGrid" style="margin-top:10px">
         <label>Kingdom <input id="taxKingdom" placeholder="Kingdom"></label>
@@ -96,13 +152,21 @@ section.card:target{display:block}
       </div>
 
       <div style="margin-top:10px">
-        <label>Location<input id="locationInput" placeholder="Where observed (e.g. park, coordinates)"></label>
-        <label style="margin-top:8px">Behaviours<textarea id="behaviourInput" placeholder="Observed behaviours (e.g. feeding, nesting)"></textarea></label>
-        <label style="margin-top:8px">Other notes<textarea id="otherNotesInput" placeholder="Other notes"></textarea></label>
+        <label>Location
+          <input id="locationInput" placeholder="Where observed (e.g. park, coordinates)">
+        </label>
+        <label style="margin-top:8px">Behaviours
+          <textarea id="behaviourInput" placeholder="Observed behaviours (e.g. feeding, nesting)"></textarea>
+        </label>
+        <label style="margin-top:8px">Other notes
+          <textarea id="otherNotesInput" placeholder="Other notes"></textarea>
+        </label>
       </div>
 
       <div style="margin-top:8px">
-        <label>Upload images (multiple)<input id="speciesImages" type="file" accept="image/*" multiple></label>
+        <label>Upload images (multiple)
+          <input id="speciesImages" type="file" accept="image/*" multiple>
+        </label>
         <div id="thumbs" style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"></div>
       </div>
 
@@ -113,35 +177,40 @@ section.card:target{display:block}
     </div>
   </section>
 
-  <!-- Tree -->
-  <section id="pageHome" class="card">
-    <div class="sectionTitle">Taxonomy Tree</div>
-    <div id="treeControls" style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
-      <div style="display:flex;gap:8px;align-items:center">
-        <input id="treeSearch" placeholder="Search species or taxonomy" style="padding:8px;border-radius:8px;border:1px solid #e6efe8">
-        <button id="searchBtn" class="btn small">Search</button>
-        <button id="clearSearch" class="btn small ghost">Clear</button>
+  <!-- Tree (Home only) -->
+  <section id="pageHome" class="card" aria-labelledby="homeTitle">
+    <div class="sectionTitle" id="homeTitle">Taxonomy Tree</div>
+
+    <div id="treeControls">
+      <div class="leftControls">
+        <div class="searchWrap">
+          <input id="treeSearch" placeholder="Search species or taxonomy" aria-label="Search taxonomy">
+          <button id="searchBtn" class="btn small">Search</button>
+          <button id="clearSearch" class="btn small ghost">Clear</button>
+        </div>
       </div>
-      <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
-        <button id="zoomIn" class="btn small">＋</button>
-        <button id="zoomOut" class="btn small">－</button>
-        <button id="resetView" class="btn small ghost">Reset</button>
+
+      <div class="rightControls">
+        <button id="zoomIn" class="btn small" title="Zoom in">＋</button>
+        <button id="zoomOut" class="btn small" title="Zoom out">－</button>
+        <!-- Move reset to rightControls but ensure min-width and wrap allowed -->
+        <button id="resetView" class="btn small ghost" title="Reset view">Reset</button>
       </div>
     </div>
 
     <div class="treeWrap">
-      <div class="treeCanvas">
-        <svg id="treeSvg" width="100%" height="520" style="touch-action:none"></svg>
+      <div class="treeCanvas" id="treeCanvas">
+        <svg id="treeSvg" width="100%" height="520" style="touch-action: none;"></svg>
         <div id="minimap" aria-hidden="true"><div style="font-weight:700;margin-bottom:6px">Overview</div><svg id="miniSvg"></svg></div>
       </div>
     </div>
   </section>
 
   <!-- Browse -->
-  <section id="pageBrowse" class="card">
-    <div class="sectionTitle">Search / List Records</div>
+  <section id="pageBrowse" class="card" aria-labelledby="browseTitle">
+    <div class="sectionTitle" id="browseTitle">Search / List Records</div>
     <div style="display:flex;gap:8px;align-items:center">
-      <input id="searchQuery" type="text" placeholder="Search by name or keyword" style="padding:8px;border-radius:8px;border:1px solid #e6efe8">
+      <input id="searchQuery" type="text" placeholder="Search by name or keyword">
       <button id="searchBtnLocal" class="btn small">Search</button>
       <button id="listBtn" class="btn small ghost">List recent 50</button>
     </div>
@@ -154,8 +223,9 @@ section.card:target{display:block}
   </section>
 
   <!-- Settings -->
-  <section id="pageSettings" class="card">
-    <div class="sectionTitle">Settings</div>
+  <section id="pageSettings" class="card" aria-labelledby="settingsTitle">
+    <div class="sectionTitle" id="settingsTitle">Settings</div>
+
     <div style="display:flex;flex-direction:column;gap:10px">
       <div style="font-weight:700;color:#145a3f">Account</div>
       <div style="display:flex;gap:8px">
@@ -193,15 +263,13 @@ section.card:target{display:block}
 
 <script>
 /* =========================
-   PWA manifest & service worker (dynamic)
+   Minimal PWA manifest + service worker registration
+   (keeps app-like behavior when added to home screen)
    ========================= */
-(function createManifestAndSW(){
+(function setupPWA(){
   try{
-    // create a simple SVG icon data URL for manifest icons
     const svgIcon = encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192"><rect width="100%" height="100%" rx="32" fill="#2fb86a"/><path d="M96 28c-18 0-34 10-42 26 0 0 18 6 42 6s42-6 42-6c-8-16-24-26-42-26zM60 120c10-18 36-18 48 0 12-18 38-18 48 0 0 28-48 56-48 56s-48-28-48-56z" fill="#fff"/></svg>');
     const iconData = 'data:image/svg+xml;charset=utf-8,' + svgIcon;
-
-    // create manifest blob and link
     const manifest = {
       name: "Exploration of the Nature",
       short_name: "Nature",
@@ -209,37 +277,21 @@ section.card:target{display:block}
       display: "standalone",
       background_color: "#ffffff",
       theme_color: "#2fb86a",
-      icons: [
-        { src: iconData, sizes: "192x192", type: "image/svg+xml" },
-        { src: iconData, sizes: "512x512", type: "image/svg+xml" }
-      ]
+      icons: [{ src: iconData, sizes: "192x192", type: "image/svg+xml" }, { src: iconData, sizes: "512x512", type: "image/svg+xml" }]
     };
-    const manifestBlob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
-    const manifestURL = URL.createObjectURL(manifestBlob);
-    const link = document.createElement('link');
-    link.rel = 'manifest';
-    link.href = manifestURL;
-    document.head.appendChild(link);
+    const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('link'); link.rel = 'manifest'; link.href = url; document.head.appendChild(link);
+    const apple = document.createElement('link'); apple.rel = 'apple-touch-icon'; apple.href = iconData; document.head.appendChild(apple);
 
-    // apple touch icon
-    const apple = document.createElement('link');
-    apple.rel = 'apple-touch-icon';
-    apple.href = iconData;
-    document.head.appendChild(apple);
-
-    // register a simple service worker via blob
     if('serviceWorker' in navigator){
       const swCode = `
         const CACHE_NAME = 'exploration-cache-v1';
         const CORE = ['/', location.pathname, location.href];
-        self.addEventListener('install', e => {
-          self.skipWaiting();
-          e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(CORE)).catch(()=>{}));
-        });
+        self.addEventListener('install', e => { self.skipWaiting(); e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(CORE)).catch(()=>{})); });
         self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
         self.addEventListener('fetch', e => {
           const url = new URL(e.request.url);
-          // try network first for API/Drive calls, else cache-first
           if(url.origin !== location.origin){
             return e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));
           }
@@ -252,20 +304,16 @@ section.card:target{display:block}
           }).catch(()=>caches.match('/'))));
         });
       `;
-      const swBlob = new Blob([swCode], {type:'application/javascript'});
+      const swBlob = new Blob([swCode], { type: 'application/javascript' });
       const swUrl = URL.createObjectURL(swBlob);
       navigator.serviceWorker.register(swUrl).catch(()=>{});
     }
-  }catch(e){
-    console.warn('PWA setup failed', e);
-  }
+  }catch(e){ console.warn('PWA setup failed', e); }
 })();
 
 /* =========================
-   App core: robust initialization
+   Storage and IndexedDB helpers
    ========================= */
-
-/* --- storage & idb helpers --- */
 const LOCAL_KEY = 'exploration_records_v1';
 const SYNC_QUEUE_KEY = 'exploration_sync_queue_v1';
 const DB_NAME = 'exploration_images_db_v1';
@@ -274,11 +322,8 @@ let dbPromise = null;
 function openDb(){
   if(dbPromise) return dbPromise;
   dbPromise = new Promise((resolve,reject)=>{
-    const req = indexedDB.open(DB_NAME,1);
-    req.onupgradeneeded = e => {
-      const db = e.target.result;
-      if(!db.objectStoreNames.contains(DB_STORE)) db.createObjectStore(DB_STORE,{keyPath:'id'});
-    };
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = (e)=>{ const db = e.target.result; if(!db.objectStoreNames.contains(DB_STORE)) db.createObjectStore(DB_STORE, { keyPath: 'id' }); };
     req.onsuccess = ()=> resolve(req.result);
     req.onerror = ()=> reject(req.error);
   });
@@ -286,29 +331,29 @@ function openDb(){
 }
 async function idbPut(id, blob){
   const db = await openDb();
-  return new Promise((res,rej)=>{
-    const tx = db.transaction(DB_STORE,'readwrite');
-    tx.objectStore(DB_STORE).put({id,blob});
-    tx.oncomplete = ()=> res(true);
-    tx.onerror = ()=> rej(tx.error);
+  return new Promise((resolve,reject)=>{
+    const tx = db.transaction(DB_STORE, 'readwrite');
+    tx.objectStore(DB_STORE).put({ id, blob });
+    tx.oncomplete = ()=> resolve(true);
+    tx.onerror = ()=> reject(tx.error);
   });
 }
 async function idbGet(id){
   const db = await openDb();
-  return new Promise((res,rej)=>{
-    const tx = db.transaction(DB_STORE,'readonly');
+  return new Promise((resolve,reject)=>{
+    const tx = db.transaction(DB_STORE, 'readonly');
     const r = tx.objectStore(DB_STORE).get(id);
-    r.onsuccess = ()=> res(r.result ? r.result.blob : null);
-    r.onerror = ()=> rej(r.error);
+    r.onsuccess = ()=> resolve(r.result ? r.result.blob : null);
+    r.onerror = ()=> reject(r.error);
   });
 }
 async function idbDelete(id){
   const db = await openDb();
-  return new Promise((res,rej)=>{
-    const tx = db.transaction(DB_STORE,'readwrite');
+  return new Promise((resolve,reject)=>{
+    const tx = db.transaction(DB_STORE, 'readwrite');
     tx.objectStore(DB_STORE).delete(id);
-    tx.oncomplete = ()=> res(true);
-    tx.onerror = ()=> rej(tx.error);
+    tx.oncomplete = ()=> resolve(true);
+    tx.onerror = ()=> reject(tx.error);
   });
 }
 function readLocalRecords(){ try{ return JSON.parse(localStorage.getItem(LOCAL_KEY) || '[]'); }catch(e){ return []; } }
@@ -316,33 +361,39 @@ function writeLocalRecords(arr){ localStorage.setItem(LOCAL_KEY, JSON.stringify(
 function readSyncQueue(){ try{ return JSON.parse(localStorage.getItem(SYNC_QUEUE_KEY) || '[]'); }catch(e){ return []; } }
 function writeSyncQueue(q){ localStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify(q)); }
 
-/* --- UI helpers --- */
+/* =========================
+   UI helpers
+   ========================= */
 const toastEl = document.getElementById('toast');
 const loginDebug = document.getElementById('loginDebug');
 const syncLogEl = document.getElementById('syncLog');
 const signedDot = document.getElementById('signedDot');
 const syncDot = document.getElementById('syncDot');
 function showToast(msg, s=3){ toastEl.innerText = msg; toastEl.classList.add('show'); clearTimeout(toastEl._t); toastEl._t=setTimeout(()=>toastEl.classList.remove('show'), s*1000); }
-function appendSyncLog(line){ const now=new Date().toLocaleString(); const entry = now + ' — ' + line; const prev = syncLogEl.dataset.log ? JSON.parse(syncLogEl.dataset.log) : []; prev.push(entry); syncLogEl.dataset.log = JSON.stringify(prev); syncLogEl.innerHTML = prev.slice().reverse().map(l=>`<div>${escapeHtml(l)}</div>`).join(''); }
+function appendSyncLog(line){ const now=new Date().toLocaleString(); const entry = `${now} — ${line}`; const prev = syncLogEl.dataset.log ? JSON.parse(syncLogEl.dataset.log) : []; prev.push(entry); syncLogEl.dataset.log = JSON.stringify(prev); syncLogEl.innerHTML = prev.slice().reverse().map(l=>`<div>${escapeHtml(l)}</div>`).join(''); }
 function escapeHtml(s){ return (s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
 function setSignedState(ok){ signedDot.style.background = ok ? '#2fb86a' : '#d9534f'; }
 function setSyncState(ok){ syncDot.style.background = ok ? '#2fb86a' : '#d9534f'; }
 
-/* --- image compression --- */
-async function compressImageFile(file, maxDim=1200, quality=0.75){
+/* =========================
+   Image compression
+   ========================= */
+async function compressImageFile(file, maxDim = 1200, quality = 0.75){
   return new Promise((resolve,reject)=>{
-    const fr = new FileReader();
     const img = new Image();
+    const fr = new FileReader();
     fr.onload = ()=> img.src = fr.result;
     fr.onerror = ()=> reject(fr.error);
     img.onload = ()=>{
       const w = img.width, h = img.height;
       let nw = w, nh = h;
       if(Math.max(w,h) > maxDim){
-        if(w>h){ nw = maxDim; nh = Math.round(h*(maxDim/w)); } else { nh = maxDim; nw = Math.round(w*(maxDim/h)); }
+        if(w > h){ nw = maxDim; nh = Math.round(h * (maxDim / w)); } else { nh = maxDim; nw = Math.round(w * (maxDim / h)); }
       }
-      const canvas = document.createElement('canvas'); canvas.width = nw; canvas.height = nh;
-      const ctx = canvas.getContext('2d'); ctx.drawImage(img,0,0,nw,nh);
+      const canvas = document.createElement('canvas');
+      canvas.width = nw; canvas.height = nh;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img,0,0,nw,nh);
       canvas.toBlob(blob => resolve(blob), 'image/jpeg', quality);
     };
     img.onerror = ()=> reject(new Error('Image load error'));
@@ -350,7 +401,9 @@ async function compressImageFile(file, maxDim=1200, quality=0.75){
   });
 }
 
-/* --- Drive helpers (GSI) --- */
+/* =========================
+   Google Drive helpers (GSI)
+   ========================= */
 const CLIENT_ID = "58009415485-8qvhrvbasmrq5ugms01dv8vt7pneen6u.apps.googleusercontent.com";
 const SCOPES = "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive";
 let tokenClient = null, accessToken = null, cachedFolderId = null;
@@ -362,27 +415,28 @@ async function waitForGISReady(timeout=4000){
 }
 async function initTokenClient(){
   const ready = await waitForGISReady(5000);
-  if(!ready){ showDebug('GSI not ready'); setSignedState(false); setSyncState(false); return false; }
+  if(!ready){ showDebug('Google Identity not ready'); setSignedState(false); setSyncState(false); return false; }
   tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: CLIENT_ID,
     scope: SCOPES,
     callback: (resp) => {
-      if(resp && resp.access_token){ accessToken = resp.access_token; setSignedState(true); hideDebug(); ensureFolderAndStartSync().catch(e=>{ showDebug('Folder error: '+(e.message||e)); setSyncState(false); }); }
+      if(resp && resp.access_token){ accessToken = resp.access_token; setSignedState(true); hideDebug(); ensureFolderAndStartSync().catch(e=>{ showDebug('Folder error: '+(e && e.message? e.message: e)); setSyncState(false); }); }
       else { showDebug('Token error'); setSignedState(false); setSyncState(false); }
     }
   });
   return true;
 }
-function showDebug(text){ loginDebug.style.display='block'; loginDebug.innerText = text; }
-function hideDebug(){ loginDebug.style.display='none'; loginDebug.innerText = ''; }
-async function driveFetch(url, opts={}){
-  if(!accessToken) throw new Error('Sign in first');
-  opts.headers = opts.headers || {}; opts.headers['Authorization'] = 'Bearer ' + accessToken;
+function showDebug(text){ loginDebug.style.display='block'; loginDebug.innerText=text; }
+function hideDebug(){ loginDebug.style.display='none'; loginDebug.innerText=''; }
+async function driveFetch(url, opts = {}){
+  if(!accessToken) throw new Error("Please sign in and grant Drive access first.");
+  opts.headers = opts.headers || {};
+  opts.headers["Authorization"] = "Bearer " + accessToken;
   const res = await fetch(url, opts);
-  if(!res.ok){ const txt = await res.text(); throw new Error('Drive API error: '+res.status+' '+txt); }
+  if(!res.ok){ const txt = await res.text(); throw new Error("Drive API error: " + res.status + " " + txt); }
   return res;
 }
-async function driveFetchJson(url, opts={}){ const r = await driveFetch(url, opts); return r.json(); }
+async function driveFetchJson(url, opts = {}){ const res = await driveFetch(url, opts); return res.json(); }
 async function getOrCreateFolderId(folderName){
   if(cachedFolderId) return cachedFolderId;
   const q = `mimeType='application/vnd.google-apps.folder' and name='${folderName.replace("'", "\\'")}' and trashed=false`;
@@ -390,23 +444,27 @@ async function getOrCreateFolderId(folderName){
   const res = await driveFetchJson(url);
   if(res.files && res.files.length){ cachedFolderId = res.files[0].id; return cachedFolderId; }
   const metadata = { name: folderName, mimeType: "application/vnd.google-apps.folder" };
-  const createRes = await fetch("https://www.googleapis.com/drive/v3/files", { method:'POST', headers:{'Authorization':'Bearer '+accessToken,'Content-Type':'application/json'}, body: JSON.stringify(metadata) });
-  if(!createRes.ok){ const txt = await createRes.text(); throw new Error('Create folder failed: '+createRes.status+' '+txt); }
+  const createRes = await fetch("https://www.googleapis.com/drive/v3/files", { method: "POST", headers: { "Authorization": "Bearer " + accessToken, "Content-Type": "application/json" }, body: JSON.stringify(metadata) });
+  if(!createRes.ok){ const txt = await createRes.text(); throw new Error("Create folder failed: " + createRes.status + " " + txt); }
   const j = await createRes.json(); cachedFolderId = j.id; return cachedFolderId;
 }
 async function uploadImageBlobToFolder(blob, nameHint, folderId){
   const meta = { name: nameHint, mimeType: blob.type, parents: folderId ? [folderId] : undefined };
-  const form = new FormData(); form.append('metadata', new Blob([JSON.stringify(meta)],{type:'application/json'})); form.append('file', blob);
-  const r = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', { method:'POST', headers:{'Authorization':'Bearer '+accessToken}, body: form });
-  if(!r.ok){ const txt = await r.text(); throw new Error('Upload image failed: '+r.status+' '+txt); }
+  const form = new FormData();
+  form.append("metadata", new Blob([JSON.stringify(meta)], { type: "application/json" }));
+  form.append("file", blob);
+  const r = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", { method: "POST", headers: { "Authorization": "Bearer " + accessToken }, body: form });
+  if(!r.ok){ const txt = await r.text(); throw new Error("Upload image failed: " + r.status + " " + txt); }
   return r.json();
 }
 async function uploadJsonRecordToFolder(name, obj, folderId){
-  const metadata = { name: name + '.json', mimeType: 'application/json', parents: folderId ? [folderId] : undefined };
-  const blob = new Blob([JSON.stringify(obj)], { type: 'application/json' });
-  const form = new FormData(); form.append('metadata', new Blob([JSON.stringify(metadata)],{type:'application/json'})); form.append('file', blob);
-  const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', { method:'POST', headers:{'Authorization':'Bearer '+accessToken}, body: form });
-  if(!res.ok){ const txt = await res.text(); throw new Error('Upload JSON failed: '+res.status+' '+txt); }
+  const metadata = { name: name + ".json", mimeType: "application/json", parents: folderId ? [folderId] : undefined };
+  const blob = new Blob([JSON.stringify(obj)], { type: "application/json" });
+  const form = new FormData();
+  form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
+  form.append("file", blob);
+  const res = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", { method: "POST", headers: { "Authorization": "Bearer " + accessToken }, body: form });
+  if(!res.ok){ const txt = await res.text(); throw new Error("Upload JSON failed: " + res.status + " " + txt); }
   return res.json();
 }
 
@@ -432,14 +490,14 @@ async function attemptSyncQueue(){
     try{
       const local = readLocalRecords();
       const rec = local.find(r=>r.id===recId);
-      if(!rec){ const q = readSyncQueue().filter(x=>x!==recId); writeSyncQueue(q); appendSyncLog('Removed missing record '+recId); continue; }
-      appendSyncLog('Uploading '+rec.id+' ('+rec.scientificName+')');
+      if(!rec){ const q = readSyncQueue().filter(x=>x!==recId); writeSyncQueue(q); appendSyncLog(`Removed missing record ${recId} from queue`); continue; }
+      appendSyncLog(`Uploading ${rec.id} (${rec.scientificName})`);
       const folderId = await getOrCreateFolderId('EcologyApp_Records');
       const imageRefs = [];
       for(let i=0;i<(rec.images||[]).length;i++){
         const imRef = rec.images[i];
         const blob = await idbGet(imRef.id);
-        if(!blob){ appendSyncLog('Image '+imRef.id+' missing'); continue; }
+        if(!blob){ appendSyncLog(`Image ${imRef.id} missing in IndexedDB`); continue; }
         const up = await uploadImageBlobToFolder(blob, `${rec.scientificName}_img_${Date.now()}_${i}.${(imRef.name||'').split('.').pop()}`, folderId);
         imageRefs.push({ id: up.id, name: up.name, mimeType: up.mimeType });
         await idbDelete(imRef.id);
@@ -454,8 +512,8 @@ async function attemptSyncQueue(){
       refreshSpeciesCount();
       renderTree();
     }catch(e){
-      appendSyncLog('Sync failed for '+recId+': '+(e && e.message ? e.message : String(e)));
-      showDebug('Sync error: '+(e && e.message ? e.message : String(e)));
+      appendSyncLog(`Sync failed for ${recId}: ${(e && e.message) ? e.message : String(e)}`);
+      showDebug('Sync error:\n' + (e && e.message ? e.message : String(e)));
       setSyncState(false);
       return;
     }
@@ -468,36 +526,65 @@ document.getElementById('exportLocalBtn').addEventListener('click', ()=>{
   const data = JSON.stringify(readLocalRecords(), null, 2);
   const blob = new Blob([data], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = `exploration_records_${new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')}.json`;
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `exploration_records_${new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')}.json`;
   document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
   showToast('Local JSON exported', 3);
 });
 
-/* ---------- Browse / List / Viewer ---------- */
-function listLocalRecords(){ const records = readLocalRecords(); renderSearchResults(records.slice().reverse().slice(0,50)); }
+/* ---------- Browse / List local records ---------- */
+function listLocalRecords(){
+  const records = readLocalRecords();
+  renderSearchResults(records.slice().reverse().slice(0,50));
+}
 function renderSearchResults(records){
   const el = document.getElementById('searchResult'); el.innerHTML = '';
   if(!records.length){ el.innerText = 'No local records'; return; }
   records.forEach(r=>{
-    const div = document.createElement('div'); div.className='card'; div.style.marginBottom='8px';
+    const div = document.createElement('div'); div.className='card';
+    div.style.marginBottom='8px';
     div.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:800">${escapeHtml(r.scientificName||'Unnamed')}</div><div style="color:#6b6b6b">${escapeHtml(r.commonName||'')}</div><div style="color:#6b6b6b;font-size:13px">${(r.taxonomy||[]).join(' › ')}</div></div><div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end"><div style="font-size:12px;color:#999">${new Date(r.createdAt).toLocaleString()}</div><div style="display:flex;gap:6px;margin-top:6px"><button class="btn small" data-action="edit" data-id="${r.id}">Edit</button><button class="btn small ghost" data-action="delete" data-id="${r.id}">Delete</button></div></div></div>`;
     el.appendChild(div);
   });
-  el.querySelectorAll('button[data-action="edit"]').forEach(b=> b.addEventListener('click', e=>{ startEditRecord(e.currentTarget.dataset.id); location.hash = '#pageAdd'; }));
-  el.querySelectorAll('button[data-action="delete"]').forEach(b=> b.addEventListener('click', e=> confirmAndDeleteRecord(e.currentTarget.dataset.id)));
+
+  el.querySelectorAll('button[data-action="edit"]').forEach(b=>{
+    b.addEventListener('click', (e)=>{
+      const id = e.currentTarget.dataset.id;
+      startEditRecord(id);
+      // ensure view shows top of Add
+      document.getElementById('pageAdd').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+  el.querySelectorAll('button[data-action="delete"]').forEach(b=>{
+    b.addEventListener('click', (e)=>{
+      const id = e.currentTarget.dataset.id;
+      confirmAndDeleteRecord(id);
+    });
+  });
 }
 async function showLocalRecord(id){
-  const records = readLocalRecords(); const r = records.find(x=>x.id===id); if(!r) return alert('Record not found');
+  const records = readLocalRecords();
+  const r = records.find(x=>x.id===id);
+  if(!r) return alert('Record not found');
   const viewer = document.getElementById('recordViewer'); viewer.innerHTML = '';
   const card = document.createElement('div'); card.className='card';
-  card.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:800;color:#145a3f">${escapeHtml(r.scientificName||'Unnamed')}</div><div style="color:#6b6b6b">${escapeHtml(r.commonName||'')}</div><div style="color:#6b6b6b">${(r.taxonomy||[]).join(' › ')}</div></div><div style="font-size:12px;color:#999">${new Date(r.createdAt).toLocaleString()}</div></div><p style="margin-top:8px;color:#333"><strong>Location:</strong> ${escapeHtml(r.location||'')}</p><p style="margin-top:4px;color:#333"><strong>Behaviours:</strong> ${escapeHtml(r.behaviours||'')}</p><p style="margin-top:4px;color:#333"><strong>Other notes:</strong> ${escapeHtml(r.otherNotes||'')}</p>`;
+  card.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:800;color:#145a3f">${escapeHtml(r.scientificName||'Unnamed')}</div><div style="color:#6b6b6b">${escapeHtml(r.commonName||'')}</div><div style="color:#6b6b6b">${(r.taxonomy||[]).join(' › ')}</div></div><div style="font-size:12px;color:#999">${new Date(r.createdAt).toLocaleString()}</div></div>
+    <p style="margin-top:8px;color:#333"><strong>Location:</strong> ${escapeHtml(r.location||'')}</p>
+    <p style="margin-top:4px;color:#333"><strong>Behaviours:</strong> ${escapeHtml(r.behaviours||'')}</p>
+    <p style="margin-top:4px;color:#333"><strong>Other notes:</strong> ${escapeHtml(r.otherNotes||'')}</p>`;
   viewer.appendChild(card);
   if(r.images && r.images.length){
-    const grid = document.createElement('div'); grid.style.display='flex'; grid.style.gap='8px'; grid.style.marginTop='8px';
+    const grid = document.createElement('div'); grid.className='imageGrid'; grid.style.display='flex'; grid.style.gap='8px'; grid.style.marginTop='8px';
     for(const im of r.images){
-      const wrap = document.createElement('div'); wrap.style.width='96px'; wrap.style.height='96px'; wrap.style.borderRadius='8px'; wrap.style.overflow='hidden'; wrap.style.border='1px solid #eef6ef';
-      const imgEl = document.createElement('img'); const blob = await idbGet(im.id);
-      if(blob) imgEl.src = URL.createObjectURL(blob); else imgEl.alt='Image missing';
+      const wrap = document.createElement('div'); wrap.className='thumb'; wrap.style.width='96px'; wrap.style.height='96px'; wrap.style.borderRadius='8px'; wrap.style.overflow='hidden'; wrap.style.border='1px solid #eef6ef';
+      const imgEl = document.createElement('img');
+      const blob = await idbGet(im.id);
+      if(blob){
+        imgEl.src = URL.createObjectURL(blob);
+      } else {
+        imgEl.alt = 'Image missing';
+      }
       imgEl.style.width='100%'; imgEl.style.height='100%'; imgEl.style.objectFit='cover';
       wrap.appendChild(imgEl); grid.appendChild(wrap);
     }
@@ -505,36 +592,229 @@ async function showLocalRecord(id){
   }
 }
 
-/* ---------- Edit / Delete ---------- */
+/* ---------- Edit / Delete helpers ---------- */
 function startEditRecord(id){
-  const records = readLocalRecords(); const r = records.find(x=>x.id===id); if(!r) return showToast('Record not found',2);
-  document.querySelectorAll('section.card').forEach(p=>p.style.display='none'); document.getElementById('pageAdd').style.display='block';
-  document.getElementById('speciesName').value = r.scientificName || ''; document.getElementById('commonName').value = r.commonName || '';
-  document.getElementById('taxKingdom').value = r.taxonomy[0] || ''; document.getElementById('taxPhylum').value = r.taxonomy[1] || '';
-  document.getElementById('taxClass').value = r.taxonomy[2] || ''; document.getElementById('taxOrder').value = r.taxonomy[3] || '';
-  document.getElementById('taxFamily').value = r.taxonomy[4] || ''; document.getElementById('taxGenus').value = r.taxonomy[5] || '';
-  document.getElementById('taxSpecies').value = r.taxonomy[6] || ''; document.getElementById('locationInput').value = r.location || '';
-  document.getElementById('behaviourInput').value = r.behaviours || ''; document.getElementById('otherNotesInput').value = r.otherNotes || '';
+  const records = readLocalRecords();
+  const r = records.find(x=>x.id===id);
+  if(!r) return showToast('Record not found', 2);
+
+  // Switch to Add page
+  document.querySelectorAll('section.card').forEach(p=>p.style.display='none');
+  document.getElementById('pageAdd').style.display='block';
+  document.getElementById('pageAdd').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  // Fill form fields
+  document.getElementById('speciesName').value = r.scientificName || '';
+  document.getElementById('commonName').value = r.commonName || '';
+  document.getElementById('taxKingdom').value = r.taxonomy[0] || '';
+  document.getElementById('taxPhylum').value = r.taxonomy[1] || '';
+  document.getElementById('taxClass').value = r.taxonomy[2] || '';
+  document.getElementById('taxOrder').value = r.taxonomy[3] || '';
+  document.getElementById('taxFamily').value = r.taxonomy[4] || '';
+  document.getElementById('taxGenus').value = r.taxonomy[5] || '';
+  document.getElementById('taxSpecies').value = r.taxonomy[6] || '';
+  document.getElementById('locationInput').value = r.location || '';
+  document.getElementById('behaviourInput').value = r.behaviours || '';
+  document.getElementById('otherNotesInput').value = r.otherNotes || '';
+
+  // show thumbnails from IndexedDB (non-destructive)
   const thumbs = document.getElementById('thumbs'); thumbs.innerHTML = '';
-  (async ()=>{ for(const im of (r.images||[])){ const blob = await idbGet(im.id); const d = document.createElement('div'); d.className='fileThumb'; if(blob){ const url = URL.createObjectURL(blob); const img = document.createElement('img'); img.src = url; img.style.width='100%'; img.style.height='100%'; img.style.objectFit='cover'; d.appendChild(img);} else d.innerText='missing'; thumbs.appendChild(d);} })();
-  document.getElementById('saveBtn').dataset.editing = id; document.getElementById('saveBtn').innerText = 'Save Changes';
-  document.getElementById('saveLocalOnlyBtn').dataset.editing = id; document.getElementById('saveLocalOnlyBtn').innerText = 'Save Local Only (Edit)';
+  (async ()=>{
+    for(const im of (r.images||[])){
+      const blob = await idbGet(im.id);
+      const d = document.createElement('div'); d.className='fileThumb';
+      if(blob){
+        const url = URL.createObjectURL(blob);
+        const img = document.createElement('img'); img.src = url; img.style.width='100%'; img.style.height='100%'; img.style.objectFit='cover';
+        d.appendChild(img);
+      } else {
+        d.innerText = 'missing';
+      }
+      thumbs.appendChild(d);
+    }
+  })();
+
+  // mark form as editing and store editing id
+  document.getElementById('saveBtn').dataset.editing = id;
+  document.getElementById('saveBtn').innerText = 'Save Changes';
+  document.getElementById('saveLocalOnlyBtn').dataset.editing = id;
+  document.getElementById('saveLocalOnlyBtn').innerText = 'Save Local Only (Edit)';
 }
+
 async function confirmAndDeleteRecord(id){
   if(!confirm('Delete this record and its local images? This cannot be undone.')) return;
   try{
-    const records = readLocalRecords(); const rec = records.find(r=>r.id===id); if(!rec){ showToast('Record not found',2); return; }
-    for(const im of (rec.images||[])){ try{ await idbDelete(im.id); }catch(e){} }
-    const updated = records.filter(r=>r.id!==id); writeLocalRecords(updated);
-    const q = readSyncQueue().filter(x=>x!==id); writeSyncQueue(q);
-    appendSyncLog('Deleted record '+id); showToast('Record deleted',2);
-    renderTree(); if(location.hash==='#pageBrowse') listLocalRecords();
-  }catch(e){ showDebug('Delete failed: '+(e && e.message? e.message: e)); showToast('Delete failed',3); }
+    const records = readLocalRecords();
+    const rec = records.find(r=>r.id===id);
+    if(!rec) { showToast('Record not found',2); return; }
+
+    for(const im of (rec.images||[])){
+      try{ await idbDelete(im.id); }catch(e){ /* ignore individual failures */ }
+    }
+
+    const updated = records.filter(r=>r.id!==id);
+    writeLocalRecords(updated);
+
+    const q = readSyncQueue().filter(x=>x!==id);
+    writeSyncQueue(q);
+
+    appendSyncLog(`Deleted record ${id}`);
+    showToast('Record deleted', 2);
+
+    renderTree();
+    if(location.hash==='#pageBrowse') listLocalRecords();
+
+  }catch(e){
+    showDebug('Delete failed:\n' + (e && e.message ? e.message : String(e)));
+    showToast('Delete failed', 3);
+  }
 }
-function clearEditingState(){ delete document.getElementById('saveBtn').dataset.editing; delete document.getElementById('saveLocalOnlyBtn').dataset.editing; document.getElementById('saveBtn').innerText='Save Record'; document.getElementById('saveLocalOnlyBtn').innerText='Save Local Only'; document.getElementById('thumbs').innerHTML=''; }
+
+function clearEditingState(){
+  delete document.getElementById('saveBtn').dataset.editing;
+  delete document.getElementById('saveLocalOnlyBtn').dataset.editing;
+  document.getElementById('saveBtn').innerText = 'Save Record';
+  document.getElementById('saveLocalOnlyBtn').innerText = 'Save Local Only';
+  document.getElementById('thumbs').innerHTML = '';
+}
+
+/* ---------- Save record (offline-first) with edit support ---------- */
+document.getElementById('saveBtn').addEventListener('click', async ()=>{ await saveRecord({ autoUpload: true }); });
+document.getElementById('saveLocalOnlyBtn').addEventListener('click', async ()=>{ await saveRecord({ autoUpload: false }); });
+
+async function saveRecord({ autoUpload = true } = {}){
+  try{
+    const editingId = document.getElementById('saveBtn').dataset.editing || null;
+    const scientific = document.getElementById('speciesName').value.trim();
+    if(!scientific) return alert('Please enter scientific name.');
+    const common = document.getElementById('commonName').value.trim();
+    const taxonomy = [
+      document.getElementById('taxKingdom').value.trim(),
+      document.getElementById('taxPhylum').value.trim(),
+      document.getElementById('taxClass').value.trim(),
+      document.getElementById('taxOrder').value.trim(),
+      document.getElementById('taxFamily').value.trim(),
+      document.getElementById('taxGenus').value.trim(),
+      document.getElementById('taxSpecies').value.trim()
+    ].filter(Boolean);
+    const location = document.getElementById('locationInput').value.trim();
+    const behaviours = document.getElementById('behaviourInput').value.trim();
+    const otherNotes = document.getElementById('otherNotesInput').value.trim();
+    const files = document.getElementById('speciesImages').files;
+
+    const records = readLocalRecords();
+    let record;
+
+    if(editingId){
+      record = records.find(r=>r.id===editingId);
+      if(!record) return alert('Editing record not found');
+      record.scientificName = scientific;
+      record.commonName = common;
+      record.taxonomy = taxonomy;
+      record.location = location;
+      record.behaviours = behaviours;
+      record.otherNotes = otherNotes;
+      record.updatedAt = new Date().toISOString();
+
+      // append new images if any
+      for(let i=0;i<files.length;i++){
+        const f = files[i];
+        const compressedBlob = await compressImageFile(f, 1200, 0.75);
+        const imgId = 'img_' + Date.now() + '_' + i;
+        await idbPut(imgId, compressedBlob);
+        record.images = record.images || [];
+        record.images.push({ id: imgId, name: f.name, type: compressedBlob.type });
+      }
+
+      writeLocalRecords(records);
+      appendSyncLog(`Edited record ${record.id}`);
+      showToast('Record updated locally', 2);
+
+      if(autoUpload){
+        const q = readSyncQueue();
+        if(!q.includes(record.id)){ q.push(record.id); writeSyncQueue(q); appendSyncLog(`Queued edited record ${record.id}`); }
+        if(navigator.onLine && accessToken) attemptSyncQueue();
+      }
+    } else {
+      const imageRefs = [];
+      for(let i=0;i<files.length;i++){
+        const f = files[i];
+        const compressedBlob = await compressImageFile(f, 1200, 0.75);
+        const imgId = 'img_' + Date.now() + '_' + i;
+        await idbPut(imgId, compressedBlob);
+        imageRefs.push({ id: imgId, name: f.name, type: compressedBlob.type });
+      }
+      record = {
+        id: 'rec_' + Date.now(),
+        scientificName: scientific,
+        commonName: common,
+        taxonomy,
+        location,
+        behaviours,
+        otherNotes,
+        images: imageRefs,
+        createdAt: new Date().toISOString(),
+        status: 'pending'
+      };
+      records.push(record);
+      writeLocalRecords(records);
+      if(autoUpload){
+        const q = readSyncQueue(); q.push(record.id); writeSyncQueue(q);
+        appendSyncLog(`Queued record ${record.id} (${record.scientificName})`);
+      } else {
+        appendSyncLog(`Saved local-only record ${record.id}`);
+      }
+      showToast('Saved locally', 2);
+    }
+
+    // reset editing state and UI
+    clearEditingState();
+
+    // clear form fields
+    document.getElementById('speciesName').value = '';
+    document.getElementById('commonName').value = '';
+    document.getElementById('speciesImages').value = '';
+    document.getElementById('locationInput').value = '';
+    document.getElementById('behaviourInput').value = '';
+    document.getElementById('otherNotesInput').value = '';
+    document.getElementById('thumbs').innerHTML = '';
+
+    // refresh UI
+    renderTree();
+    if(location.hash==='#pageBrowse' || document.getElementById('navBrowse').classList.contains('active')) listLocalRecords();
+
+  }catch(e){
+    showDebug('Save failed:\n' + (e && e.message ? e.message : String(e)));
+    showToast('Save failed', 3);
+  }
+}
 
 /* ---------- Tree (D3) top→bottom ---------- */
-const demoData = { name:"Life", children:[{name:"Animalia",children:[{name:"Arthropoda",children:[{name:"Insecta",children:[{name:"Hymenoptera",children:[{name:"Formicidae",children:[{name:"Formica rufa",species:true},{name:"Camponotus",children:[{name:"Camponotus pennsylvanicus",species:true}]}]},{name:"Apidae",children:[{name:"Apis mellifera",species:true}]}]}]}]}]},{name:"Plantae",children:[{name:"Magnoliophyta",children:[{name:"Rosopsida",children:[{name:"Rosales",children:[{name:"Rosaceae",children:[{name:"Rosa",children:[{name:"Rosa rubiginosa",species:true}]}]}]}]}]}]};
+const demoData = {
+  name: "Life",
+  children: [
+    { name: "Animalia", children: [
+      { name: "Arthropoda", children: [
+        { name: "Insecta", children: [
+          { name: "Hymenoptera", children: [
+            { name: "Formicidae", children: [
+              { name: "Formica rufa", species:true },
+              { name: "Camponotus", children: [{name:"Camponotus pennsylvanicus", species:true}] }
+            ]},
+            { name: "Apidae", children: [{name:"Apis mellifera", species:true}]}
+          ]}
+        ]}
+      ]},
+    ]},
+    { name: "Plantae", children: [
+      { name: "Magnoliophyta", children: [
+        { name: "Rosopsida", children: [
+          { name: "Rosales", children: [{ name: "Rosaceae", children: [{ name: "Rosa", children: [{ name: "Rosa rubiginosa", species:true }] }]}]
+        ]}
+      ]}
+    ]}
+  ]
+};
 
 function buildTreeDataFromLocal(){
   const records = readLocalRecords();
@@ -554,93 +834,280 @@ function buildTreeDataFromLocal(){
   return root;
 }
 
-const svg = d3.select('#treeSvg'); const inner = svg.append('g').attr('class','innerGroup'); const miniSvg = d3.select('#miniSvg'); const baseFontSize = 13; const treeLayout = d3.tree();
-let rootData = buildTreeDataFromLocal(); let root = d3.hierarchy(rootData);
-function collapseAll(d, depth=0, maxDepth=2){ if(d.children){ d.children.forEach(c=>collapseAll(c, depth+1, maxDepth)); if(depth>=maxDepth){ d._children = d.children; d.children = null; } } }
-collapseAll(root,0,2);
-function truncate(s,n){ if(!s) return ''; return s.length>n? s.slice(0,n-1)+'…':s; }
+/* D3 top→bottom tree implementation */
+const svg = d3.select('#treeSvg');
+const inner = svg.append('g').attr('class','innerGroup');
+const miniSvg = d3.select('#miniSvg');
+const baseFontSize = 13;
+const treeLayout = d3.tree();
+
+let rootData = buildTreeDataFromLocal();
+let root = d3.hierarchy(rootData);
+
+function collapseAll(d, depth=0, maxDepth=2){
+  if(d.children){
+    d.children.forEach(c=>collapseAll(c, depth+1, maxDepth));
+    if(depth>=maxDepth){ d._children = d.children; d.children = null; }
+  }
+}
+collapseAll(root, 0, 2);
+
+function truncate(str, n){ if(!str) return ''; return str.length>n? str.slice(0,n-1)+'…':str; }
 
 function renderTree(){
   try{
-    rootData = buildTreeDataFromLocal(); root = d3.hierarchy(rootData); collapseAll(root,0,2);
-    const svgW = svg.node().clientWidth; const svgH = +svg.attr('height');
-    treeLayout.size([svgW - 40, svgH - 40]); treeLayout(root);
+    rootData = buildTreeDataFromLocal();
+    root = d3.hierarchy(rootData);
+    collapseAll(root, 0, 2);
+
+    const svgW = svg.node().clientWidth;
+    const svgH = +svg.attr('height');
+    treeLayout.size([svgW - 40, svgH - 40]);
+    treeLayout(root);
+
     const links = inner.selectAll('.link').data(root.links(), d=>d.target.data.name + '_' + d.target.depth);
-    links.join(enter => enter.append('path').attr('class','link').attr('d', d => linkPath(d)), update => update.attr('d', d => linkPath(d)), exit => exit.remove());
+    links.join(
+      enter => enter.append('path').attr('class','link').attr('d', d => linkPath(d)),
+      update => update.attr('d', d => linkPath(d)),
+      exit => exit.remove()
+    );
+
     const nodes = inner.selectAll('.node').data(root.descendants(), d=>d.data.name + '_' + d.depth);
     const nodeEnter = nodes.enter().append('g').attr('class','node').attr('transform', d=>`translate(${d.x},${d.y})`);
     nodeEnter.append('circle').attr('r', d=> d.children || d._children ? 6 : 5).attr('fill', d=> d.children || d._children ? 'var(--accent)' : '#fff').attr('stroke','var(--accent)');
-    nodeEnter.append('text').attr('x',0).attr('y',-10).attr('text-anchor','middle').text(d=>truncate(d.data.name,28)).style('font-size', baseFontSize+'px');
-    nodes.merge(nodeEnter).transition().duration(200).attr('transform', d=>`translate(${d.x},${d.y})`);
-    nodes.select('text').text(d=>truncate(d.data.name,28));
-    inner.selectAll('.node').on('click', (event,d)=>{ event.stopPropagation(); if(d.children){ d._children = d.children; d.children = null; } else { d.children = d._children; d._children = null; } renderTree(); updateMinimap(); if(d.data.species && d.data.recordId){ location.hash = '#pageBrowse'; setTimeout(()=> showLocalRecord(d.data.recordId), 300); } });
-    updateMinimap();
-  }catch(e){ console.warn('renderTree error', e); }
-}
-function linkPath(d){ const x1=d.source.x,y1=d.source.y,x2=d.target.x,y2=d.target.y,midY=(y1+y2)/2; return `M${x1},${y1} C${x1},${midY} ${x2},${midY} ${x2},${y2}`; }
+    nodeEnter.append('text')
+      .attr('x', 0).attr('y', -10)
+      .attr('text-anchor','middle')
+      .text(d => truncate(d.data.name, 28))
+      .attr('title', d => d.data.name)
+      .style('font-size', baseFontSize + 'px');
 
-const zoom = d3.zoom().scaleExtent([0.4,6]).on('zoom', (event)=>{ inner.attr('transform', event.transform); const k = Math.max(0.6, Math.min(2.5, event.transform.k)); svg.selectAll('.node text').style('font-size', (baseFontSize / k) + 'px'); updateMinimapViewport(event.transform); });
-svg.call(zoom).on('dblclick.zoom', null);
-['touchstart','touchmove','touchend','wheel'].forEach(ev=> svg.node().addEventListener(ev, e=> e.stopPropagation(), {passive:false}));
+    nodes.merge(nodeEnter).transition().duration(200).attr('transform', d=>`translate(${d.x},${d.y})`);
+    nodes.select('text').text(d => truncate(d.data.name, 28)).attr('title', d=>d.data.name);
+
+    inner.selectAll('.node').on('click', (event,d) => {
+      event.stopPropagation();
+      if(d.children){ d._children = d.children; d.children = null; }
+      else { d.children = d._children; d._children = null; }
+      renderTree();
+      updateMinimap();
+      if(d.data.species && d.data.recordId){
+        location.hash = '#pageBrowse';
+        setTimeout(()=> showLocalRecord(d.data.recordId), 300);
+      }
+    });
+
+    updateMinimap();
+  }catch(e){
+    console.warn('renderTree error', e);
+  }
+}
+
+function linkPath(d){
+  const x1 = d.source.x, y1 = d.source.y;
+  const x2 = d.target.x, y2 = d.target.y;
+  const midY = (y1 + y2) / 2;
+  return `M${x1},${y1} C${x1},${midY} ${x2},${midY} ${x2},${y2}`;
+}
+
+/* Zoom behavior (tree only) */
+const zoom = d3.zoom()
+  .scaleExtent([0.4, 6])
+  .on('zoom', (event) => {
+    inner.attr('transform', event.transform);
+    const k = Math.max(0.6, Math.min(2.5, event.transform.k));
+    svg.selectAll('.node text').style('font-size', (baseFontSize / k) + 'px');
+    updateMinimapViewport(event.transform);
+  });
+
+svg.call(zoom).on("dblclick.zoom", null);
+['touchstart','touchmove','touchend','wheel'].forEach(ev=>{
+  svg.node().addEventListener(ev, e => { e.stopPropagation(); }, {passive:false});
+});
+
 document.getElementById('zoomIn').addEventListener('click', ()=> svg.transition().call(zoom.scaleBy, 1.2));
 document.getElementById('zoomOut').addEventListener('click', ()=> svg.transition().call(zoom.scaleBy, 1/1.2));
 document.getElementById('resetView').addEventListener('click', ()=> fitToScreen());
-function fitToScreen(){ const nodes = root.descendants(); if(!nodes.length) return; const minX=d3.min(nodes,d=>d.x), maxX=d3.max(nodes,d=>d.x), minY=d3.min(nodes,d=>d.y), maxY=d3.max(nodes,d=>d.y); const contentW=maxX-minX+200, contentH=maxY-minY+200; const svgW=svg.node().clientWidth, svgH=+svg.attr('height'); const scale=Math.min(svgW/contentW, svgH/contentH,1); const tx=(svgW - scale*(minX+maxX))/2; const ty=(svgH - scale*(minY+maxY))/2; const t = d3.zoomIdentity.translate(tx,ty).scale(scale); svg.transition().duration(600).call(zoom.transform, t); }
-function focusNode(d){ const svgW=svg.node().clientWidth, svgH=+svg.attr('height'), scale=1.2, x=d.x, y=d.y, tx=svgW/2 - x*scale, ty=svgH/2 - y*scale; const t = d3.zoomIdentity.translate(tx,ty).scale(scale); svg.transition().duration(600).call(zoom.transform, t); }
-function updateMinimap(){ const nodes = root.descendants(); const maxX=d3.max(nodes,d=>d.x), maxY=d3.max(nodes,d=>d.y), minX=d3.min(nodes,d=>d.x), minY=d3.min(nodes,d=>d.y); miniSvg.attr('viewBox', `${minX} ${minY} ${Math.max(1, maxX-minX)} ${Math.max(1, maxY-minY)}`); miniSvg.selectAll('*').remove(); miniSvg.selectAll('circle').data(nodes).enter().append('circle').attr('cx',d=>d.x).attr('cy',d=>d.y).attr('r',1.2).attr('fill','#cfeee0'); miniSvg.append('rect').attr('id','miniViewport').attr('x',0).attr('y',0).attr('width',10).attr('height',10).attr('fill','rgba(43,184,106,0.12)').attr('stroke','#2fb86a'); updateMinimapViewport(); }
-function updateMinimapViewport(transform){ const t = transform || d3.zoomTransform(svg.node()); const svgW = svg.node().clientWidth, svgH = +svg.attr('height'); const x0 = (0 - t.x)/t.k, y0 = (0 - t.y)/t.k, x1 = (svgW - t.x)/t.k, y1 = (svgH - t.y)/t.k; miniSvg.select('#miniViewport').attr('x', x0).attr('y', y0).attr('width', Math.max(1, x1-x0)).attr('height', Math.max(1, y1-y0)); }
 
-/* ---------- Safe DOMContentLoaded initialization ---------- */
-window.addEventListener('DOMContentLoaded', async () => {
-  // ensure only one section visible (hash or home)
-  try{
-    document.querySelectorAll('section.card').forEach(s=>s.style.display='none');
-    const targetHash = location.hash && document.querySelector(location.hash) ? location.hash : '#pageHome';
-    const targetEl = document.querySelector(targetHash);
-    if(targetEl) targetEl.style.display='block';
-    document.querySelectorAll('.navBtn').forEach(b=>b.classList.remove('active'));
-    const navAnchor = document.querySelector(`a[href="${targetHash}"]`) || document.getElementById('navHome');
-    if(navAnchor) navAnchor.classList.add('active');
-  }catch(e){ console.warn('initial section setup failed', e); }
+function fitToScreen(){
+  const nodes = root.descendants();
+  if(!nodes.length) return;
+  const minX = d3.min(nodes, d=>d.x);
+  const maxX = d3.max(nodes, d=>d.x);
+  const minY = d3.min(nodes, d=>d.y);
+  const maxY = d3.max(nodes, d=>d.y);
+  const contentW = maxX - minX + 200;
+  const contentH = maxY - minY + 200;
+  const svgW = svg.node().clientWidth;
+  const svgH = +svg.attr('height');
+  const scale = Math.min(svgW / contentW, svgH / contentH, 1);
+  const tx = (svgW - scale * (minX + maxX)) / 2;
+  const ty = (svgH - scale * (minY + maxY)) / 2;
+  const t = d3.zoomIdentity.translate(tx, ty).scale(scale);
+  svg.transition().duration(600).call(zoom.transform, t);
+}
 
-  // bind nav anchors
-  document.querySelectorAll('.navBtn').forEach(a=>{
-    a.addEventListener('click', (ev)=>{
-      try{ ev.preventDefault(); }catch(e){}
+function focusNode(d){
+  const svgW = svg.node().clientWidth;
+  const svgH = +svg.attr('height');
+  const scale = 1.2;
+  const x = d.x, y = d.y;
+  const tx = svgW/2 - x*scale;
+  const ty = svgH/2 - y*scale;
+  const t = d3.zoomIdentity.translate(tx, ty).scale(scale);
+  svg.transition().duration(600).call(zoom.transform, t);
+}
+
+/* Minimap */
+function updateMinimap(){
+  const nodes = root.descendants();
+  const maxX = d3.max(nodes, d=>d.x);
+  const maxY = d3.max(nodes, d=>d.y);
+  const minX = d3.min(nodes, d=>d.x);
+  const minY = d3.min(nodes, d=>d.y);
+  miniSvg.attr('viewBox', `${minX} ${minY} ${Math.max(1, maxX-minX)} ${Math.max(1, maxY-minY)}`);
+  miniSvg.selectAll('*').remove();
+  miniSvg.selectAll('circle').data(nodes).enter().append('circle')
+    .attr('cx', d=>d.x).attr('cy', d=>d.y).attr('r', 1.2).attr('fill','#cfeee0');
+  miniSvg.append('rect').attr('id','miniViewport').attr('x',0).attr('y',0).attr('width',10).attr('height',10).attr('fill','rgba(43,184,106,0.12)').attr('stroke','#2fb86a');
+  updateMinimapViewport();
+}
+
+function updateMinimapViewport(transform){
+  const t = transform || d3.zoomTransform(svg.node());
+  const svgW = svg.node().clientWidth;
+  const svgH = +svg.attr('height');
+  const x0 = (0 - t.x) / t.k;
+  const y0 = (0 - t.y) / t.k;
+  const x1 = (svgW - t.x) / t.k;
+  const y1 = (svgH - t.y) / t.k;
+  miniSvg.select('#miniViewport')
+    .attr('x', x0)
+    .attr('y', y0)
+    .attr('width', Math.max(1, x1 - x0))
+    .attr('height', Math.max(1, y1 - y0));
+}
+
+/* ---------- Navigation enhancements (auto-scroll + tree visibility) ---------- */
+(function bindAppNavEnhancements(){
+  const navAnchors = document.querySelectorAll('.navBtn');
+  const treeWrap = document.querySelector('.treeWrap');
+
+  function showSectionByHash(hash) {
+    document.querySelectorAll('section.card').forEach(s => s.style.display = 'none');
+    const target = document.querySelector(hash) || document.getElementById('pageHome');
+    if (target) {
+      target.style.display = 'block';
+      try { target.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch(e) { window.scrollTo({ top: 0, behavior: 'smooth' }); }
+    }
+    navAnchors.forEach(a => a.classList.remove('active'));
+    const active = document.querySelector(`a[href="${hash}"]`) || document.getElementById('navHome');
+    if (active) active.classList.add('active');
+
+    // Tree visibility: only show tree container when Home is visible
+    if (target && target.id === 'pageHome') {
+      if (treeWrap) treeWrap.style.display = '';
+      if (typeof renderTree === 'function') { try { renderTree(); fitToScreen(); } catch (e) { console.warn('renderTree error', e); } }
+    } else {
+      if (treeWrap) treeWrap.style.display = 'none';
+    }
+  }
+
+  const initialHash = location.hash && document.querySelector(location.hash) ? location.hash : '#pageHome';
+  showSectionByHash(initialHash);
+
+  navAnchors.forEach(a => {
+    a.addEventListener('click', (ev) => {
+      ev.preventDefault();
       const href = a.getAttribute('href') || '#pageHome';
-      history.replaceState(null,'',href);
-      document.querySelectorAll('section.card').forEach(s=>s.style.display='none');
-      const el = document.querySelector(href);
-      if(el) el.style.display='block';
-      document.querySelectorAll('.navBtn').forEach(b=>b.classList.remove('active'));
-      a.classList.add('active');
-      if(href === '#pageBrowse') listLocalRecords();
+      history.replaceState(null, '', href);
+      showSectionByHash(href);
+      if (href === '#pageBrowse') listLocalRecords();
     });
   });
 
-  // bind save buttons
-  document.getElementById('saveBtn').addEventListener('click', async ()=>{ await saveRecord({ autoUpload: true }); });
-  document.getElementById('saveLocalOnlyBtn').addEventListener('click', async ()=>{ await saveRecord({ autoUpload: false }); });
+  window.addEventListener('hashchange', () => {
+    const h = location.hash && document.querySelector(location.hash) ? location.hash : '#pageHome';
+    showSectionByHash(h);
+  });
+})();
 
-  // bind other UI
-  document.getElementById('searchBtnLocal').addEventListener('click', ()=>{ const q=document.getElementById('searchQuery').value.trim().toLowerCase(); const records=readLocalRecords(); const results=records.filter(r => (r.scientificName||'').toLowerCase().includes(q) || (r.commonName||'').toLowerCase().includes(q) || (r.taxonomy||[]).join(' ').toLowerCase().includes(q)); renderSearchResults(results); });
+/* ---------- Bind UI handlers after DOM ready ---------- */
+window.addEventListener('DOMContentLoaded', async () => {
+  // Bind search buttons
+  document.getElementById('searchBtnLocal').addEventListener('click', ()=>{
+    const q = document.getElementById('searchQuery').value.trim().toLowerCase();
+    const records = readLocalRecords();
+    const results = records.filter(r => (r.scientificName||'').toLowerCase().includes(q) || (r.commonName||'').toLowerCase().includes(q) || (r.taxonomy||[]).join(' ').toLowerCase().includes(q));
+    renderSearchResults(results);
+  });
   document.getElementById('listBtn').addEventListener('click', listLocalRecords);
-  document.getElementById('searchBtn').addEventListener('click', ()=>{ const q=document.getElementById('treeSearch').value.trim().toLowerCase(); if(!q) return; const found = root.descendants().find(d => (d.data.name||'').toLowerCase().includes(q)); if(found){ let p = found.parent; while(p){ if(p._children){ p.children = p._children; p._children = null; } p = p.parent; } renderTree(); focusNode(found); } else showToast('No match found',2); });
-  document.getElementById('clearSearch').addEventListener('click', ()=> document.getElementById('treeSearch').value = '');
-  document.getElementById('btnSignGrant').addEventListener('click', async ()=>{ if(!tokenClient){ await initTokenClient(); } try{ tokenClient.requestAccessToken({ prompt:'consent' }); }catch(e){ showDebug('Sign error'); } });
-  document.getElementById('btnSignRetry').addEventListener('click', async ()=>{ if(!tokenClient){ await initTokenClient(); } try{ tokenClient.requestAccessToken({ prompt:'consent' }); }catch(e){ showDebug('Retry error'); } });
 
-  // thumbnails preview
-  document.getElementById('speciesImages').addEventListener('change', async (e)=>{ const files = e.target.files; const thumbs = document.getElementById('thumbs'); thumbs.innerHTML=''; for(let i=0;i<files.length;i++){ const f=files[i]; const url = URL.createObjectURL(f); const d=document.createElement('div'); d.className='fileThumb'; const img=document.createElement('img'); img.src=url; img.style.width='100%'; img.style.height='100%'; img.style.objectFit='cover'; d.appendChild(img); thumbs.appendChild(d); } });
+  // Tree search
+  document.getElementById('searchBtn').addEventListener('click', ()=> {
+    const q = document.getElementById('treeSearch').value.trim().toLowerCase();
+    if(!q) return;
+    const found = root.descendants().find(d => (d.data.name||'').toLowerCase().includes(q));
+    if(found){
+      let p = found.parent;
+      while(p){ if(p._children){ p.children = p._children; p._children = null; } p = p.parent; }
+      renderTree();
+      focusNode(found);
+    } else {
+      showToast('No match found', 2);
+    }
+  });
+  document.getElementById('clearSearch').addEventListener('click', ()=> { document.getElementById('treeSearch').value = ''; });
 
-  // safe init externals
+  // Sign buttons
+  document.getElementById('btnSignGrant').addEventListener('click', async () => {
+    if (!tokenClient) { await initTokenClient(); }
+    try { tokenClient.requestAccessToken({ prompt: 'consent' }); } catch (err) { showDebug("Sign & Grant error"); setSignedState(false); setSyncState(false); }
+  });
+  document.getElementById('btnSignRetry').addEventListener('click', async () => {
+    if (!tokenClient) { await initTokenClient(); }
+    try { tokenClient.requestAccessToken({ prompt: 'consent' }); } catch (err) { showDebug("Retry error"); setSignedState(false); setSyncState(false); }
+  });
+
+  // Thumbnails preview
+  document.getElementById('speciesImages').addEventListener('change', async (e)=>{
+    const files = e.target.files;
+    const thumbs = document.getElementById('thumbs');
+    thumbs.innerHTML = '';
+    for(let i=0;i<files.length;i++){
+      const f = files[i];
+      const url = URL.createObjectURL(f);
+      const d = document.createElement('div'); d.className='fileThumb';
+      const img = document.createElement('img'); img.src = url; img.style.width='100%'; img.style.height='100%'; img.style.objectFit='cover';
+      d.appendChild(img); thumbs.appendChild(d);
+    }
+  });
+
+  // Safe init externals
   try{ await initTokenClient(); }catch(e){ console.warn('GSI init failed', e); }
   try{ renderTree(); fitToScreen(); }catch(e){ console.warn('Tree render failed', e); }
   try{ if(navigator.onLine) attemptSyncQueue(); }catch(e){ console.warn('Sync start failed', e); }
 });
 
-/* expose debug helpers */
+/* ---------- Utility: refresh species count (Drive) ---------- */
+async function refreshSpeciesCount(){
+  try{
+    if(!accessToken) return;
+    const q = `mimeType='application/json' and trashed=false`;
+    const url2 = `https://www.googleapis.com/drive/v3/files?pageSize=1000&q=${encodeURIComponent(q)}&fields=files(id)`;
+    const res = await driveFetchJson(url2);
+    const count = (res.files || []).length;
+    // optionally update UI
+  }catch(e){
+    // ignore
+  }
+}
+
+/* ---------- Expose debug helpers ---------- */
 window._app = { readLocalRecords, readSyncQueue, attemptSyncQueue, appendSyncLog, startEditRecord, confirmAndDeleteRecord };
+
+/* ---------- Prevent page pinch-zoom on iOS Safari (extra) ---------- */
+document.addEventListener('gesturestart', function (e) { e.preventDefault(); });
 </script>
 </body>
 </html>
