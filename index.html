@@ -428,6 +428,20 @@ window.addEventListener('DOMContentLoaded', ()=> {
     for(let i=0;i<files.length;i++){ const f=files[i]; const url = URL.createObjectURL(f); const d=document.createElement('div'); d.className='fileThumb'; const img=document.createElement('img'); img.src=url; img.style.width='100%'; img.style.height='100%'; img.style.objectFit='cover'; d.appendChild(img); thumbs.appendChild(d); }
   });
 
+  // Auto-fill genus/species from scientific name input
+  const speciesNameInput = document.getElementById('speciesName');
+  speciesNameInput.addEventListener('input', ()=>{
+    const val = speciesNameInput.value.trim();
+    if(!val) return;
+    const parts = val.split(/\s+/);
+    if(parts.length >= 1){
+      document.getElementById('taxGenus').value = parts[0] || '';
+    }
+    if(parts.length >= 2){
+      document.getElementById('taxSpecies').value = parts[1] || '';
+    }
+  });
+
   // initial render
   const initial = location.hash && document.querySelector(location.hash) ? location.hash : '#pageHome';
   showSection(initial);
@@ -459,8 +473,8 @@ function populateEditForm(id){
   document.getElementById('taxClass').value = r.taxonomy[2] || '';
   document.getElementById('taxOrder').value = r.taxonomy[3] || '';
   document.getElementById('taxFamily').value = r.taxonomy[4] || '';
-  document.getElementById('taxGenus').value = r.taxonomy[5] || '';
-  document.getElementById('taxSpecies').value = r.taxonomy[6] || '';
+  document.getElementById('taxGenus').value = r.taxonomy[5] || r.taxonomy[0] || '';
+  document.getElementById('taxSpecies').value = r.taxonomy[6] || r.scientificName && r.scientificName.split(/\s+/)[1] || '';
   document.getElementById('locationInput').value = r.location || '';
   document.getElementById('behaviourInput').value = r.behaviours || '';
   document.getElementById('otherNotesInput').value = r.otherNotes || '';
@@ -485,7 +499,15 @@ async function handleSaveFromAdd({ autoUpload = true } = {}){
     const scientific = document.getElementById('speciesName').value.trim();
     if(!scientific) return alert('Please enter scientific name.');
     const common = document.getElementById('commonName').value.trim();
-    const taxonomy = [document.getElementById('taxKingdom').value.trim(),document.getElementById('taxPhylum').value.trim(),document.getElementById('taxClass').value.trim(),document.getElementById('taxOrder').value.trim(),document.getElementById('taxFamily').value.trim(),document.getElementById('taxGenus').value.trim(),document.getElementById('taxSpecies').value.trim()].filter(Boolean);
+    const taxonomy = [
+      document.getElementById('taxKingdom').value.trim(),
+      document.getElementById('taxPhylum').value.trim(),
+      document.getElementById('taxClass').value.trim(),
+      document.getElementById('taxOrder').value.trim(),
+      document.getElementById('taxFamily').value.trim(),
+      document.getElementById('taxGenus').value.trim(),
+      document.getElementById('taxSpecies').value.trim()
+    ].filter(Boolean);
     const location = document.getElementById('locationInput').value.trim();
     const behaviours = document.getElementById('behaviourInput').value.trim();
     const otherNotes = document.getElementById('otherNotesInput').value.trim();
@@ -496,7 +518,6 @@ async function handleSaveFromAdd({ autoUpload = true } = {}){
       rec.scientificName = scientific; rec.commonName = common; rec.taxonomy = taxonomy; rec.location = location; rec.behaviours = behaviours; rec.otherNotes = otherNotes; rec.updatedAt = new Date().toISOString();
       for(let i=0;i<files.length;i++){ const f=files[i]; const compressedBlob = await compressImageFile(f,1200,0.75); const imgId='img_'+Date.now()+'_'+i; await idbPut(imgId, compressedBlob); rec.images = rec.images || []; rec.images.push({id:imgId,name:f.name,type:compressedBlob.type}); }
       writeLocalRecords(records); showToast('Record updated locally',2);
-      // clear editing state and form
       delete document.getElementById('saveBtnAdd').dataset.editing;
       delete document.getElementById('saveLocalOnlyBtnAdd').dataset.editing;
       document.getElementById('saveBtnAdd').innerText='Save Record';
