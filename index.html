@@ -4,72 +4,39 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Jeffrey's exploration</title>
-
 <meta name="theme-color" content="#2fb86a">
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;800&display=swap" rel="stylesheet">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://d3js.org/d3.v7.min.js"></script>
-
 <style>
 :root{
-  --accent:#2fb86a;
-  --accent-dark:#238a55;
-  --bg:#eef6f0;
-  --card:#fff;
-  --muted:#6b6b6b;
-  --radius:12px;
-  --nav-height:72px;
-  --header-height:72px;
-  --safe-top:env(safe-area-inset-top,20px);
-  --safe-bottom:env(safe-area-inset-bottom,0px);
-  --shadow:0 10px 30px rgba(20,40,30,0.06);
+  --accent:#2fb86a; --accent-dark:#238a55; --bg:#eef6f0; --card:#fff; --muted:#6b6b6b;
+  --radius:12px; --nav-height:72px; --header-height:72px; --safe-top:env(safe-area-inset-top,20px);
+  --safe-bottom:env(safe-area-inset-bottom,0px); --shadow:0 10px 30px rgba(20,40,30,0.06);
 }
 *{box-sizing:border-box}
 html,body{height:100%;margin:0;font-family:"Baloo 2",system-ui,-apple-system,"Segoe UI",Roboto,Arial;background:var(--bg);color:#0b2b1f}
 body{padding-top:calc(var(--safe-top));}
-
-/* header */
-header{
-  position:sticky;top:0;z-index:300;
-  background:linear-gradient(90deg,var(--accent),var(--accent-dark));
-  color:#fff;padding:calc(8px + var(--safe-top)) 18px 12px 18px;display:flex;align-items:center;justify-content:space-between;height:calc(var(--header-height) + var(--safe-top));
-  box-shadow:0 6px 18px rgba(0,0,0,0.08);
-}
+header{position:sticky;top:0;z-index:300;background:linear-gradient(90deg,var(--accent),var(--accent-dark));color:#fff;padding:calc(8px + var(--safe-top)) 18px 12px 18px;display:flex;align-items:center;justify-content:space-between;height:calc(var(--header-height) + var(--safe-top));box-shadow:0 6px 18px rgba(0,0,0,0.08);}
 .titleWrap{display:flex;align-items:center;gap:12px;flex:1;min-width:0}
-h1{
-  font-size:18px;margin:0;font-weight:800;
-  white-space:normal;
-  line-height:1.05;
-  word-break:break-word;
-  max-width:calc(100% - 160px);
-}
+h1{font-size:18px;margin:0;font-weight:800;white-space:normal;line-height:1.05;word-break:break-word;max-width:calc(100% - 160px);}
 .headerStatus{display:flex;gap:10px;align-items:center}
 .statusMini{display:flex;align-items:center;gap:6px;font-size:12px;color:#eafaf0}
 .dot{width:10px;height:10px;border-radius:999px;background:#d9534f;box-shadow:0 2px 6px rgba(0,0,0,0.08)}
 .dot.green{background:#2fb86a}
-
-/* layout */
 .container{max-width:1100px;margin:12px auto;padding:12px 14px calc(var(--nav-height) + 28px)}
 .card{background:var(--card);border-radius:var(--radius);padding:14px;margin-bottom:22px;box-shadow:var(--shadow);overflow:visible}
 .sectionTitle{display:block;background:linear-gradient(180deg,#f3fff6,#fff);border-radius:10px;padding:8px 12px;color:var(--accent-dark);font-weight:800;margin:-14px -14px 12px -14px}
-
-/* tree */
 .treeWrap{position:relative;border-radius:10px;padding:10px;background:linear-gradient(180deg,#fff,#fbfff9);border:1px dashed #e6efe6}
 .treeCanvas{width:100%;height:520px;border-radius:8px;background:linear-gradient(180deg,#fff,#f7fff8);overflow:hidden;position:relative}
 #minimap{position:absolute;right:12px;bottom:12px;width:160px;height:110px;border-radius:8px;background:rgba(255,255,255,0.95);padding:6px;font-size:12px;z-index:40}
-
-/* controls & buttons */
 .btn{background:var(--accent);color:#fff;border:none;padding:8px 10px;border-radius:8px;font-weight:800;cursor:pointer}
 .btn.ghost{background:#fff;color:var(--accent);border:2px solid var(--accent)}
 .small{padding:6px 8px;font-size:13px}
-
-/* forms */
 .formGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 label{display:block;font-weight:700;margin-bottom:6px}
 input[type="text"],textarea,select{width:100%;padding:10px;border-radius:8px;border:1px solid #e6efe8;background:linear-gradient(180deg,#fff,#fbfffb);font-size:14px}
 textarea{min-height:72px;resize:vertical}
-
-/* thumbs with overlay controls */
 .thumbGrid{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
 .thumbItem{position:relative;width:84px;height:84px;border-radius:8px;overflow:hidden;border:1px solid #eef6ef;background:#fff;display:flex;align-items:center;justify-content:center}
 .thumbItem img{width:100%;height:100%;object-fit:cover;display:block}
@@ -77,8 +44,6 @@ textarea{min-height:72px;resize:vertical}
 .thumbBtn{width:26px;height:26px;border-radius:6px;border:none;background:rgba(0,0,0,0.45);color:#fff;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px}
 .thumbBtn.profile{background:rgba(43,184,106,0.95)}
 .thumbBadge{position:absolute;left:6px;bottom:6px;background:rgba(0,0,0,0.55);color:#fff;padding:2px 6px;border-radius:999px;font-size:12px}
-
-/* library cards */
 .libraryGroup{margin-bottom:12px;border-radius:10px;background:#fff;padding:8px;box-shadow:var(--shadow)}
 .groupHeader{display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:6px 8px;border-radius:8px;background:linear-gradient(180deg,#f7fff7,#fff)}
 .groupTitle{font-weight:900;color:#145a3f;margin:0}
@@ -92,21 +57,13 @@ textarea{min-height:72px;resize:vertical}
 .speciesInfo{flex:1}
 .speciesName{font-weight:800;color:#145a3f}
 .commonName{color:#6b6b6b;font-size:13px}
-
-/* toast */
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--nav-height) + 18px + var(--safe-bottom));background:rgba(15,80,50,0.95);color:#fff;padding:12px 18px;border-radius:12px;font-weight:700;z-index:400;opacity:0;transition:opacity .2s}
 .toast.show{opacity:1}
-
-/* bottom nav fixed */
 .bottomNav{position:fixed;left:0;right:0;bottom:calc(0px + var(--safe-bottom));height:var(--nav-height);background:linear-gradient(180deg,#fff,#f6fff6);border-top:1px solid #e9f3ea;display:flex;align-items:center;justify-content:space-around;z-index:500;padding:8px 12px;box-shadow:0 -6px 20px rgba(10,30,20,0.03)}
 .navBtn{flex:1;text-align:center;color:#3b6b52;font-weight:800;cursor:pointer;padding:8px 6px;text-decoration:none;display:block}
 .navBtn.active{color:var(--accent-dark)}
 .navIcon{display:block;font-size:20px;margin-bottom:6px}
-
-/* ensure no transforms on body/html that could move bottom nav */
 html, body { transform: none !important; }
-
-/* responsive */
 @media (max-width:900px){ .formGrid{grid-template-columns:1fr} .treeCanvas{height:420px} #minimap{width:120px;height:90px} .speciesCard{width:calc(50% - 12px)} }
 </style>
 </head>
@@ -123,7 +80,6 @@ html, body { transform: none !important; }
 </header>
 
 <div class="container">
-  <!-- HOME -->
   <section id="pageHome" class="card" aria-labelledby="homeTitle">
     <div class="sectionTitle" id="homeTitle">Overview</div>
     <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
@@ -163,7 +119,6 @@ html, body { transform: none !important; }
     </div>
   </section>
 
-  <!-- ADD -->
   <section id="pageAdd" class="card" aria-labelledby="addTitle" style="display:none">
     <div class="sectionTitle" id="addTitle">Add New Species</div>
     <div class="formFull">
@@ -202,13 +157,11 @@ html, body { transform: none !important; }
     </div>
   </section>
 
-  <!-- LIBRARY (摺疊式) -->
   <section id="pageLibrary" class="card" aria-labelledby="libraryTitle" style="display:none">
     <div class="sectionTitle" id="libraryTitle">Library</div>
     <div id="libraryContent" style="margin-top:8px"></div>
   </section>
 
-  <!-- SETTINGS -->
   <section id="pageSettings" class="card" aria-labelledby="settingsTitle" style="display:none">
     <div class="sectionTitle" id="settingsTitle">Settings</div>
     <div style="display:flex;flex-direction:column;gap:10px">
@@ -246,21 +199,24 @@ html, body { transform: none !important; }
 </nav>
 
 <script>
-/* ============================
-  保留之前所有功能，新增：
-  - Library 改為摺疊式（kingdom->phylum->class）
-  - species 卡片 profile 圖改為圓形
-  - 圖片縮圖新增刪除與設為 profile 按鈕（Add/Edit）
-  其餘功能（Save/Edit/Delete/Sync/Tree/IDB）保留
-============================ */
-
-/* ---------- Storage & IDB helpers ---------- */
+/* ---------- helpers & storage ---------- */
 const LOCAL_KEY = 'exploration_records_v1';
 const SYNC_QUEUE_KEY = 'exploration_sync_queue_v1';
 function readLocalRecords(){ try{ return JSON.parse(localStorage.getItem(LOCAL_KEY) || '[]'); }catch(e){ return []; } }
 function writeLocalRecords(arr){ localStorage.setItem(LOCAL_KEY, JSON.stringify(arr)); }
 function readSyncQueue(){ try{ return JSON.parse(localStorage.getItem(SYNC_QUEUE_KEY) || '[]'); }catch(e){ return []; } }
 function writeSyncQueue(q){ localStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify(q)); }
+
+/* dedupe helper: remove records with duplicate id */
+function dedupeRecords(arr){
+  const seen = new Set(); const out = [];
+  for(const r of arr){
+    if(!r || !r.id) continue;
+    if(seen.has(r.id)) continue;
+    seen.add(r.id); out.push(r);
+  }
+  return out;
+}
 
 /* IDB for images */
 function openDb(){
@@ -301,22 +257,15 @@ async function idbDelete(id){
   });
 }
 
-/* ---------- UI helpers ---------- */
-function showToast(msg, s=3){
-  const t = document.getElementById('toast');
-  t.innerText = msg; t.classList.add('show');
-  clearTimeout(t._t); t._t = setTimeout(()=> t.classList.remove('show'), s*1000);
-}
+/* UI helpers */
+function showToast(msg, s=3){ const t = document.getElementById('toast'); t.innerText = msg; t.classList.add('show'); clearTimeout(t._t); t._t = setTimeout(()=> t.classList.remove('show'), s*1000); }
 function escapeHtml(s){ return (s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
 function appendSyncLog(line){ const el = document.getElementById('syncLog'); const now = new Date().toLocaleString(); const entry = `${now} — ${line}`; const prev = el.dataset.log ? JSON.parse(el.dataset.log) : []; prev.push(entry); el.dataset.log = JSON.stringify(prev); el.innerHTML = prev.slice().reverse().map(l=>`<div>${escapeHtml(l)}</div>`).join(''); console.info('[SYNC]', line); }
 
-/* ---------- Drive helpers (GSI + Drive REST) ---------- */
-let tokenClient = null;
-let accessToken = null;
-let cachedFolderId = null;
+/* ---------- Drive helpers ---------- */
+let tokenClient = null; let accessToken = null; let cachedFolderId = null;
 const CLIENT_ID = "58009415485-8qvhrvbasmrq5ugms01dv8vt7pneen6u.apps.googleusercontent.com";
 const SCOPES = "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive";
-
 async function initTokenClientIfNeeded(){
   if(tokenClient) return tokenClient;
   if(!(window.google && google.accounts && google.accounts.oauth2)) return null;
@@ -330,21 +279,16 @@ async function initTokenClientIfNeeded(){
         document.getElementById('signedText').innerText = 'Signed';
         appendSyncLog('Signed in to Google');
         attemptSyncQueue().catch(err=>console.error('attemptSyncQueue error', err));
-      } else {
-        showToast('Sign failed',2);
-      }
+      } else { showToast('Sign failed',2); }
     }
   });
   return tokenClient;
 }
-
 async function driveFetch(url, opts = {}){
   if(!accessToken) throw new Error('No access token');
-  opts.headers = opts.headers || {};
-  opts.headers['Authorization'] = 'Bearer ' + accessToken;
+  opts.headers = opts.headers || {}; opts.headers['Authorization'] = 'Bearer ' + accessToken;
   return fetch(url, opts);
 }
-
 async function getOrCreateFolderId(folderName){
   if(cachedFolderId) return cachedFolderId;
   const q = `mimeType='application/vnd.google-apps.folder' and name='${folderName.replace(/'/g,"\\'")}' and trashed=false`;
@@ -359,11 +303,8 @@ async function getOrCreateFolderId(folderName){
     body: JSON.stringify({ name: folderName, mimeType: 'application/vnd.google-apps.folder' })
   });
   if(!createRes.ok) throw new Error('Create folder failed: ' + createRes.status);
-  const cj = await createRes.json();
-  cachedFolderId = cj.id;
-  return cachedFolderId;
+  const cj = await createRes.json(); cachedFolderId = cj.id; return cachedFolderId;
 }
-
 async function uploadJsonRecordToFolder(name, obj, folderId){
   const metadata = { name: `${name}.json`, mimeType: 'application/json', parents: folderId ? [folderId] : undefined };
   const blob = new Blob([JSON.stringify(obj)], { type: 'application/json' });
@@ -374,7 +315,6 @@ async function uploadJsonRecordToFolder(name, obj, folderId){
   if(!r.ok) throw new Error('Upload JSON failed: ' + r.status);
   return r.json();
 }
-
 async function uploadImageBlobToFolder(blob, nameHint, folderId){
   const meta = { name: nameHint, mimeType: blob.type, parents: folderId ? [folderId] : undefined };
   const form = new FormData();
@@ -385,7 +325,7 @@ async function uploadImageBlobToFolder(blob, nameHint, folderId){
   return r.json();
 }
 
-/* ---------- Sync queue processing ---------- */
+/* ---------- Sync queue processing (重要修正) ---------- */
 async function attemptSyncQueue(){
   try{
     if(!accessToken){ document.getElementById('syncDot').classList.remove('green'); document.getElementById('syncText').innerText = 'Sync'; appendSyncLog('Not signed — sync skipped'); return false; }
@@ -397,18 +337,23 @@ async function attemptSyncQueue(){
       const records = readLocalRecords();
       const rec = records.find(r=>r.id===recId);
       if(!rec){ writeSyncQueue(readSyncQueue().filter(x=>x!==recId)); appendSyncLog(`Removed missing record ${recId}`); continue; }
-      const imageRefs = [];
+      // upload images but DO NOT delete local blobs; instead store driveId in image ref
       for(let i=0;i<(rec.images||[]).length;i++){
         const imRef = rec.images[i];
+        // if already uploaded (has driveId) skip
+        if(imRef.driveId) continue;
         const blob = await idbGet(imRef.id);
-        if(!blob){ appendSyncLog(`Image ${imRef.id} missing`); continue; }
+        if(!blob){ appendSyncLog(`Image ${imRef.id} missing locally`); continue; }
         const up = await uploadImageBlobToFolder(blob, `${(rec.scientificName||rec.id).replace(/\s+/g,'_')}_img_${Date.now()}_${i}.${(imRef.name||'').split('.').pop()}`, folderId);
-        imageRefs.push({ id: up.id, name: up.name, mimeType: up.mimeType });
-        try{ await idbDelete(imRef.id); }catch(e){}
+        // store driveId but KEEP local id so local display still works
+        imRef.driveId = up.id;
+        appendSyncLog(`Uploaded image ${imRef.id} -> ${up.id}`);
       }
-      const recToUpload = { id: rec.id, scientificName: rec.scientificName, commonName: rec.commonName, taxonomy: rec.taxonomy, location: rec.location, behaviours: rec.behaviours, otherNotes: rec.otherNotes, images: imageRefs, createdAt: rec.createdAt };
+      // upload JSON (include drive image ids if available)
+      const recToUpload = { id: rec.id, scientificName: rec.scientificName, commonName: rec.commonName, taxonomy: rec.taxonomy, location: rec.location, behaviours: rec.behaviours, otherNotes: rec.otherNotes, images: (rec.images||[]).map(i=>({ driveId: i.driveId || null, name: i.name || null })), createdAt: rec.createdAt };
       const uploaded = await uploadJsonRecordToFolder(rec.scientificName || rec.id, recToUpload, folderId);
-      const updated = readLocalRecords().map(r => r.id===recId ? ({...r, status:'uploaded', driveId: uploaded.id}) : r);
+      // mark uploaded and store driveId for record
+      const updated = readLocalRecords().map(r => r.id===recId ? ({...r, status:'uploaded', driveId: uploaded.id, images: r.images}) : r);
       writeLocalRecords(updated);
       const newQueue = readSyncQueue().filter(x=>x!==recId);
       writeSyncQueue(newQueue);
@@ -427,63 +372,18 @@ async function attemptSyncQueue(){
   }
 }
 
-/* ---------- D3 tree (kept minimal) ---------- */
-const svg = d3.select('#treeSvg');
-const inner = svg.append('g').attr('class','innerGroup');
-const miniSvg = d3.select('#miniSvg');
-const treeLayout = d3.tree();
-let root = d3.hierarchy({name:'Life',children:[]});
-
-function buildTreeDataFromLocal(){
-  const records = readLocalRecords();
-  const root = {name:'Life',children:[]};
-  for(const r of records){
-    const levels = r.taxonomy && r.taxonomy.length ? r.taxonomy : ['Unclassified'];
-    let cursor = root;
-    for(const lvl of levels){
-      let child = cursor.children.find(c=>c.name===lvl);
-      if(!child){ child = {name: lvl, children: []}; cursor.children.push(child); }
-      cursor = child;
-    }
-    cursor.children = cursor.children || [];
-    cursor.children.push({name: r.scientificName || r.id, species:true, recordId: r.id});
-  }
-  if(root.children.length===0) return {name:'Life',children:[{name:'No records yet',children:[]}]};
-  return root;
-}
+/* ---------- D3 tree (unchanged) ---------- */
+const svg = d3.select('#treeSvg'); const inner = svg.append('g').attr('class','innerGroup'); const miniSvg = d3.select('#miniSvg'); const treeLayout = d3.tree(); let root = d3.hierarchy({name:'Life',children:[]});
+function buildTreeDataFromLocal(){ const records = readLocalRecords(); const root = {name:'Life',children:[]}; for(const r of records){ const levels = r.taxonomy && r.taxonomy.length ? r.taxonomy : ['Unclassified']; let cursor = root; for(const lvl of levels){ let child = cursor.children.find(c=>c.name===lvl); if(!child){ child = {name: lvl, children: []}; cursor.children.push(child); } cursor = child; } cursor.children = cursor.children || []; cursor.children.push({name: r.scientificName || r.id, species:true, recordId: r.id}); } if(root.children.length===0) return {name:'Life',children:[{name:'No records yet',children:[]}]}; return root; }
 function collapseAll(d, depth=0, maxDepth=2){ if(d.children){ d.children.forEach(c=>collapseAll(c, depth+1, maxDepth)); if(depth>=maxDepth){ d._children = d.children; d.children = null; } } }
 function truncate(s,n){ if(!s) return ''; return s.length>n? s.slice(0,n-1)+'…':s; }
-
-function renderTree(){
-  try{
-    const data = buildTreeDataFromLocal();
-    root = d3.hierarchy(data);
-    collapseAll(root,0,2);
-    const svgW = svg.node().clientWidth; const svgH = +svg.attr('height');
-    treeLayout.size([svgW-40, svgH-40]); treeLayout(root);
-
-    const links = inner.selectAll('.link').data(root.links(), d=>d.target.data.name + '_' + d.target.depth);
-    links.join(enter => enter.append('path').attr('class','link').attr('d', d=>linkPath(d)), update => update.attr('d', d=>linkPath(d)), exit => exit.remove());
-
-    const nodes = inner.selectAll('.node').data(root.descendants(), d=>d.data.name + '_' + d.depth);
-    const nodeEnter = nodes.enter().append('g').attr('class','node').attr('transform', d=>`translate(${d.x},${d.y})`);
-    nodeEnter.append('circle').attr('r', d=> d.children || d._children ? 6 : 5).attr('fill', d=> d.children || d._children ? 'var(--accent)' : '#fff').attr('stroke','var(--accent)');
-    nodeEnter.append('text').attr('x',0).attr('y',-10).attr('text-anchor','middle').text(d=>truncate(d.data.name,28)).style('font-size','13px');
-
-    nodes.merge(nodeEnter).transition().duration(200).attr('transform', d=>`translate(${d.x},${d.y})`);
-    inner.selectAll('.node').on('click', (event,d)=>{ event.stopPropagation(); if(d.children){ d._children = d.children; d.children = null; } else { d.children = d._children; d._children = null; } renderTree(); if(d.data.species && d.data.recordId){ showSection('#pageLibrary'); setTimeout(()=> showLocalRecord(d.data.recordId), 300); } });
-    updateMinimap();
-    updateSpeciesCount();
-  }catch(e){ console.warn('renderTree error', e); }
-}
+function renderTree(){ try{ const data = buildTreeDataFromLocal(); root = d3.hierarchy(data); collapseAll(root,0,2); const svgW = svg.node().clientWidth; const svgH = +svg.attr('height'); treeLayout.size([svgW-40, svgH-40]); treeLayout(root); const links = inner.selectAll('.link').data(root.links(), d=>d.target.data.name + '_' + d.target.depth); links.join(enter => enter.append('path').attr('class','link').attr('d', d=>linkPath(d)), update => update.attr('d', d=>linkPath(d)), exit => exit.remove()); const nodes = inner.selectAll('.node').data(root.descendants(), d=>d.data.name + '_' + d.depth); const nodeEnter = nodes.enter().append('g').attr('class','node').attr('transform', d=>`translate(${d.x},${d.y})`); nodeEnter.append('circle').attr('r', d=> d.children || d._children ? 6 : 5).attr('fill', d=> d.children || d._children ? 'var(--accent)' : '#fff').attr('stroke','var(--accent)'); nodeEnter.append('text').attr('x',0).attr('y',-10).attr('text-anchor','middle').text(d=>truncate(d.data.name,28)).style('font-size','13px'); nodes.merge(nodeEnter).transition().duration(200).attr('transform', d=>`translate(${d.x},${d.y})`); inner.selectAll('.node').on('click', (event,d)=>{ event.stopPropagation(); if(d.children){ d._children = d.children; d.children = null; } else { d.children = d._children; d._children = null; } renderTree(); if(d.data.species && d.data.recordId){ showSection('#pageLibrary'); setTimeout(()=> showLocalRecord(d.data.recordId), 300); } }); updateMinimap(); updateSpeciesCount(); }catch(e){ console.warn('renderTree error', e); } }
 function linkPath(d){ const x1=d.source.x,y1=d.source.y,x2=d.target.x,y2=d.target.y,midY=(y1+y2)/2; return `M${x1},${y1} C${x1},${midY} ${x2},${midY} ${x2},${y2}`; }
-
 const zoom = d3.zoom().scaleExtent([0.4,6]).on('zoom', (event)=>{ inner.attr('transform', event.transform); updateMinimapViewport(event.transform); });
 svg.call(zoom).on('dblclick.zoom', null);
 document.getElementById('zoomIn').addEventListener('click', ()=> svg.transition().call(zoom.scaleBy, 1.2));
 document.getElementById('zoomOut').addEventListener('click', ()=> svg.transition().call(zoom.scaleBy, 1/1.2));
 document.getElementById('resetView').addEventListener('click', ()=> fitToScreen());
-
 function fitToScreen(){ const nodes = root.descendants(); if(!nodes.length) return; const minX=d3.min(nodes,d=>d.x), maxX=d3.max(nodes,d=>d.x), minY=d3.min(nodes,d=>d.y), maxY=d3.max(nodes,d=>d.y); const contentW=maxX-minX+200, contentH=maxY-minY+200; const svgW=svg.node().clientWidth, svgH=+svg.attr('height'); const scale=Math.min(svgW/contentW, svgH/contentH,1); const tx=(svgW - scale*(minX+maxX))/2; const ty=(svgH - scale*(minY+maxY))/2; const t = d3.zoomIdentity.translate(tx,ty).scale(scale); svg.transition().duration(600).call(zoom.transform, t); }
 function updateMinimap(){ const nodes = root.descendants(); if(!nodes.length) return; const maxX=d3.max(nodes,d=>d.x), maxY=d3.max(nodes,d=>d.y), minX=d3.min(nodes,d=>d.x), minY=d3.min(nodes,d=>d.y); miniSvg.attr('viewBox', `${minX} ${minY} ${Math.max(1, maxX-minX)} ${Math.max(1, maxY-minY)}`); miniSvg.selectAll('*').remove(); miniSvg.selectAll('circle').data(nodes).enter().append('circle').attr('cx',d=>d.x).attr('cy',d=>d.y).attr('r',1.2).attr('fill','#cfeee0'); miniSvg.append('rect').attr('id','miniViewport').attr('x',0).attr('y',0).attr('width',10).attr('height',10).attr('fill','rgba(43,184,106,0.12)').attr('stroke','#2fb86a'); updateMinimapViewport(); }
 function updateMinimapViewport(transform){ const t = transform || d3.zoomTransform(svg.node()); const svgW = svg.node().clientWidth, svgH = +svg.attr('height'); const x0=(0 - t.x)/t.k, y0=(0 - t.y)/t.k, x1=(svgW - t.x)/t.k, y1=(svgH - t.y)/t.k; miniSvg.select('#miniViewport').attr('x', x0).attr('y', y0).attr('width', Math.max(1, x1-x0)).attr('height', Math.max(1, y1-y0)); }
@@ -520,7 +420,6 @@ window.addEventListener('DOMContentLoaded', ()=> {
 
   window.addEventListener('hashchange', ()=> { const h = location.hash && document.querySelector(location.hash) ? location.hash : '#pageHome'; showSection(h); });
 
-  // Tree search
   document.getElementById('searchBtn').addEventListener('click', ()=> {
     const q = document.getElementById('treeSearch').value.trim().toLowerCase();
     if(!q) return;
@@ -529,11 +428,9 @@ window.addEventListener('DOMContentLoaded', ()=> {
   });
   document.getElementById('clearSearch').addEventListener('click', ()=> document.getElementById('treeSearch').value = '');
 
-  // Add save
   document.getElementById('saveBtnAdd').addEventListener('click', async ()=> { await handleSaveFromAdd({autoUpload:true}); });
   document.getElementById('saveLocalOnlyBtnAdd').addEventListener('click', async ()=> { await handleSaveFromAdd({autoUpload:false}); });
 
-  // Settings import/export
   document.getElementById('exportLocalBtnSettings').addEventListener('click', ()=>{
     const data = JSON.stringify(readLocalRecords(), null, 2);
     const blob = new Blob([data], { type: 'application/json' });
@@ -545,10 +442,17 @@ window.addEventListener('DOMContentLoaded', ()=> {
   document.getElementById('importLocalBtnSettings').addEventListener('click', ()=> document.getElementById('importFile').click());
   document.getElementById('importFile').addEventListener('change', async (e)=>{
     const f = e.target.files[0]; if(!f) return;
-    try{ const txt = await f.text(); const arr = JSON.parse(txt); if(!Array.isArray(arr)) throw new Error('Invalid file'); writeLocalRecords(arr); showToast('Imported records',2); renderTree(); }catch(err){ showToast('Import failed',3); }
+    try{
+      const txt = await f.text(); const arr = JSON.parse(txt); if(!Array.isArray(arr)) throw new Error('Invalid file');
+      // dedupe by id before writing
+      const existing = readLocalRecords();
+      const merged = existing.concat(arr);
+      const deduped = dedupeRecords(merged);
+      writeLocalRecords(deduped);
+      showToast('Imported records',2); renderTree();
+    }catch(err){ showToast('Import failed',3); }
   });
 
-  // Sign buttons
   document.getElementById('btnSignGrantSettings').addEventListener('click', async ()=>{
     await initTokenClientIfNeeded();
     if(tokenClient) tokenClient.requestAccessToken({ prompt: 'consent' });
@@ -559,7 +463,6 @@ window.addEventListener('DOMContentLoaded', ()=> {
     else showToast('No token client',2);
   });
 
-  // Thumbs preview + interactive controls
   document.getElementById('speciesImages').addEventListener('change', async (e)=>{
     const files = e.target.files;
     const thumbs = document.getElementById('thumbs'); thumbs.innerHTML = '';
@@ -574,7 +477,6 @@ window.addEventListener('DOMContentLoaded', ()=> {
     }
   });
 
-  // Auto-fill genus/species from scientific name input
   const speciesNameInput = document.getElementById('speciesName');
   speciesNameInput.addEventListener('input', ()=>{
     const val = speciesNameInput.value.trim();
@@ -583,23 +485,13 @@ window.addEventListener('DOMContentLoaded', ()=> {
     document.getElementById('taxSpecies').value = parts[1] || '';
   });
 
-  // delegated handlers for thumbs (delete / set profile) in Add form
   document.getElementById('thumbs').addEventListener('click', async (e)=>{
     const btn = e.target.closest('button[data-action]');
     if(!btn) return;
-    const action = btn.dataset.action;
-    const id = btn.dataset.id;
+    const action = btn.dataset.action; const id = btn.dataset.id;
     if(action === 'delete'){
-      if(id && id.startsWith('tmp_')){
-        delete window._tmpFiles[id];
-        const el = document.querySelector(`.thumbItem[data-id="${id}"]`);
-        if(el) el.remove();
-      } else {
-        window._deletedImages = window._deletedImages || [];
-        window._deletedImages.push(id);
-        const el = document.querySelector(`.thumbItem[data-id="${id}"]`);
-        if(el) el.remove();
-      }
+      if(id && id.startsWith('tmp_')){ delete window._tmpFiles[id]; const el = document.querySelector(`.thumbItem[data-id="${id}"]`); if(el) el.remove(); }
+      else { window._deletedImages = window._deletedImages || []; window._deletedImages.push(id); const el = document.querySelector(`.thumbItem[data-id="${id}"]`); if(el) el.remove(); }
     } else if(action === 'profile'){
       document.querySelectorAll('.thumbItem').forEach(t=> t.classList.remove('profileSelected'));
       const el = document.querySelector(`.thumbItem[data-id="${id}"]`);
@@ -608,47 +500,29 @@ window.addEventListener('DOMContentLoaded', ()=> {
     }
   });
 
-  // delegated edit/delete handlers in library/list
   document.getElementById('pageLibrary').addEventListener('click', (e)=>{
     const editBtn = e.target.closest('button[data-edit-id]');
     const delBtn = e.target.closest('button[data-delete-id]');
-    if(editBtn){
-      const id = editBtn.dataset.editId;
-      populateEditForm(id);
-      showSection('#pageAdd');
-      setTimeout(()=> document.getElementById('pageAdd').scrollIntoView({behavior:'smooth', block:'start'}),120);
-    } else if(delBtn){
-      const id = delBtn.dataset.deleteId;
-      confirmAndDeleteRecord(id);
-    } else {
-      // toggle group headers
+    if(editBtn){ const id = editBtn.dataset.editId; populateEditForm(id); showSection('#pageAdd'); setTimeout(()=> document.getElementById('pageAdd').scrollIntoView({behavior:'smooth', block:'start'}),120); }
+    else if(delBtn){ const id = delBtn.dataset.deleteId; confirmAndDeleteRecord(id); }
+    else {
       const grpBtn = e.target.closest('button[data-toggle-group]');
-      if(grpBtn){
-        const target = document.querySelector(grpBtn.dataset.toggleGroup);
-        if(target) target.classList.toggle('hidden');
-      }
+      if(grpBtn){ const target = document.querySelector(grpBtn.dataset.toggleGroup); if(target) target.classList.toggle('hidden'); grpBtn.innerText = target.classList.contains('hidden') ? '▸' : '▾'; }
       const subBtn = e.target.closest('button[data-toggle-sub]');
-      if(subBtn){
-        const target = document.querySelector(subBtn.dataset.toggleSub);
-        if(target) target.classList.toggle('hidden');
-      }
+      if(subBtn){ const target = document.querySelector(subBtn.dataset.toggleSub); if(target) target.classList.toggle('hidden'); subBtn.innerText = target.classList.contains('hidden') ? '▸' : '▾'; }
     }
   });
 
-  // initial render
   const initial = location.hash && document.querySelector(location.hash) ? location.hash : '#pageHome';
   showSection(initial);
   try{ renderTree(); fitToScreen(); }catch(e){}
   updateSpeciesCount();
-
-  // auto sync interval
   setInterval(()=>{ if(accessToken) attemptSyncQueue().catch(()=>{}); }, 60000);
 });
 
-/* ---------- Helper to create thumb DOM element ---------- */
+/* ---------- thumb element helper ---------- */
 function createThumbElement(imgRef, isTmp=false){
-  const d = document.createElement('div'); d.className='thumbItem'; d.dataset.id = imgRef.id;
-  if(imgRef.name) d.dataset.name = imgRef.name;
+  const d = document.createElement('div'); d.className='thumbItem'; d.dataset.id = imgRef.id; if(imgRef.name) d.dataset.name = imgRef.name;
   const img = document.createElement('img'); img.alt = imgRef.name || '';
   if(imgRef.url) img.src = imgRef.url;
   d.appendChild(img);
@@ -657,76 +531,49 @@ function createThumbElement(imgRef, isTmp=false){
   const btnDel = document.createElement('button'); btnDel.className='thumbBtn'; btnDel.title='Delete'; btnDel.dataset.action='delete'; btnDel.dataset.id = imgRef.id; btnDel.innerText='✕';
   controls.appendChild(btnProfile); controls.appendChild(btnDel);
   d.appendChild(controls);
-  if(imgRef.isProfile) {
-    const badge = document.createElement('div'); badge.className='thumbBadge'; badge.innerText='Profile'; d.appendChild(badge);
-    d.classList.add('profileSelected');
-    window._selectedProfile = imgRef.id;
-  }
+  if(imgRef.isProfile){ const badge = document.createElement('div'); badge.className='thumbBadge'; badge.innerText='Profile'; d.appendChild(badge); d.classList.add('profileSelected'); window._selectedProfile = imgRef.id; }
   return d;
 }
 
 /* ---------- Library rendering (摺疊式) ---------- */
 function renderLibrary(){
-  const container = document.getElementById('libraryContent');
-  container.innerHTML = '';
+  const container = document.getElementById('libraryContent'); container.innerHTML = '';
   const records = readLocalRecords();
   if(!records.length){ container.innerHTML = '<div>No records yet</div>'; return; }
-
-  // Build nested grouping
   const groups = {};
   for(const r of records){
     const tax = r.taxonomy || [];
-    const k = tax[0] || 'Unclassified';
-    const p = tax[1] || 'Unclassified';
-    const c = tax[2] || 'Unclassified';
-    groups[k] = groups[k] || {};
-    groups[k][p] = groups[k][p] || {};
-    groups[k][p][c] = groups[k][p][c] || [];
-    groups[k][p][c].push(r);
+    const k = tax[0] || 'Unclassified'; const p = tax[1] || 'Unclassified'; const c = tax[2] || 'Unclassified';
+    groups[k] = groups[k] || {}; groups[k][p] = groups[k][p] || {}; groups[k][p][c] = groups[k][p][c] || []; groups[k][p][c].push(r);
   }
-
   const kingdomKeys = Object.keys(groups).sort((a,b)=> a.localeCompare(b));
   kingdomKeys.forEach((k, kIdx) => {
     const kWrap = document.createElement('div'); kWrap.className='libraryGroup';
     const kHeader = document.createElement('div'); kHeader.className='groupHeader';
     const kTitle = document.createElement('div'); kTitle.className='groupTitle'; kTitle.innerText = `Kingdom: ${k}`;
     const kToggle = document.createElement('button'); kToggle.className='groupToggle'; kToggle.innerText = '▾'; kToggle.dataset.toggleGroup = `#kingdom_${kIdx}`;
-    kHeader.appendChild(kTitle); kHeader.appendChild(kToggle);
-    kWrap.appendChild(kHeader);
-
+    kHeader.appendChild(kTitle); kHeader.appendChild(kToggle); kWrap.appendChild(kHeader);
     const kBody = document.createElement('div'); kBody.id = `kingdom_${kIdx}`;
-    const phylumObj = groups[k];
-    const phylumKeys = Object.keys(phylumObj).sort((a,b)=> a.localeCompare(b));
+    const phylumObj = groups[k]; const phylumKeys = Object.keys(phylumObj).sort((a,b)=> a.localeCompare(b));
     phylumKeys.forEach((p, pIdx) => {
       const pHeader = document.createElement('div'); pHeader.className='subHeader';
       const pTitle = document.createElement('div'); pTitle.style.fontWeight='800'; pTitle.innerText = `Phylum: ${p}`;
       const pToggle = document.createElement('button'); pToggle.className='groupToggle'; pToggle.innerText = '▾'; pToggle.dataset.toggleSub = `#phylum_${kIdx}_${pIdx}`;
-      pHeader.appendChild(pTitle); pHeader.appendChild(pToggle);
-      kBody.appendChild(pHeader);
-
+      pHeader.appendChild(pTitle); pHeader.appendChild(pToggle); kBody.appendChild(pHeader);
       const pBody = document.createElement('div'); pBody.className='subGroup'; pBody.id = `phylum_${kIdx}_${pIdx}`;
-      const classObj = phylumObj[p];
-      const classKeys = Object.keys(classObj).sort((a,b)=> a.localeCompare(b));
+      const classObj = phylumObj[p]; const classKeys = Object.keys(classObj).sort((a,b)=> a.localeCompare(b));
       classKeys.forEach((c, cIdx) => {
-        const cTitle = document.createElement('div'); cTitle.style.fontWeight='700'; cTitle.style.margin='6px 0 4px 6px'; cTitle.innerText = `Class: ${c}`;
-        pBody.appendChild(cTitle);
-        const speciesList = classObj[c];
-        const grid = document.createElement('div'); grid.className='speciesGrid';
+        const cTitle = document.createElement('div'); cTitle.style.fontWeight='700'; cTitle.style.margin='6px 0 4px 6px'; cTitle.innerText = `Class: ${c}`; pBody.appendChild(cTitle);
+        const speciesList = classObj[c]; const grid = document.createElement('div'); grid.className='speciesGrid';
         speciesList.sort((a,b)=> (a.scientificName||'').localeCompare(b.scientificName||''));
         speciesList.forEach(s => {
           const card = document.createElement('div'); card.className='speciesCard';
           const thumbWrap = document.createElement('div'); thumbWrap.className='speciesThumb';
-          const imgEl = document.createElement('img');
-          imgEl.alt = s.scientificName || '';
+          const imgEl = document.createElement('img'); imgEl.alt = s.scientificName || '';
           const profileRef = (s.images||[]).find(im => im.isProfile) || (s.images && s.images[0]) || null;
           if(profileRef){
-            (async ()=>{
-              const blob = await idbGet(profileRef.id).catch(()=>null);
-              if(blob) imgEl.src = URL.createObjectURL(blob);
-            })();
-          } else {
-            imgEl.src = '';
-          }
+            (async ()=>{ const blob = await idbGet(profileRef.id).catch(()=>null); if(blob) imgEl.src = URL.createObjectURL(blob); })();
+          } else { imgEl.src = ''; }
           thumbWrap.appendChild(imgEl);
           const info = document.createElement('div'); info.className='speciesInfo';
           const sName = document.createElement('div'); sName.className='speciesName'; sName.innerText = s.scientificName || 'Unnamed';
@@ -743,33 +590,13 @@ function renderLibrary(){
       });
       kBody.appendChild(pBody);
     });
-
-    kWrap.appendChild(kBody);
-    container.appendChild(kWrap);
+    kWrap.appendChild(kBody); container.appendChild(kWrap);
   });
-
-  // attach toggles
-  document.querySelectorAll('[data-toggle-group]').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      const sel = btn.dataset.toggleGroup;
-      const el = document.querySelector(sel);
-      if(!el) return;
-      el.classList.toggle('hidden');
-      btn.innerText = el.classList.contains('hidden') ? '▸' : '▾';
-    });
-  });
-  document.querySelectorAll('[data-toggle-sub]').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      const sel = btn.dataset.toggleSub;
-      const el = document.querySelector(sel);
-      if(!el) return;
-      el.classList.toggle('hidden');
-      btn.innerText = el.classList.contains('hidden') ? '▸' : '▾';
-    });
-  });
+  document.querySelectorAll('[data-toggle-group]').forEach(btn=>{ btn.addEventListener('click', ()=>{ const sel = btn.dataset.toggleGroup; const el = document.querySelector(sel); if(!el) return; el.classList.toggle('hidden'); btn.innerText = el.classList.contains('hidden') ? '▸' : '▾'; }); });
+  document.querySelectorAll('[data-toggle-sub]').forEach(btn=>{ btn.addEventListener('click', ()=>{ const sel = btn.dataset.toggleSub; const el = document.querySelector(sel); if(!el) return; el.classList.toggle('hidden'); btn.innerText = el.classList.contains('hidden') ? '▸' : '▾'; }); });
 }
 
-/* ---------- Browse / Edit / Delete / Save implementations ---------- */
+/* ---------- Edit/Delete/Save ---------- */
 function populateEditForm(id){
   const records = readLocalRecords(); const r = records.find(x=>x.id===id); if(!r) return showToast('Record not found',2);
   document.getElementById('speciesName').value = r.scientificName || '';
@@ -787,28 +614,16 @@ function populateEditForm(id){
   document.getElementById('otherNotesInput').value = r.otherNotes || '';
   const thumbs = document.getElementById('thumbs'); thumbs.innerHTML = '';
   window._tmpFiles = {}; window._deletedImages = []; window._selectedProfile = null;
-  (async ()=>{
-    for(const im of (r.images||[])){
-      const blob = await idbGet(im.id).catch(()=>null);
-      const url = blob ? URL.createObjectURL(blob) : '';
-      const item = createThumbElement({ id: im.id, url, name: im.name, isProfile: !!im.isProfile }, false);
-      thumbs.appendChild(item);
-    }
-  })();
-  document.getElementById('saveBtnAdd').dataset.editing = id;
-  document.getElementById('saveBtnAdd').innerText = 'Save Changes';
-  document.getElementById('saveLocalOnlyBtnAdd').dataset.editing = id;
-  document.getElementById('saveLocalOnlyBtnAdd').innerText = 'Save Local Only (Edit)';
+  (async ()=>{ for(const im of (r.images||[])){ const blob = await idbGet(im.id).catch(()=>null); const url = blob ? URL.createObjectURL(blob) : ''; const item = createThumbElement({ id: im.id, url, name: im.name, isProfile: !!im.isProfile }, false); thumbs.appendChild(item); } })();
+  document.getElementById('saveBtnAdd').dataset.editing = id; document.getElementById('saveBtnAdd').innerText = 'Save Changes';
+  document.getElementById('saveLocalOnlyBtnAdd').dataset.editing = id; document.getElementById('saveLocalOnlyBtnAdd').innerText = 'Save Local Only (Edit)';
 }
-
 async function confirmAndDeleteRecord(id){
   if(!confirm('Delete this record and its local images? This cannot be undone.')) return;
   const records = readLocalRecords(); const rec = records.find(r=>r.id===id); if(!rec){ showToast('Record not found',2); return; }
   for(const im of (rec.images||[])){ try{ await idbDelete(im.id); }catch(e){} }
   const updated = records.filter(r=>r.id!==id); writeLocalRecords(updated); showToast('Record deleted',2); renderTree(); renderLibrary();
 }
-
-/* Save (new or edit). If signed, queue for sync and attempt immediately */
 async function handleSaveFromAdd({ autoUpload = true } = {}){
   try{
     const editingId = document.getElementById('saveBtnAdd').dataset.editing || null;
@@ -827,7 +642,6 @@ async function handleSaveFromAdd({ autoUpload = true } = {}){
     const location = document.getElementById('locationInput').value.trim();
     const behaviours = document.getElementById('behaviourInput').value.trim();
     const otherNotes = document.getElementById('otherNotesInput').value.trim();
-
     const thumbsEls = Array.from(document.querySelectorAll('.thumbItem'));
     const imageRefs = [];
     for(const el of thumbsEls){
@@ -847,68 +661,30 @@ async function handleSaveFromAdd({ autoUpload = true } = {}){
 
     if(editingId){
       const records = readLocalRecords(); const rec = records.find(r=>r.id===editingId); if(!rec) return alert('Record not found');
-      if(window._deletedImages && window._deletedImages.length){
-        for(const delId of window._deletedImages){
-          try{ await idbDelete(delId); }catch(e){}
-        }
-      }
+      if(window._deletedImages && window._deletedImages.length){ for(const delId of window._deletedImages){ try{ await idbDelete(delId); }catch(e){} } }
       rec.scientificName = scientific; rec.commonName = common; rec.taxonomy = taxonomy; rec.location = location; rec.behaviours = behaviours; rec.otherNotes = otherNotes; rec.updatedAt = new Date().toISOString();
       rec.images = imageRefs;
       writeLocalRecords(records);
       showToast('Record updated locally',2);
-      delete document.getElementById('saveBtnAdd').dataset.editing;
-      delete document.getElementById('saveLocalOnlyBtnAdd').dataset.editing;
-      document.getElementById('saveBtnAdd').innerText='Save Record';
-      document.getElementById('saveLocalOnlyBtnAdd').innerText='Save Local Only';
-      clearAddForm();
-      renderTree();
-      renderLibrary();
-      if(accessToken){
-        const q = readSyncQueue(); if(!q.includes(rec.id)){ q.push(rec.id); writeSyncQueue(q); appendSyncLog(`Queued edited ${rec.id}`); }
-        const ok = await attemptSyncQueue();
-        if(ok) showToast('Saved and synced',2); else showToast('Saved locally (queued)',2);
-      } else {
-        appendSyncLog(`Saved local-only edited ${rec.id}`);
-      }
+      delete document.getElementById('saveBtnAdd').dataset.editing; delete document.getElementById('saveLocalOnlyBtnAdd').dataset.editing;
+      document.getElementById('saveBtnAdd').innerText='Save Record'; document.getElementById('saveLocalOnlyBtnAdd').innerText='Save Local Only';
+      clearAddForm(); renderTree(); renderLibrary();
+      if(accessToken){ const q = readSyncQueue(); if(!q.includes(rec.id)){ q.push(rec.id); writeSyncQueue(q); appendSyncLog(`Queued edited ${rec.id}`); } const ok = await attemptSyncQueue(); if(ok) showToast('Saved and synced',2); else showToast('Saved locally (queued)',2); }
+      else appendSyncLog(`Saved local-only edited ${rec.id}`);
       return;
     }
 
     const record = { id:'rec_'+Date.now(), scientificName:scientific, commonName:common, taxonomy, location, behaviours, otherNotes, images:imageRefs, createdAt:new Date().toISOString(), status:'pending' };
-    const records = readLocalRecords(); records.push(record); writeLocalRecords(records);
-    if(accessToken){
-      const q = readSyncQueue(); q.push(record.id); writeSyncQueue(q); appendSyncLog(`Queued ${record.id}`);
-      const ok = await attemptSyncQueue();
-      if(ok) showToast('Saved and synced',2);
-      else showToast('Saved locally (queued)',2);
-    } else {
-      appendSyncLog(`Saved local-only ${record.id}`);
-      showToast('Saved locally (queued)',2);
-    }
-    clearAddForm();
-    renderTree();
-    renderLibrary();
+    const records = readLocalRecords(); records.push(record);
+    // dedupe by id just in case
+    const deduped = dedupeRecords(records);
+    writeLocalRecords(deduped);
+    if(accessToken){ const q = readSyncQueue(); q.push(record.id); writeSyncQueue(q); appendSyncLog(`Queued ${record.id}`); const ok = await attemptSyncQueue(); if(ok) showToast('Saved and synced',2); else showToast('Saved locally (queued)',2); }
+    else { appendSyncLog(`Saved local-only ${record.id}`); showToast('Saved locally (queued)',2); }
+    clearAddForm(); renderTree(); renderLibrary();
   }catch(e){ console.error(e); showToast('Save failed',3); }
 }
-
-function clearAddForm(){
-  document.getElementById('speciesName').value = '';
-  document.getElementById('commonName').value = '';
-  document.getElementById('taxKingdom').value = '';
-  document.getElementById('taxPhylum').value = '';
-  document.getElementById('taxClass').value = '';
-  document.getElementById('taxOrder').value = '';
-  document.getElementById('taxFamily').value = '';
-  document.getElementById('taxGenus').value = '';
-  document.getElementById('taxSpecies').value = '';
-  document.getElementById('locationInput').value = '';
-  document.getElementById('behaviourInput').value = '';
-  document.getElementById('otherNotesInput').value = '';
-  document.getElementById('speciesImages').value = '';
-  document.getElementById('thumbs').innerHTML = '';
-  window._tmpFiles = {};
-  window._deletedImages = [];
-  window._selectedProfile = null;
-}
+function clearAddForm(){ document.getElementById('speciesName').value = ''; document.getElementById('commonName').value = ''; document.getElementById('taxKingdom').value = ''; document.getElementById('taxPhylum').value = ''; document.getElementById('taxClass').value = ''; document.getElementById('taxOrder').value = ''; document.getElementById('taxFamily').value = ''; document.getElementById('taxGenus').value = ''; document.getElementById('taxSpecies').value = ''; document.getElementById('locationInput').value = ''; document.getElementById('behaviourInput').value = ''; document.getElementById('otherNotesInput').value = ''; document.getElementById('speciesImages').value = ''; document.getElementById('thumbs').innerHTML = ''; window._tmpFiles = {}; window._deletedImages = []; window._selectedProfile = null; }
 
 /* image compression helper */
 async function compressImageFile(file, maxDim=1200, quality=0.75){
@@ -923,30 +699,20 @@ async function compressImageFile(file, maxDim=1200, quality=0.75){
 /* show single record */
 async function showLocalRecord(id){
   const records = readLocalRecords(); const r = records.find(x=>x.id===id); if(!r) return showToast('Record not found',2);
-  const viewer = document.getElementById('recordViewer');
-  if(!viewer) return;
+  const viewer = document.getElementById('recordViewer'); if(!viewer) return;
   viewer.innerHTML = '';
   const card = document.createElement('div'); card.className='card';
   card.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:800;color:#145a3f">${escapeHtml(r.scientificName||'Unnamed')}</div><div style="color:#6b6b6b">${escapeHtml(r.commonName||'')}</div><div style="color:#6b6b6b">${(r.taxonomy||[]).join(' › ')}</div></div><div style="font-size:12px;color:#999">${new Date(r.createdAt).toLocaleString()}</div></div><p style="margin-top:8px;color:#333"><strong>Location:</strong> ${escapeHtml(r.location||'')}</p><p style="margin-top:4px;color:#333"><strong>Behaviours:</strong> ${escapeHtml(r.behaviours||'')}</p><p style="margin-top:4px;color:#333"><strong>Other notes:</strong> ${escapeHtml(r.otherNotes||'')}</p>`;
   viewer.appendChild(card);
   if(r.images && r.images.length){
     const grid = document.createElement('div'); grid.style.display='flex'; grid.style.gap='8px'; grid.style.marginTop='8px';
-    for(const im of r.images){
-      const wrap = document.createElement('div'); wrap.style.width='96px'; wrap.style.height='96px'; wrap.style.borderRadius='8px'; wrap.style.overflow='hidden'; wrap.style.border='1px solid #eef6ef';
-      const imgEl = document.createElement('img');
-      const blob = await idbGet(im.id).catch(()=>null);
-      if(blob) imgEl.src = URL.createObjectURL(blob); else imgEl.alt = 'Image missing';
-      imgEl.style.width='100%'; imgEl.style.height='100%'; imgEl.style.objectFit='cover';
-      wrap.appendChild(imgEl); grid.appendChild(wrap);
-    }
+    for(const im of r.images){ const wrap=document.createElement('div'); wrap.style.width='96px'; wrap.style.height='96px'; wrap.style.borderRadius='8px'; wrap.style.overflow='hidden'; wrap.style.border='1px solid #eef6ef'; const imgEl=document.createElement('img'); const blob = await idbGet(im.id).catch(()=>null); if(blob) imgEl.src = URL.createObjectURL(blob); else imgEl.alt='Image missing'; imgEl.style.width='100%'; imgEl.style.height='100%'; imgEl.style.objectFit='cover'; wrap.appendChild(imgEl); grid.appendChild(wrap); }
     viewer.appendChild(grid);
   }
 }
 
 /* update species count */
 function updateSpeciesCount(){ document.getElementById('speciesCount').innerText = `Species recorded: ${readLocalRecords().length}`; }
-
-/* prevent iOS pinch zoom */
 document.addEventListener('gesturestart', e=> e.preventDefault());
 </script>
 </body>
