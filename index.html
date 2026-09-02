@@ -38,7 +38,6 @@ header{
 .titleWrap{display:flex;align-items:center;gap:12px;flex:1;min-width:0}
 h1{
   font-size:18px;margin:0;font-weight:800;
-  /* allow wrapping so full title always visible */
   white-space:normal;
   line-height:1.05;
   word-break:break-word;
@@ -234,6 +233,18 @@ html, body { transform: none !important; }
 </nav>
 
 <script>
+/* ============================
+   Full app HTML delivered.
+   Fixes included:
+   - Title fully visible (wrap)
+   - Bottom nav fixed (no transforms)
+   - Edit works via delegated handlers
+   - Save clears form after add; edit updates record
+   - Google sign sets accessToken and attempts sync
+   - Sync queue processing with robust logging and console output
+   - Auto-fill genus/species from scientific name
+   ============================ */
+
 /* ---------- Storage & IDB helpers ---------- */
 const LOCAL_KEY = 'exploration_records_v1';
 const SYNC_QUEUE_KEY = 'exploration_sync_queue_v1';
@@ -288,9 +299,9 @@ function showToast(msg, s=3){
   clearTimeout(t._t); t._t = setTimeout(()=> t.classList.remove('show'), s*1000);
 }
 function escapeHtml(s){ return (s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
-function appendSyncLog(line){ const el = document.getElementById('syncLog'); const now = new Date().toLocaleString(); const entry = `${now} — ${line}`; const prev = el.dataset.log ? JSON.parse(el.dataset.log) : []; prev.push(entry); el.dataset.log = JSON.stringify(prev); el.innerHTML = prev.slice().reverse().map(l=>`<div>${escapeHtml(l)}</div>`).join(''); }
+function appendSyncLog(line){ const el = document.getElementById('syncLog'); const now = new Date().toLocaleString(); const entry = `${now} — ${line}`; const prev = el.dataset.log ? JSON.parse(el.dataset.log) : []; prev.push(entry); el.dataset.log = JSON.stringify(prev); el.innerHTML = prev.slice().reverse().map(l=>`<div>${escapeHtml(l)}</div>`).join(''); console.info('[SYNC]', line); }
 
-/* ---------- Drive helpers (uses GSI token) ---------- */
+/* ---------- Drive helpers (GSI + Drive REST) ---------- */
 let tokenClient = null;
 let accessToken = null;
 let cachedFolderId = null;
@@ -309,8 +320,8 @@ async function initTokenClientIfNeeded(){
         document.getElementById('signedDot').classList.add('green');
         document.getElementById('signedText').innerText = 'Signed';
         appendSyncLog('Signed in to Google');
-        // try to sync queued items immediately
-        attemptSyncQueue();
+        // attempt sync immediately
+        attemptSyncQueue().catch(err=>console.error('attemptSyncQueue error', err));
       } else {
         showToast('Sign failed',2);
       }
@@ -322,7 +333,7 @@ async function initTokenClientIfNeeded(){
 async function requestDriveToken(){
   const client = await initTokenClientIfNeeded();
   if(!client) { showToast('Google Identity not available',3); return; }
-  try{ client.requestAccessToken({ prompt: 'consent' }); }catch(e){ showToast('Sign request failed',2); }
+  try{ client.requestAccessToken({ prompt: 'consent' }); }catch(e){ showToast('Sign request failed',2); console.error(e); }
 }
 
 async function driveFetch(url, opts = {}){
@@ -337,7 +348,7 @@ async function getOrCreateFolderId(folderName){
   const q = `mimeType='application/vnd.google-apps.folder' and name='${folderName.replace(/'/g,"\\'")}' and trashed=false`;
   const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name)`;
   const res = await driveFetch(url);
-  if(!res.ok) throw new Error('Drive list failed');
+  if(!res.ok) throw new Error('Drive list failed: ' + res.status);
   const j = await res.json();
   if(j.files && j.files.length){ cachedFolderId = j.files[0].id; return cachedFolderId; }
   // create
@@ -346,7 +357,7 @@ async function getOrCreateFolderId(folderName){
     headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
     body: JSON.stringify({ name: folderName, mimeType: 'application/vnd.google-apps.folder' })
   });
-  if(!createRes.ok) throw new Error('Create folder failed');
+  if(!createRes.ok) throw new Error('Create folder failed: ' + createRes.status);
   const cj = await createRes.json();
   cachedFolderId = cj.id;
   return cachedFolderId;
@@ -359,7 +370,7 @@ async function uploadJsonRecordToFolder(name, obj, folderId){
   form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
   form.append('file', blob);
   const r = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', { method: 'POST', headers: { 'Authorization': 'Bearer ' + accessToken }, body: form });
-  if(!r.ok) throw new Error('Upload JSON failed');
+  if(!r.ok) throw new Error('Upload JSON failed: ' + r.status);
   return r.json();
 }
 
@@ -369,30 +380,29 @@ async function uploadImageBlobToFolder(blob, nameHint, folderId){
   form.append('metadata', new Blob([JSON.stringify(meta)], { type: 'application/json' }));
   form.append('file', blob);
   const r = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', { method: 'POST', headers: { 'Authorization': 'Bearer ' + accessToken }, body: form });
-  if(!r.ok) throw new Error('Upload image failed');
+  if(!r.ok) throw new Error('Upload image failed: ' + r.status);
   return r.json();
 }
 
 /* ---------- Sync queue processing ---------- */
-let autoSyncInterval = null;
 async function attemptSyncQueue(){
-  if(!accessToken) { document.getElementById('syncDot').classList.remove('green'); document.getElementById('syncText').innerText = 'Sync'; return; }
-  const queue = readSyncQueue();
-  if(!queue.length){ document.getElementById('syncDot').classList.add('green'); document.getElementById('syncText').innerText = 'Synced'; appendSyncLog('Sync queue empty'); return; }
-  appendSyncLog(`Starting sync of ${queue.length} item(s)`);
   try{
+    if(!accessToken){ document.getElementById('syncDot').classList.remove('green'); document.getElementById('syncText').innerText = 'Sync'; appendSyncLog('Not signed — sync skipped'); return; }
+    const queue = readSyncQueue();
+    if(!queue.length){ document.getElementById('syncDot').classList.add('green'); document.getElementById('syncText').innerText = 'Synced'; appendSyncLog('Sync queue empty'); return; }
+    appendSyncLog(`Starting sync of ${queue.length} item(s)`);
     const folderId = await getOrCreateFolderId('EcologyApp_Records');
     for(const recId of [...queue]){
       const records = readLocalRecords();
       const rec = records.find(r=>r.id===recId);
       if(!rec){ writeSyncQueue(readSyncQueue().filter(x=>x!==recId)); appendSyncLog(`Removed missing record ${recId}`); continue; }
-      // upload images first
+      // upload images
       const imageRefs = [];
       for(let i=0;i<(rec.images||[]).length;i++){
         const imRef = rec.images[i];
         const blob = await idbGet(imRef.id);
         if(!blob){ appendSyncLog(`Image ${imRef.id} missing`); continue; }
-        const up = await uploadImageBlobToFolder(blob, `${rec.scientificName || rec.id}_img_${Date.now()}_${i}.${(imRef.name||'').split('.').pop()}`, folderId);
+        const up = await uploadImageBlobToFolder(blob, `${(rec.scientificName||rec.id).replace(/\s+/g,'_')}_img_${Date.now()}_${i}.${(imRef.name||'').split('.').pop()}`, folderId);
         imageRefs.push({ id: up.id, name: up.name, mimeType: up.mimeType });
         try{ await idbDelete(imRef.id); }catch(e){}
       }
@@ -413,6 +423,7 @@ async function attemptSyncQueue(){
     appendSyncLog('Sync failed: ' + (e && e.message ? e.message : String(e)));
     document.getElementById('syncDot').classList.remove('green');
     document.getElementById('syncText').innerText = 'Sync';
+    throw e;
   }
 }
 
@@ -545,7 +556,7 @@ window.addEventListener('DOMContentLoaded', ()=> {
     try{ const txt = await f.text(); const arr = JSON.parse(txt); if(!Array.isArray(arr)) throw new Error('Invalid file'); writeLocalRecords(arr); showToast('Imported records',2); renderTree(); }catch(err){ showToast('Import failed',3); }
   });
 
-  // Sign buttons: try to init GSI and request token; update UI on success
+  // Sign buttons
   document.getElementById('btnSignGrantSettings').addEventListener('click', async ()=>{
     await initTokenClientIfNeeded();
     if(tokenClient) tokenClient.requestAccessToken({ prompt: 'consent' });
@@ -571,6 +582,21 @@ window.addEventListener('DOMContentLoaded', ()=> {
     document.getElementById('taxSpecies').value = parts[1] || '';
   });
 
+  // delegated edit/delete handlers (ensures edit works even after re-render)
+  document.getElementById('searchResult').addEventListener('click', (e)=>{
+    const btn = e.target.closest('button[data-action]');
+    if(!btn) return;
+    const action = btn.dataset.action;
+    const id = btn.dataset.id;
+    if(action === 'edit') {
+      populateEditForm(id);
+      showSection('#pageAdd');
+      setTimeout(()=> document.getElementById('pageAdd').scrollIntoView({behavior:'smooth', block:'start'}),120);
+    } else if(action === 'delete') {
+      confirmAndDeleteRecord(id);
+    }
+  });
+
   // initial render
   const initial = location.hash && document.querySelector(location.hash) ? location.hash : '#pageHome';
   showSection(initial);
@@ -578,7 +604,7 @@ window.addEventListener('DOMContentLoaded', ()=> {
   updateSpeciesCount();
 
   // auto sync interval (attempt every 60s if signed)
-  setInterval(()=>{ if(accessToken) attemptSyncQueue(); }, 60000);
+  setInterval(()=>{ if(accessToken) attemptSyncQueue().catch(()=>{}); }, 60000);
 });
 
 /* ---------- Browse / Edit / Delete / Save implementations ---------- */
@@ -592,8 +618,6 @@ function renderSearchResults(records){
     div.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:800">${escapeHtml(r.scientificName||'Unnamed')}</div><div style="color:#6b6b6b">${escapeHtml(r.commonName||'')}</div><div style="color:#6b6b6b;font-size:13px">${(r.taxonomy||[]).join(' › ')}</div></div><div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end"><div style="font-size:12px;color:#999">${new Date(r.createdAt).toLocaleString()}</div><div style="display:flex;gap:6px;margin-top:6px"><button class="btn small" data-action="edit" data-id="${r.id}">Edit</button><button class="btn small ghost" data-action="delete" data-id="${r.id}">Delete</button></div></div></div>`;
     el.appendChild(div);
   });
-  el.querySelectorAll('button[data-action="edit"]').forEach(b=> b.addEventListener('click', e=>{ populateEditForm(e.currentTarget.dataset.id); showSection('#pageAdd'); setTimeout(()=> document.getElementById('pageAdd').scrollIntoView({behavior:'smooth', block:'start'}),120); }));
-  el.querySelectorAll('button[data-action="delete"]').forEach(b=> b.addEventListener('click', e=> confirmAndDeleteRecord(e.currentTarget.dataset.id)));
 }
 
 function populateEditForm(id){
@@ -605,7 +629,6 @@ function populateEditForm(id){
   document.getElementById('taxClass').value = r.taxonomy[2] || '';
   document.getElementById('taxOrder').value = r.taxonomy[3] || '';
   document.getElementById('taxFamily').value = r.taxonomy[4] || '';
-  // try to preserve genus/species mapping
   const parts = (r.scientificName || '').split(/\s+/);
   document.getElementById('taxGenus').value = r.taxonomy[5] || parts[0] || '';
   document.getElementById('taxSpecies').value = r.taxonomy[6] || parts[1] || '';
@@ -660,7 +683,7 @@ async function handleSaveFromAdd({ autoUpload = true } = {}){
       clearAddForm();
       renderTree();
       // queue for sync if signed
-      if(accessToken){ const q = readSyncQueue(); if(!q.includes(rec.id)){ q.push(rec.id); writeSyncQueue(q); appendSyncLog(`Queued edited ${rec.id}`); attemptSyncQueue(); } }
+      if(accessToken){ const q = readSyncQueue(); if(!q.includes(rec.id)){ q.push(rec.id); writeSyncQueue(q); appendSyncLog(`Queued edited ${rec.id}`); attemptSyncQueue().catch(()=>{}); } }
       return;
     }
 
@@ -671,7 +694,7 @@ async function handleSaveFromAdd({ autoUpload = true } = {}){
     const records = readLocalRecords(); records.push(record); writeLocalRecords(records); showToast('Saved locally',2);
     // queue for sync if signed
     if(accessToken){
-      const q = readSyncQueue(); q.push(record.id); writeSyncQueue(q); appendSyncLog(`Queued ${record.id}`); attemptSyncQueue();
+      const q = readSyncQueue(); q.push(record.id); writeSyncQueue(q); appendSyncLog(`Queued ${record.id}`); attemptSyncQueue().catch(()=>{});
     } else {
       appendSyncLog(`Saved local-only ${record.id}`);
     }
