@@ -1,4 +1,346 @@
-<!doctype html>
+<!doctype html><!doctype html>
+<html lang="zh-HK">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Jeffrey's exploration — test v2</title>
+<meta name="theme-color" content="#2fb86a">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;800&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+:root{
+  --accent:#2fb86a; --accent-dark:#238a55; --bg:#eef6f0; --card:#fff; --muted:#6b6b6b;
+  --radius:12px; --nav-height:72px; --header-height:72px; --safe-top:env(safe-area-inset-top,20px);
+  --safe-bottom:env(safe-area-inset-bottom,0px); --shadow:0 10px 30px rgba(20,40,30,0.06);
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;padding:0;font-family:"Baloo 2",system-ui,-apple-system,"Segoe UI",Roboto,Arial;background:var(--bg);color:#0b2b1f; -webkit-text-size-adjust:100%;}
+html, body { transform: none !important; }
+
+/* Fixed header: always full width and fixed position */
+header{
+  position:fixed;
+  top:0;
+  left:0;
+  right:0;
+  width:100%;
+  z-index:1200;
+  background:linear-gradient(90deg,var(--accent),var(--accent-dark));
+  color:#fff;
+  padding:calc(8px + var(--safe-top)) 18px 12px 18px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  height:calc(var(--header-height) + var(--safe-top));
+  box-shadow:0 6px 18px rgba(0,0,0,0.08);
+  box-sizing:border-box;
+}
+/* Ensure title and icon don't overflow */
+.titleWrap{display:flex;align-items:center;gap:12px;flex:1;min-width:0}
+.titleWrap svg{flex:0 0 36px;width:36px;height:36px;display:block}
+h1{font-size:18px;margin:0;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:calc(100% - 220px);}
+
+/* header status */
+.headerStatus{display:flex;gap:10px;align-items:center;flex:0 0 auto}
+.statusMini{display:flex;align-items:center;gap:6px;font-size:12px;color:#eafaf0}
+.dot{width:10px;height:10px;border-radius:999px;background:#d9534f;box-shadow:0 2px 6px rgba(0,0,0,0.08)}
+.dot.green{background:#2fb86a}
+
+/* Visible version badge for testing */
+.versionBadge{background:rgba(255,255,255,0.12);padding:6px 10px;border-radius:999px;font-weight:800;font-size:12px;margin-left:12px}
+
+/* Fixed bottom nav: always flush to bottom */
+.bottomNav{
+  position:fixed;
+  left:0;
+  right:0;
+  bottom:0;
+  height:var(--nav-height);
+  background:linear-gradient(180deg,#fff,#f6fff6);
+  border-top:1px solid #e9f3ea;
+  display:flex;
+  align-items:center;
+  justify-content:space-around;
+  z-index:1300;
+  padding:8px 12px;
+  padding-bottom:calc(env(safe-area-inset-bottom,0px));
+  box-sizing:border-box;
+  box-shadow:0 -6px 20px rgba(10,30,20,0.03);
+}
+.navBtn{flex:1;text-align:center;color:#3b6b52;font-weight:800;cursor:pointer;padding:8px 6px;text-decoration:none;display:block}
+.navBtn.active{color:var(--accent-dark)}
+.navIcon{display:block;font-size:20px;margin-bottom:6px}
+
+/* Container: account for fixed header/footer using padding */
+.container{
+  max-width:1100px;
+  margin:0 auto;
+  padding: calc(var(--header-height) + var(--safe-top) + 12px) 14px calc(var(--nav-height) + var(--safe-bottom) + 18px);
+  min-height: calc(100vh - (var(--header-height) + var(--nav-height) + var(--safe-top) + var(--safe-bottom) + 30px));
+  box-sizing:border-box;
+}
+
+/* Cards and sections */
+.card{background:var(--card);border-radius:var(--radius);padding:14px;margin-bottom:18px;box-shadow:var(--shadow);overflow:visible}
+.sectionTitle{display:block;background:linear-gradient(180deg,#f3fff6,#fff);border-radius:10px;padding:8px 12px;color:var(--accent-dark);font-weight:800;margin:-14px -14px 12px -14px}
+
+/* Inputs: set base font-size to avoid iOS zoom on focus */
+input[type="text"],textarea,select{width:100%;padding:10px;border-radius:8px;border:1px solid #e6efe8;background:linear-gradient(180deg,#fff,#fbfffb);font-size:16px}
+textarea{min-height:72px;resize:vertical}
+
+/* Thumbs */
+.thumbGrid{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.thumbItem{position:relative;width:84px;height:84px;border-radius:8px;overflow:hidden;border:1px solid #eef6ef;background:#fff;display:flex;align-items:center;justify-content:center}
+.thumbItem img{width:100%;height:100%;object-fit:cover;display:block}
+.thumbControls{position:absolute;right:4px;top:4px;display:flex;gap:6px;z-index:30}
+.thumbBtn{width:26px;height:26px;border-radius:6px;border:none;background:rgba(0,0,0,0.45);color:#fff;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px}
+.thumbBtn.profile{background:rgba(43,184,106,0.95)}
+.thumbBadge{position:absolute;left:6px;bottom:6px;background:rgba(0,0,0,0.55);color:#fff;padding:2px 6px;border-radius:999px;font-size:12px}
+
+/* Library styles */
+.libraryGroup{margin-bottom:12px;border-radius:10px;background:#fff;padding:8px;box-shadow:var(--shadow)}
+.groupHeader{display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:6px 8px;border-radius:8px;background:linear-gradient(180deg,#f7fff7,#fff')}
+.groupTitle{font-weight:900;color:#145a3f;margin:0}
+.groupToggle{font-weight:800;color:#145a3f;background:transparent;border:none;cursor:pointer}
+.subGroup{margin-left:12px;margin-top:8px;border-left:2px dashed #eef6ef;padding-left:12px}
+.subHeader{display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:4px 6px;border-radius:6px}
+.speciesGrid{display:flex;flex-wrap:wrap;gap:12px;margin-top:8px}
+.speciesCard{width:220px;background:#fff;border-radius:10px;padding:10px;box-shadow:0 6px 18px rgba(10,30,20,0.04);display:flex;gap:10px;align-items:center}
+.speciesThumb{width:72px;height:72px;border-radius:50%;overflow:hidden;border:1px solid #eef6ef;display:flex;align-items:center;justify-content:center;background:#f6fff6;flex-shrink:0}
+.speciesThumb img{width:100%;height:100%;object-fit:cover;display:block;border-radius:50%}
+.speciesInfo{flex:1}
+.speciesName{font-weight:800;color:#145a3f}
+.commonName{color:#6b6b6b;font-size:13px}
+
+/* Toast */
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--nav-height) + 18px + var(--safe-bottom));background:rgba(15,80,50,0.95);color:#fff;padding:12px 18px;border-radius:12px;font-weight:700;z-index:2000;opacity:0;transition:opacity .2s}
+.toast.show{opacity:1}
+
+/* Modal */
+.modalBackdrop{position:fixed;left:0;top:0;right:0;bottom:0;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;z-index:2500}
+.modal{background:#fff;border-radius:12px;padding:16px;max-width:920px;width:92%;max-height:80vh;overflow:auto}
+
+/* Responsive */
+@media (max-width:900px){
+  input[type="text"],textarea,select{font-size:16px}
+  .speciesCard{width:calc(50% - 12px)}
+}
+</style>
+</head>
+<body>
+<header id="appHeader">
+  <div class="titleWrap">
+    <svg width="36" height="36" viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M12 2C9.8 2 7.8 3 6.6 4.6C5.4 6.2 5 8.2 5.2 10.2C6 18 12 22 12 22s6-4 6.8-11.8c.2-2-0.2-4-1.4-5.6C16.2 3 14.2 2 12 2z"/></svg>
+    <h1 id="appTitle">Jeffrey's exploration</h1>
+    <!-- Visible version badge to confirm you loaded this file -->
+    <div class="versionBadge" id="versionBadge">v2 — settings-only</div>
+  </div>
+  <div class="headerStatus">
+    <div class="statusMini"><div id="signedDot" class="dot"></div><span id="signedText">Sign</span></div>
+    <div class="statusMini"><div id="syncDot" class="dot"></div><span id="syncText">Sync</span></div>
+  </div>
+</header>
+
+<div class="container" id="mainContainer">
+  <section id="pageHome" class="card" aria-labelledby="homeTitle">
+    <div class="sectionTitle" id="homeTitle">Overview</div>
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+      <div style="background:#fff;border-radius:12px;padding:12px;box-shadow:var(--shadow);min-width:220px">
+        <div id="speciesCount" style="font-weight:800;color:#145a3f;font-size:18px">Species recorded: 0</div>
+        <div style="color:var(--muted);font-size:13px;margin-top:6px">Total local records saved</div>
+      </div>
+      <div style="flex:1;min-width:260px">
+        <div style="background:#fff;border-radius:12px;padding:12px;box-shadow:var(--shadow)">
+          <div style="font-weight:800;color:#145a3f">Taxonomy Tree</div>
+          <div style="color:var(--muted);font-size:13px;margin-top:6px">Tap nodes to expand; tap species to view record</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:12px" class="card">
+      <div class="sectionTitle">Taxonomy Tree</div>
+      <div id="treeControls" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <div style="display:flex;gap:8px;align-items:center">
+          <input id="treeSearch" placeholder="Search species or taxonomy" style="padding:8px;border-radius:8px;border:1px solid #e6efe8">
+          <button id="searchBtn" class="btn small">Search</button>
+          <button id="clearSearch" class="btn small ghost">Clear</button>
+        </div>
+        <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+          <button id="zoomIn" class="btn small">＋</button>
+          <button id="zoomOut" class="btn small">－</button>
+          <button id="resetView" class="btn small ghost">Reset</button>
+        </div>
+      </div>
+
+      <div class="treeWrap" style="margin-top:10px">
+        <div class="treeCanvas" id="treeCanvas">
+          <svg id="treeSvg" width="100%" height="520" style="touch-action:none"></svg>
+          <div id="minimap" aria-hidden="true"><div style="font-weight:700;margin-bottom:6px">Overview</div><svg id="miniSvg"></svg></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="pageAdd" class="card" aria-labelledby="addTitle" style="display:none">
+    <div class="sectionTitle" id="addTitle">Add New Species</div>
+    <div class="formFull">
+      <label>Scientific name
+        <input id="speciesName" type="text" placeholder="e.g. Formica rufa" autocomplete="off">
+      </label>
+      <label style="margin-top:8px">Common name
+        <input id="commonName" type="text" placeholder="e.g. Red wood ant" autocomplete="off">
+      </label>
+
+      <div class="formGrid" style="margin-top:10px">
+        <label>Kingdom <input id="taxKingdom" placeholder="Kingdom"></label>
+        <label>Phylum <input id="taxPhylum" placeholder="Phylum"></label>
+        <label>Class <input id="taxClass" placeholder="Class"></label>
+        <label>Order <input id="taxOrder" placeholder="Order"></label>
+        <label>Family <input id="taxFamily" placeholder="Family"></label>
+        <label>Genus <input id="taxGenus" placeholder="Genus"></label>
+        <label>Species <input id="taxSpecies" placeholder="Species"></label>
+      </div>
+
+      <div style="margin-top:10px">
+        <label>Location<input id="locationInput" placeholder="Where observed"></label>
+        <label style="margin-top:8px">Behaviours<textarea id="behaviourInput" placeholder="Observed behaviours"></textarea></label>
+        <label style="margin-top:8px">Other notes<textarea id="otherNotesInput" placeholder="Other notes"></textarea></label>
+      </div>
+
+      <div style="margin-top:8px">
+        <label>Upload images (multiple)<input id="speciesImages" type="file" accept="image/*" multiple></label>
+        <div id="thumbs" class="thumbGrid"></div>
+      </div>
+
+      <div style="margin-top:12px;display:flex;gap:8px">
+        <button id="saveBtnAdd" class="btn">Save Record</button>
+        <button id="saveLocalOnlyBtnAdd" class="btn ghost">Save Local Only</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="pageLibrary" class="card" aria-labelledby="libraryTitle" style="display:none">
+    <div class="sectionTitle" id="libraryTitle">Library</div>
+    <div style="margin-bottom:8px;display:flex;gap:8px;align-items:center">
+      <button id="openTrashBtn" class="btn small">Open Trash</button>
+      <div style="margin-left:auto;color:var(--muted);font-size:13px">Cards grouped by taxonomy</div>
+    </div>
+    <div id="libraryContent" style="margin-top:8px"></div>
+  </section>
+
+  <section id="pageSettings" class="card" aria-labelledby="settingsTitle" style="display:none">
+    <div class="sectionTitle" id="settingsTitle">Settings</div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="font-weight:700;color:#145a3f">Account</div>
+      <div style="display:flex;gap:8px">
+        <button id="btnSignGrantSettings" class="btn small">Sign in & Grant Drive Access</button>
+        <button id="btnSignRetrySettings" class="btn small ghost">Retry</button>
+      </div>
+
+      <div style="margin-top:8px">
+        <div style="font-weight:700;color:#145a3f;margin-bottom:6px">Export / Import</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button id="exportLocalBtnSettings" class="btn ghost small">Export local JSON</button>
+          <button id="importLocalBtnSettings" class="btn small">Import JSON</button>
+          <input id="importFile" type="file" accept="application/json" style="display:none">
+        </div>
+        <div style="margin-top:8px;color:var(--muted);font-size:13px">Export will download a JSON file of locally saved records.</div>
+      </div>
+
+      <div style="margin-top:8px;display:flex;gap:8px;align-items:center">
+        <button id="backupAllBtn" class="btn small">Backup all to Drive</button>
+        <div style="color:var(--muted);font-size:13px">Backup local-only records to Drive (conservative preview)</div>
+      </div>
+
+      <div style="margin-top:12px">
+        <div style="font-weight:700;color:#145a3f;margin-bottom:6px">Sync Log</div>
+        <div id="syncLog" style="max-height:160px;overflow:auto;border-radius:8px;padding:8px;background:#fbfff9;border:1px solid #eef6ef;font-size:13px">No sync activity yet.</div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<nav class="bottomNav" role="navigation" aria-label="Main navigation">
+  <a href="#pageHome" id="navHome" class="navBtn"><span class="navIcon">🌳</span>Home</a>
+  <a href="#pageAdd" id="navAdd" class="navBtn"><span class="navIcon">➕</span>Add</a>
+  <a href="#pageLibrary" id="navLibrary" class="navBtn"><span class="navIcon">📚</span>Library</a>
+  <a href="#pageSettings" id="navSettings" class="navBtn"><span class="navIcon">⚙️</span>Settings</a>
+</nav>
+
+<!-- Sync Preview Modal -->
+<div id="syncPreviewModal" style="display:none"></div>
+<!-- Trash Modal -->
+<div id="trashModal" style="display:none"></div>
+
+<script>
+/* ---------- 重要測試點 ----------
+   1) ensureSettingsThen 會在 console.log 印出 'ensureSettingsThen called'
+   2) renderSyncPreview 會在 console.log 印出 'renderSyncPreview shown'
+   3) header 會顯示 versionBadge (v2 — settings-only)
+   4) Backup 按鈕會先切到 Settings 再顯示 Sync Preview
+*/
+
+/* minimal helpers for demo/testing */
+function showToast(msg, s=3){ const t = document.getElementById('toast'); t.innerText = msg; t.classList.add('show'); clearTimeout(t._t); t._t = setTimeout(()=> t.classList.remove('show'), s*1000); }
+function appendSyncLog(line){ const el = document.getElementById('syncLog'); const now = new Date().toLocaleString(); const entry = `${now} — ${line}`; const prev = el.dataset.log ? JSON.parse(el.dataset.log) : []; prev.push(entry); el.dataset.log = JSON.stringify(prev); el.innerHTML = prev.slice().reverse().map(l=>`<div>${l}</div>`).join(''); console.info('[SYNC]', line); }
+
+/* ensureSettingsThen: 明顯 log，並切換 hash 到 #pageSettings */
+function ensureSettingsThen(fn){
+  console.log('ensureSettingsThen called');
+  if(location.hash !== '#pageSettings'){
+    history.replaceState(null, '', '#pageSettings');
+    // 等 UI 更新
+    setTimeout(()=> {
+      try{ fn(); } catch(e){ console.error(e); }
+    }, 220);
+  } else {
+    try{ fn(); } catch(e){ console.error(e); }
+  }
+}
+
+/* renderSyncPreview: 顯示 modal 並 log */
+function renderSyncPreview(diffs){
+  console.log('renderSyncPreview shown', diffs);
+  appendSyncLog('Showing sync preview (test)');
+  const modalRoot = document.getElementById('syncPreviewModal');
+  modalRoot.innerHTML = '';
+  const backdrop = document.createElement('div'); backdrop.className='modalBackdrop';
+  const modal = document.createElement('div'); modal.className='modal';
+  modal.innerHTML = `<h3 style="margin-top:0">Sync Preview (test)</h3><p style="color:#666">This is a test preview. Confirm actions manually.</p>
+    <div style="margin-top:8px"><button id="closePreviewTest" class="btn small">Close</button></div>`;
+  backdrop.appendChild(modal);
+  modalRoot.appendChild(backdrop);
+  modalRoot.style.display='block';
+  document.getElementById('closePreviewTest').addEventListener('click', ()=> { modalRoot.innerHTML=''; modalRoot.style.display='none'; });
+}
+
+/* Demo: Backup button handler uses ensureSettingsThen -> renderSyncPreview */
+document.addEventListener('DOMContentLoaded', ()=>{
+  document.getElementById('backupAllBtn').addEventListener('click', ()=>{
+    const localOnly = [{id:'demo1', scientificName:'Demo species'}];
+    ensureSettingsThen(()=> renderSyncPreview({onlyLocal: localOnly, onlyRemote:[], both:[], localDeleted:[]}));
+  });
+
+  // Trash button: ensureSettingsThen wrapper
+  document.getElementById('openTrashBtn').addEventListener('click', ()=> ensureSettingsThen(()=> {
+    console.log('openTrashModal shown');
+    const modalRoot = document.getElementById('trashModal');
+    modalRoot.innerHTML = '<div class="modalBackdrop"><div class="modal"><h3>Trash (test)</h3><div style="margin-top:8px"><button id="closeTrashTest" class="btn small">Close</button></div></div></div>';
+    modalRoot.style.display='block';
+    document.getElementById('closeTrashTest').addEventListener('click', ()=> { modalRoot.innerHTML=''; modalRoot.style.display='none'; });
+  }));
+
+  // show initial section
+  const initial = location.hash && document.querySelector(location.hash) ? location.hash : '#pageHome';
+  history.replaceState(null,'',initial);
+});
+</script>
+</body>
+</html>
+
 <html lang="zh-HK">
 <head>
 <meta charset="utf-8" />
