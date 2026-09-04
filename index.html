@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Jeffrey's exploration — fixed layout</title>
+<title>Jeffrey's exploration — Complete</title>
 <meta name="theme-color" content="#2fb86a">
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;800&display=swap" rel="stylesheet">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -11,15 +11,14 @@
 <style>
 :root{
   --accent:#2fb86a; --accent-dark:#238a55; --bg:#eef6f0; --card:#fff; --muted:#6b6b6b;
-  --radius:12px; --nav-height:72px; --header-height:72px; --safe-top:env(safe-area-inset-top,20px);
+  --radius:12px; --nav-height:64px; --header-height:64px; --safe-top:env(safe-area-inset-top,20px);
   --safe-bottom:env(safe-area-inset-bottom,0px); --shadow:0 10px 30px rgba(20,40,30,0.06);
 }
 *{box-sizing:border-box}
 html,body{height:100%;margin:0;padding:0;font-family:"Baloo 2",system-ui,-apple-system,"Segoe UI",Roboto,Arial;background:var(--bg);color:#0b2b1f; -webkit-text-size-adjust:100%;}
-/* ensure no unexpected transforms or margins */
 html, body { transform: none !important; -webkit-transform:none !important; }
 
-/* Fixed header */
+/* Header */
 header{
   position:fixed; top:0; left:0; right:0; width:100%; z-index:1200;
   background:linear-gradient(90deg,var(--accent),var(--accent-dark));
@@ -29,7 +28,7 @@ header{
 }
 .titleWrap{display:flex;align-items:center;gap:12px;flex:1;min-width:0}
 .titleWrap svg{flex:0 0 36px;width:36px;height:36px;display:block}
-h1{font-size:18px;margin:0;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:calc(100% - 140px);}
+h1{font-size:18px;margin:0;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:calc(100% - 160px);}
 
 /* header status */
 .headerStatus{display:flex;gap:10px;align-items:center;flex:0 0 auto}
@@ -37,12 +36,12 @@ h1{font-size:18px;margin:0;font-weight:800;white-space:nowrap;overflow:hidden;te
 .dot{width:10px;height:10px;border-radius:999px;background:#d9534f;box-shadow:0 2px 6px rgba(0,0,0,0.08)}
 .dot.green{background:#2fb86a}
 
-/* Fixed bottom nav: flush to bottom including safe area */
+/* Bottom nav: flush to bottom including safe area */
 .bottomNav{
   position:fixed;
   left:0;
   right:0;
-  bottom:env(safe-area-inset-bottom,0);
+  bottom:0;
   height:calc(var(--nav-height) + env(safe-area-inset-bottom,0px));
   background:linear-gradient(180deg,#fff,#f6fff6);
   border-top:1px solid #e9f3ea;
@@ -75,7 +74,7 @@ h1{font-size:18px;margin:0;font-weight:800;white-space:nowrap;overflow:hidden;te
 .card{background:var(--card);border-radius:var(--radius);padding:14px;margin-bottom:18px;box-shadow:var(--shadow);overflow:visible}
 .sectionTitle{display:block;background:linear-gradient(180deg,#f3fff6,#fff);border-radius:10px;padding:8px 12px;color:var(--accent-dark);font-weight:800;margin:-14px -14px 12px -14px}
 
-/* Inputs */
+/* Inputs: set base font-size to avoid iOS zoom on focus */
 input[type="text"],textarea,select{width:100%;padding:10px;border-radius:8px;border:1px solid #e6efe8;background:linear-gradient(180deg,#fff,#fbfffb);font-size:16px}
 textarea{min-height:72px;resize:vertical}
 
@@ -88,12 +87,12 @@ textarea{min-height:72px;resize:vertical}
 .thumbBtn.profile{background:rgba(43,184,106,0.95)}
 .thumbBadge{position:absolute;left:6px;bottom:6px;background:rgba(0,0,0,0.55);color:#fff;padding:2px 6px;border-radius:999px;font-size:12px}
 
-/* Library styles: force left alignment and consistent spacing */
+/* Library styles: left aligned headings */
 .libraryGroup{margin-bottom:12px;border-radius:10px;background:#fff;padding:8px;box-shadow:var(--shadow)}
 .groupHeader{
   display:flex;
   align-items:center;
-  justify-content:flex-start; /* left align */
+  justify-content:flex-start;
   gap:12px;
   cursor:pointer;
   padding:6px 8px;
@@ -106,7 +105,7 @@ textarea{min-height:72px;resize:vertical}
 .subHeader{
   display:flex;
   align-items:center;
-  justify-content:flex-start; /* left align */
+  justify-content:flex-start;
   gap:12px;
   cursor:pointer;
   padding:4px 6px;
@@ -199,7 +198,7 @@ textarea{min-height:72px;resize:vertical}
         <input id="commonName" type="text" placeholder="e.g. Red wood ant" autocomplete="off">
       </label>
 
-      <div class="formGrid" style="margin-top:10px">
+      <div class="formGrid" style="margin-top:10px;display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px">
         <label>Kingdom <input id="taxKingdom" placeholder="Kingdom"></label>
         <label>Phylum <input id="taxPhylum" placeholder="Phylum"></label>
         <label>Class <input id="taxClass" placeholder="Class"></label>
@@ -283,20 +282,203 @@ textarea{min-height:72px;resize:vertical}
 <div id="trashModal" style="display:none"></div>
 
 <script>
-/* Minimal JS to keep navigation, library rendering and ensureSettingsThen behavior.
-   Focus: keep layout fixes and left-aligned taxonomy headings working.
+/* Complete implementation:
+   - Fixed header/footer layout
+   - Navigation with hash routing and scroll-to-top behavior
+   - Library left-aligned headings and consistent spacing
+   - Bottom nav flush to bottom including safe area
+   - Local storage, IDB for images, Drive OAuth + sync queue (conservative)
+   - Sync preview only shown in Settings via ensureSettingsThen
+   - Trash soft-delete, restore, permanent delete, auto-purge
+   - Background image processing and queueing
 */
 
-/* Storage helpers (simple) */
-const LOCAL_KEY = 'exploration_records_layout_test';
+/* ---------- Storage & IDB ---------- */
+const LOCAL_KEY = 'exploration_records_complete_v1';
+const SYNC_QUEUE_KEY = 'exploration_sync_queue_complete_v1';
+const TRASH_RETENTION_DAYS = 30;
+
 function readLocalRecords(){ try{ return JSON.parse(localStorage.getItem(LOCAL_KEY) || '[]'); }catch(e){ return []; } }
 function writeLocalRecords(arr){ localStorage.setItem(LOCAL_KEY, JSON.stringify(arr)); }
+function readSyncQueue(){ try{ return JSON.parse(localStorage.getItem(SYNC_QUEUE_KEY) || '[]'); }catch(e){ return []; } }
+function writeSyncQueue(q){ localStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify(q)); }
 
-/* UI helpers */
+/* IDB for images */
+function openDb(){
+  if(window._dbPromise) return window._dbPromise;
+  window._dbPromise = new Promise((resolve,reject)=>{
+    const req = indexedDB.open('exploration_images_db_complete_v1',1);
+    req.onupgradeneeded = e => { const db = e.target.result; if(!db.objectStoreNames.contains('images')) db.createObjectStore('images',{keyPath:'id'}); };
+    req.onsuccess = ()=> resolve(req.result);
+    req.onerror = ()=> reject(req.error);
+  });
+  return window._dbPromise;
+}
+async function idbPut(id, blob){
+  const db = await openDb();
+  return new Promise((res,rej)=>{
+    const tx = db.transaction('images','readwrite');
+    tx.objectStore('images').put({id,blob});
+    tx.oncomplete = ()=> res(true);
+    tx.onerror = ()=> rej(tx.error);
+  });
+}
+async function idbGet(id){
+  const db = await openDb();
+  return new Promise((res,rej)=>{
+    const tx = db.transaction('images','readonly');
+    const r = tx.objectStore('images').get(id);
+    r.onsuccess = ()=> res(r.result ? r.result.blob : null);
+    r.onerror = ()=> rej(r.error);
+  });
+}
+async function idbDelete(id){
+  const db = await openDb();
+  return new Promise((res,rej)=>{
+    const tx = db.transaction('images','readwrite');
+    tx.objectStore('images').delete(id);
+    tx.oncomplete = ()=> res(true);
+    tx.onerror = ()=> rej(tx.error);
+  });
+}
+
+/* ---------- UI helpers ---------- */
 function showToast(msg, s=3){ const t = document.getElementById('toast'); t.innerText = msg; t.classList.add('show'); clearTimeout(t._t); t._t = setTimeout(()=> t.classList.remove('show'), s*1000); }
-function appendSyncLog(line){ const el = document.getElementById('syncLog'); if(!el) return; const now = new Date().toLocaleString(); const entry = `${now} — ${line}`; const prev = el.dataset.log ? JSON.parse(el.dataset.log) : []; prev.push(entry); el.dataset.log = JSON.stringify(prev); el.innerHTML = prev.slice().reverse().map(l=>`<div>${l}</div>`).join(''); console.info('[SYNC]', line); }
+function escapeHtml(s){ return (s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+function appendSyncLog(line){ const el = document.getElementById('syncLog'); const now = new Date().toLocaleString(); const entry = `${now} — ${line}`; const prev = el.dataset.log ? JSON.parse(el.dataset.log) : []; prev.push(entry); el.dataset.log = JSON.stringify(prev); el.innerHTML = prev.slice().reverse().map(l=>`<div>${escapeHtml(l)}</div>`).join(''); console.info('[SYNC]', line); }
 
-/* ensureSettingsThen */
+/* ---------- Drive helpers (OAuth + Drive REST) ---------- */
+let tokenClient = null;
+let accessToken = null;
+let cachedFolderId = null;
+const CLIENT_ID = "58009415485-8qvhrvbasmrq5ugms01dv8vt7pneen6u.apps.googleusercontent.com";
+const SCOPES = "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive";
+
+async function initTokenClientIfNeeded(){
+  if(tokenClient) return tokenClient;
+  if(!(window.google && google.accounts && google.accounts.oauth2)) return null;
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: SCOPES,
+    callback: (resp) => {
+      if(resp && resp.access_token){
+        accessToken = resp.access_token;
+        document.getElementById('signedDot').classList.add('green');
+        document.getElementById('signedText').innerText = 'Signed';
+        appendSyncLog('Signed in to Google');
+        loginSync().catch(err=>console.error('loginSync error', err));
+      } else {
+        showToast('Sign failed',2);
+      }
+    }
+  });
+  return tokenClient;
+}
+
+async function driveFetch(url, opts = {}){
+  if(!accessToken) throw new Error('No access token');
+  opts.headers = opts.headers || {};
+  opts.headers['Authorization'] = 'Bearer ' + accessToken;
+  return fetch(url, opts);
+}
+
+async function getOrCreateFolderId(folderName){
+  if(cachedFolderId) return cachedFolderId;
+  const q = `mimeType='application/vnd.google-apps.folder' and name='${folderName.replace(/'/g,"\\'")}' and trashed=false`;
+  const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name)`;
+  const res = await driveFetch(url);
+  if(!res.ok) throw new Error('Drive list failed: ' + res.status);
+  const j = await res.json();
+  if(j.files && j.files.length){ cachedFolderId = j.files[0].id; return cachedFolderId; }
+  const createRes = await fetch('https://www.googleapis.com/drive/v3/files', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: folderName, mimeType: 'application/vnd.google-apps.folder' })
+  });
+  if(!createRes.ok) throw new Error('Create folder failed: ' + createRes.status);
+  const cj = await createRes.json();
+  cachedFolderId = cj.id;
+  return cachedFolderId;
+}
+
+async function uploadJsonRecordToFolder(name, obj, folderId){
+  const metadata = { name: `${name}.json`, mimeType: 'application/json', parents: folderId ? [folderId] : undefined };
+  const blob = new Blob([JSON.stringify(obj)], { type: 'application/json' });
+  const form = new FormData();
+  form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+  form.append('file', blob);
+  const r = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', { method: 'POST', headers: { 'Authorization': 'Bearer ' + accessToken }, body: form });
+  if(!r.ok) throw new Error('Upload JSON failed: ' + r.status);
+  return r.json();
+}
+
+async function uploadImageBlobToFolder(blob, nameHint, folderId){
+  const meta = { name: nameHint, mimeType: blob.type, parents: folderId ? [folderId] : undefined };
+  const form = new FormData();
+  form.append('metadata', new Blob([JSON.stringify(meta)], { type: 'application/json' }));
+  form.append('file', blob);
+  const r = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', { method: 'POST', headers: { 'Authorization': 'Bearer ' + accessToken }, body: form });
+  if(!r.ok) throw new Error('Upload image failed: ' + r.status);
+  return r.json();
+}
+
+async function deleteDriveFile(driveId){
+  try{
+    if(!accessToken) throw new Error('Not signed');
+    const url = `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(driveId)}`;
+    const res = await driveFetch(url, { method: 'DELETE' });
+    if(res.status === 204) return true;
+    const j = await res.json().catch(()=>null);
+    throw new Error('Drive delete failed: ' + (j && j.error && j.error.message ? j.error.message : res.status));
+  }catch(e){
+    console.warn('deleteDriveFile error', e);
+    throw e;
+  }
+}
+
+/* ---------- Sync queue processing ---------- */
+async function attemptSyncQueue(){
+  try{
+    if(!accessToken){ document.getElementById('syncDot').classList.remove('green'); document.getElementById('syncText').innerText = 'Sync'; appendSyncLog('Not signed — sync skipped'); return false; }
+    const queue = readSyncQueue();
+    if(!queue.length){ document.getElementById('syncDot').classList.add('green'); document.getElementById('syncText').innerText = 'Synced'; appendSyncLog('Sync queue empty'); return true; }
+    appendSyncLog(`Starting sync of ${queue.length} item(s)`);
+    const folderId = await getOrCreateFolderId('EcologyApp_Records');
+    for(const recId of [...queue]){
+      const records = readLocalRecords();
+      const rec = records.find(r=>r.id===recId);
+      if(!rec){ writeSyncQueue(readSyncQueue().filter(x=>x!==recId)); appendSyncLog(`Removed missing record ${recId}`); continue; }
+      for(let i=0;i<(rec.images||[]).length;i++){
+        const imRef = rec.images[i];
+        if(imRef.driveId) continue;
+        const blob = await idbGet(imRef.id);
+        if(!blob){ appendSyncLog(`Image ${imRef.id} missing locally`); continue; }
+        const up = await uploadImageBlobToFolder(blob, `${(rec.scientificName||rec.id).replace(/\s+/g,'_')}_img_${Date.now()}_${i}.${(imRef.name||'').split('.').pop()}`, folderId);
+        imRef.driveId = up.id;
+        appendSyncLog(`Uploaded image ${imRef.id} -> ${up.id}`);
+      }
+      const recToUpload = { id: rec.id, scientificName: rec.scientificName, commonName: rec.commonName, taxonomy: rec.taxonomy, location: rec.location, behaviours: rec.behaviours, otherNotes: rec.otherNotes, images: (rec.images||[]).map(i=>({ driveId: i.driveId || null, name: i.name || null })), createdAt: rec.createdAt };
+      const uploaded = await uploadJsonRecordToFolder(rec.scientificName || rec.id, recToUpload, folderId);
+      const updated = readLocalRecords().map(r => r.id===recId ? ({...r, status:'uploaded', driveId: uploaded.id, images: r.images}) : r);
+      writeLocalRecords(updated);
+      const newQueue = readSyncQueue().filter(x=>x!==recId);
+      writeSyncQueue(newQueue);
+      appendSyncLog(`Uploaded ${recId} -> ${uploaded.id}`);
+    }
+    document.getElementById('syncDot').classList.add('green');
+    document.getElementById('syncText').innerText = 'Synced';
+    appendSyncLog('Sync completed');
+    return true;
+  }catch(e){
+    console.error('Sync error', e);
+    appendSyncLog('Sync failed: ' + (e && e.message ? e.message : String(e)));
+    document.getElementById('syncDot').classList.remove('green');
+    document.getElementById('syncText').innerText = 'Sync';
+    return false;
+  }
+}
+
+/* ---------- ensure Settings then run ---------- */
 function ensureSettingsThen(fn){
   if(location.hash !== '#pageSettings'){
     history.replaceState(null, '', '#pageSettings');
@@ -306,31 +488,567 @@ function ensureSettingsThen(fn){
   }
 }
 
-/* Sync preview (simple) */
-function renderSyncPreview(diffs){
+/* ---------- Remote listing & loginSync ---------- */
+async function listRemoteRecordsInFolder(){
+  try{
+    const folderId = await getOrCreateFolderId('EcologyApp_Records');
+    const url = `https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents+and+mimeType='application/json'+and+trashed=false&fields=files(id,name,modifiedTime)`;
+    const res = await driveFetch(url);
+    if(!res.ok) throw new Error('Drive list failed: ' + res.status);
+    const j = await res.json();
+    const files = j.files || [];
+    const remoteRecords = [];
+    for(const f of files){
+      try{
+        const getUrl = `https://www.googleapis.com/drive/v3/files/${f.id}?alt=media`;
+        const r = await driveFetch(getUrl);
+        if(!r.ok) { appendSyncLog(`Failed to fetch remote JSON ${f.id}`); continue; }
+        const obj = await r.json();
+        obj._driveFile = { id: f.id, name: f.name, modifiedTime: f.modifiedTime };
+        remoteRecords.push(obj);
+      }catch(e){
+        console.warn('fetch remote json error', e);
+      }
+    }
+    return remoteRecords;
+  }catch(e){
+    console.error('listRemoteRecordsInFolder error', e);
+    throw e;
+  }
+}
+
+function computeDiffs(local, remote){
+  const remoteByDrive = {};
+  remote.forEach(r=>{ if(r._driveFile && r._driveFile.id) remoteByDrive[r._driveFile.id] = r; if(r.id) remoteByDrive[r.id] = r; });
+
+  const onlyLocal = []; const onlyRemote = []; const both = []; const localDeleted = [];
+
+  for(const l of local){
+    if(l.deleted){
+      const rem = (l.driveId && remote.find(r=>r._driveFile && r._driveFile.id === l.driveId)) || (l.id && remote.find(r=>r.id === l.id));
+      if(rem) localDeleted.push({ local: l, remote: rem });
+      continue;
+    }
+    const rem = (l.driveId && remote.find(r=>r._driveFile && r._driveFile.id === l.driveId)) || (l.id && remote.find(r=>r.id === l.id));
+    if(rem) both.push({ local: l, remote: rem });
+    else onlyLocal.push(l);
+  }
+  for(const r of remote){
+    const localMatch = (r.id && local.find(l=>l.id===r.id)) || (r._driveFile && local.find(l=>l.driveId===r._driveFile.id));
+    if(!localMatch) onlyRemote.push(r);
+  }
+  return { onlyLocal, onlyRemote, both, localDeleted };
+}
+
+/* ---------- Sync Preview UI ---------- */
+function renderSyncPreview(diffResult){
   const modalRoot = document.getElementById('syncPreviewModal');
   modalRoot.innerHTML = '';
   const backdrop = document.createElement('div'); backdrop.className='modalBackdrop';
   const modal = document.createElement('div'); modal.className='modal';
-  modal.innerHTML = `<h3 style="margin-top:0">Sync Preview</h3><p style="color:#666">This is a conservative preview (layout test).</p><div style="margin-top:12px;display:flex;justify-content:flex-end"><button id="closeSync" class="btn small ghost">Close</button></div>`;
-  backdrop.appendChild(modal); modalRoot.appendChild(backdrop); modalRoot.style.display='block';
-  document.getElementById('closeSync').addEventListener('click', ()=> { modalRoot.innerHTML=''; modalRoot.style.display='none'; });
+  modal.innerHTML = `<h3 style="margin-top:0">Sync Preview</h3><p style="color:#666">以下為 Drive 與本地之差異。採用保守策略，請逐項確認要執行的動作。</p>`;
+  const sections = document.createElement('div'); sections.style.display='grid'; sections.style.gap='12px';
+
+  function createRow(contentEl, defaultAction, actions){
+    const row = document.createElement('div'); row.style.display='flex'; row.style.alignItems='center'; row.style.justifyContent='space-between'; row.style.padding='8px'; row.style.borderBottom='1px dashed #f0f8f0';
+    const left = document.createElement('div'); left.style.flex='1'; left.appendChild(contentEl);
+    const right = document.createElement('div'); right.style.display='flex'; right.style.gap='8px';
+    actions.forEach(a=>{
+      const btn = document.createElement('button'); btn.className='btn small'; btn.innerText = a.label;
+      if(a.ghost) btn.classList.add('ghost');
+      btn.addEventListener('click', ()=>{ row.dataset.action = a.action; row.style.background = a.bg || 'transparent'; });
+      right.appendChild(btn);
+    });
+    row.appendChild(left); row.appendChild(right);
+    row.dataset.action = defaultAction || 'keep';
+    return row;
+  }
+
+  // Only Local
+  const onlyLocalWrap = document.createElement('div'); onlyLocalWrap.style.border='1px solid #eef6ef'; onlyLocalWrap.style.padding='8px'; onlyLocalWrap.style.borderRadius='8px';
+  const t1 = document.createElement('div'); t1.style.fontWeight='800'; t1.innerText = `Only Local (${diffResult.onlyLocal.length})`; onlyLocalWrap.appendChild(t1);
+  const list1 = document.createElement('div'); list1.style.marginTop='8px';
+  diffResult.onlyLocal.forEach(l=>{
+    const content = document.createElement('div');
+    content.innerHTML = `<div style="font-weight:800">${escapeHtml(l.scientificName||l.id)}</div><div style="color:#666">${escapeHtml(l.commonName||'')}</div>`;
+    const row = createRow(content, 'upload', [{label:'Upload', action:'upload', bg:'#f7fff7'},{label:'Keep', action:'keep', ghost:true}]);
+    row.dataset.item = JSON.stringify(l);
+    list1.appendChild(row);
+  });
+  onlyLocalWrap.appendChild(list1);
+  sections.appendChild(onlyLocalWrap);
+
+  // Only Remote
+  const onlyRemoteWrap = document.createElement('div'); onlyRemoteWrap.style.border='1px solid #eef6ef'; onlyRemoteWrap.style.padding='8px'; onlyRemoteWrap.style.borderRadius='8px';
+  const t2 = document.createElement('div'); t2.style.fontWeight='800'; t2.innerText = `Only Remote (${diffResult.onlyRemote.length})`; onlyRemoteWrap.appendChild(t2);
+  const list2 = document.createElement('div'); list2.style.marginTop='8px';
+  diffResult.onlyRemote.forEach(r=>{
+    const content = document.createElement('div');
+    content.innerHTML = `<div style="font-weight:800">${escapeHtml(r.scientificName||r.id||r._driveFile.name)}</div><div style="color:#666">remote file: ${escapeHtml(r._driveFile && r._driveFile.name || '')}</div>`;
+    const row = createRow(content, 'download', [{label:'Download', action:'download', bg:'#f7f7ff'},{label:'Keep', action:'keep', ghost:true}]);
+    row.dataset.item = JSON.stringify(r);
+    list2.appendChild(row);
+  });
+  onlyRemoteWrap.appendChild(list2);
+  sections.appendChild(onlyRemoteWrap);
+
+  // Both (conflicts)
+  const bothWrap = document.createElement('div'); bothWrap.style.border='1px solid #eef6ef'; bothWrap.style.padding='8px'; bothWrap.style.borderRadius='8px';
+  const t3 = document.createElement('div'); t3.style.fontWeight='800'; t3.innerText = `Both (conflicts) (${diffResult.both.length})`; bothWrap.appendChild(t3);
+  const list3 = document.createElement('div'); list3.style.marginTop='8px';
+  diffResult.both.forEach(pair=>{
+    const local = pair.local; const remote = pair.remote;
+    const content = document.createElement('div');
+    const table = document.createElement('div'); table.style.display='grid'; table.style.gridTemplateColumns='1fr 1fr'; table.style.gap='8px';
+    const leftCol = document.createElement('div'); leftCol.innerHTML = `<div style="font-weight:700;color:#145a3f">Local</div>
+      <div><strong>${escapeHtml(local.scientificName||'')}</strong></div><div style="color:#666">${escapeHtml(local.commonName||'')}</div>
+      <div style="margin-top:6px"><em>Taxonomy:</em> ${escapeHtml((local.taxonomy||[]).join(' › '))}</div>
+      <div><em>Location:</em> ${escapeHtml(local.location||'')}</div>
+      <div><em>Behaviours:</em> ${escapeHtml(local.behaviours||'')}</div>
+      <div style="margin-top:6px"><em>Images (local):</em></div>`;
+    const rightCol = document.createElement('div'); rightCol.innerHTML = `<div style="font-weight:700;color:#145a3f">Remote</div>
+      <div><strong>${escapeHtml(remote.scientificName||remote.id||'')}</strong></div><div style="color:#666">remote file: ${escapeHtml(remote._driveFile && remote._driveFile.name||'')}</div>
+      <div style="margin-top:6px"><em>Taxonomy:</em> ${escapeHtml((remote.taxonomy||[]).join(' › '))}</div>
+      <div><em>Location:</em> ${escapeHtml(remote.location||'')}</div>
+      <div><em>Behaviours:</em> ${escapeHtml(remote.behaviours||'')}</div>
+      <div style="margin-top:6px"><em>Images (remote):</em></div>`;
+    table.appendChild(leftCol); table.appendChild(rightCol);
+    content.appendChild(table);
+
+    const localImgsWrap = document.createElement('div'); localImgsWrap.style.display='flex'; localImgsWrap.style.gap='6px'; localImgsWrap.style.marginTop='6px';
+    (async ()=>{
+      for(const im of (local.images||[])){
+        const b = await idbGet(im.id).catch(()=>null);
+        const img = document.createElement('img'); img.style.width='64px'; img.style.height='64px'; img.style.objectFit='cover'; img.style.borderRadius='6px'; img.alt = im.name || '';
+        if(b) img.src = URL.createObjectURL(b); else img.alt = 'missing';
+        localImgsWrap.appendChild(img);
+      }
+    })();
+    leftCol.appendChild(localImgsWrap);
+
+    const remoteImgsWrap = document.createElement('div'); remoteImgsWrap.style.display='flex'; remoteImgsWrap.style.flexDirection='column'; remoteImgsWrap.style.gap='4px'; remoteImgsWrap.style.marginTop='6px';
+    (remote.images||[]).forEach(im=>{
+      const el = document.createElement('div'); el.style.fontSize='12px'; el.style.color='#666'; el.innerText = `${im.name || 'image'} ${im.driveId ? '('+im.driveId+')' : ''}`; remoteImgsWrap.appendChild(el);
+    });
+    rightCol.appendChild(remoteImgsWrap);
+
+    const row = createRow(content, 'keep', [{label:'Download', action:'download', bg:'#f7f7ff'},{label:'Upload', action:'upload', bg:'#f7fff7'},{label:'Keep', action:'keep', ghost:true}]);
+    row.dataset.item = JSON.stringify(pair);
+    list3.appendChild(row);
+  });
+  bothWrap.appendChild(list3);
+  sections.appendChild(bothWrap);
+
+  // Local deleted
+  const ldWrap = document.createElement('div'); ldWrap.style.border='1px solid #eef6ef'; ldWrap.style.padding='8px'; ldWrap.style.borderRadius='8px';
+  const t4 = document.createElement('div'); t4.style.fontWeight='800'; t4.innerText = `Local deleted (remote exists) (${diffResult.localDeleted.length})`; ldWrap.appendChild(t4);
+  const list4 = document.createElement('div'); list4.style.marginTop='8px';
+  diffResult.localDeleted.forEach(pair=>{
+    const content = document.createElement('div');
+    content.innerHTML = `<div style="font-weight:800">${escapeHtml(pair.local.scientificName||pair.local.id)}</div><div style="color:#666">remote file: ${escapeHtml(pair.remote._driveFile && pair.remote._driveFile.name||'')}</div>`;
+    const row = createRow(content, 'keep', [{label:'Delete remote', action:'deleteRemote', bg:'#fff7f7'},{label:'Restore local', action:'restore', ghost:true}]);
+    row.dataset.item = JSON.stringify(pair);
+    list4.appendChild(row);
+  });
+  ldWrap.appendChild(list4);
+  sections.appendChild(ldWrap);
+
+  modal.appendChild(sections);
+
+  const footer = document.createElement('div'); footer.style.display='flex'; footer.style.justifyContent='space-between'; footer.style.gap='8px'; footer.style.marginTop='12px';
+  const leftInfo = document.createElement('div'); leftInfo.style.color='#666'; leftInfo.style.fontSize='13px'; leftInfo.innerText = '保守模式：所有會改動遠端或覆寫本地的操作都需要你確認。';
+  const rightBtns = document.createElement('div'); rightBtns.style.display='flex'; rightBtns.style.gap='8px';
+  const btnCancel = document.createElement('button'); btnCancel.className='btn small ghost'; btnCancel.innerText='Cancel'; btnCancel.addEventListener('click', ()=> { modalRoot.innerHTML=''; modalRoot.style.display='none'; });
+  const btnApply = document.createElement('button'); btnApply.className='btn small'; btnApply.innerText='Apply selected actions'; btnApply.addEventListener('click', async ()=>{
+    const rows = modal.querySelectorAll('div[data-item]');
+    const actions = [];
+    rows.forEach(r=>{
+      const action = r.dataset.action || 'keep';
+      const item = JSON.parse(r.dataset.item);
+      actions.push({ action, item });
+    });
+    modalRoot.innerHTML=''; modalRoot.style.display='none';
+    await applySyncActions(actions);
+  });
+  rightBtns.appendChild(btnCancel); rightBtns.appendChild(btnApply);
+  footer.appendChild(leftInfo); footer.appendChild(rightBtns);
+  modal.appendChild(footer);
+  backdrop.appendChild(modal);
+  modalRoot.appendChild(backdrop);
+  modalRoot.style.display='block';
 }
 
-/* Trash modal */
+/* Apply actions chosen in preview */
+async function applySyncActions(actions){
+  for(const a of actions){
+    try{
+      if(a.action === 'upload'){
+        const local = a.item;
+        const q = readSyncQueue(); if(!q.includes(local.id)){ q.push(local.id); writeSyncQueue(q); appendSyncLog(`Queued ${local.id} for upload`); }
+        await attemptSyncQueue();
+      } else if(a.action === 'download'){
+        const remote = a.item;
+        const localRecords = readLocalRecords();
+        const existing = localRecords.find(r=>r.id === remote.id || (r.driveId && r.driveId === (remote._driveFile && remote._driveFile.id)));
+        if(existing){
+          appendSyncLog(`Skipped automatic overwrite for ${existing.id || remote.id}`);
+        } else {
+          const newRec = {
+            id: remote.id || ('rec_' + Date.now() + '_' + Math.floor(Math.random()*10000)),
+            scientificName: remote.scientificName || '',
+            commonName: remote.commonName || '',
+            taxonomy: remote.taxonomy || [],
+            location: remote.location || '',
+            behaviours: remote.behaviours || '',
+            otherNotes: remote.otherNotes || '',
+            images: (remote.images||[]).map(im=>({ id: 'img_remote_' + Math.floor(Math.random()*1000000), name: im.name || '', isProfile: false, driveId: im.driveId || null })),
+            createdAt: remote.createdAt || new Date().toISOString(),
+            updatedAt: remote.updatedAt || new Date().toISOString(),
+            driveId: remote._driveFile && remote._driveFile.id,
+            status: 'uploaded'
+          };
+          localRecords.push(newRec);
+          writeLocalRecords(localRecords);
+          appendSyncLog(`Downloaded remote ${newRec.id} into local`);
+        }
+      } else if(a.action === 'deleteRemote'){
+        const pair = a.item;
+        const driveId = (pair.remote && pair.remote._driveFile && pair.remote._driveFile.id) || (pair.driveId);
+        if(driveId && accessToken){
+          try{ await deleteDriveFile(driveId); appendSyncLog(`Deleted remote file ${driveId}`); }
+          catch(e){ appendSyncLog(`Failed to delete remote ${driveId}: ${e.message}`); }
+        } else {
+          appendSyncLog(`No driveId or not signed; skipped deleteRemote`);
+        }
+      } else if(a.action === 'restore'){
+        const pair = a.item;
+        if(pair.local && pair.local.id) restoreFromTrash(pair.local.id);
+      } else {
+        // keep: do nothing
+      }
+    }catch(e){
+      console.error('applySyncActions error', e);
+      appendSyncLog('Action failed: ' + (e && e.message ? e.message : String(e)));
+    }
+  }
+  renderTree(); renderLibrary();
+}
+
+/* ---------- Trash ---------- */
+function softDeleteRecord(id){
+  const records = readLocalRecords();
+  const rec = records.find(r=>r.id===id);
+  if(!rec) return showToast('Record not found',2);
+  rec.deleted = true; rec.deletedAt = new Date().toISOString();
+  writeLocalRecords(records);
+  appendSyncLog(`Moved ${id} to Trash`);
+  renderTree(); renderLibrary();
+}
+
 function openTrashModal(){
   const modalRoot = document.getElementById('trashModal');
   modalRoot.innerHTML = '';
   const backdrop = document.createElement('div'); backdrop.className='modalBackdrop';
   const modal = document.createElement('div'); modal.className='modal';
-  modal.innerHTML = `<h3 style="margin-top:0">Trash</h3><p style="color:#666">Trash (layout test).</p><div style="margin-top:12px;display:flex;justify-content:flex-end"><button id="closeTrash" class="btn small ghost">Close</button></div>`;
-  backdrop.appendChild(modal); modalRoot.appendChild(backdrop); modalRoot.style.display='block';
-  document.getElementById('closeTrash').addEventListener('click', ()=> { modalRoot.innerHTML=''; modalRoot.style.display='none'; });
+  modal.innerHTML = `<h3 style="margin-top:0">Trash</h3><p style="color:#666">已刪除的紀錄會保留 ${TRASH_RETENTION_DAYS} 天。你可以還原或永久刪除。</p>`;
+  const list = document.createElement('div'); list.style.display='grid'; list.style.gap='8px';
+  const records = readLocalRecords().filter(r=>r.deleted);
+  if(!records.length){ list.innerHTML = '<div>No items in Trash</div>'; }
+  records.forEach(r=>{
+    const row = document.createElement('div'); row.style.display='flex'; row.style.justifyContent='space-between'; row.style.alignItems='center'; row.style.padding='8px'; row.style.border='1px solid #eef6ef'; row.style.borderRadius='8px';
+    const left = document.createElement('div'); left.innerHTML = `<div style="font-weight:800">${escapeHtml(r.scientificName||r.id)}</div><div style="color:#666">${escapeHtml(r.commonName||'')}</div><div style="color:#999;font-size:12px">Deleted: ${new Date(r.deletedAt).toLocaleString()}</div>`;
+    const right = document.createElement('div'); right.style.display='flex'; right.style.gap='8px';
+    const btnRestore = document.createElement('button'); btnRestore.className='btn small'; btnRestore.innerText='Restore'; btnRestore.addEventListener('click', ()=>{ restoreFromTrash(r.id); modalRoot.innerHTML=''; modalRoot.style.display='none'; });
+    const btnPerm = document.createElement('button'); btnPerm.className='btn small ghost'; btnPerm.innerText='Delete permanently'; btnPerm.addEventListener('click', ()=>{ permanentDelete(r.id); modalRoot.innerHTML=''; modalRoot.style.display='none'; });
+    right.appendChild(btnRestore); right.appendChild(btnPerm);
+    row.appendChild(left); row.appendChild(right);
+    list.appendChild(row);
+  });
+  modal.appendChild(list);
+  const footer = document.createElement('div'); footer.style.display='flex'; footer.style.justifyContent='flex-end'; footer.style.marginTop='12px';
+  const btnClose = document.createElement('button'); btnClose.className='btn small ghost'; btnClose.innerText='Close'; btnClose.addEventListener('click', ()=>{ modalRoot.innerHTML=''; modalRoot.style.display='none'; });
+  footer.appendChild(btnClose);
+  modal.appendChild(footer);
+  backdrop.appendChild(modal);
+  modalRoot.appendChild(backdrop);
+  modalRoot.style.display='block';
 }
 
-/* Navigation and rendering */
-function updateSpeciesCount(){ document.getElementById('speciesCount').innerText = `Species recorded: ${readLocalRecords().filter(r=>!r.deleted).length}`; }
+function restoreFromTrash(id){
+  const records = readLocalRecords();
+  const rec = records.find(r=>r.id===id);
+  if(!rec) return showToast('Record not found',2);
+  delete rec.deleted; delete rec.deletedAt;
+  writeLocalRecords(records);
+  appendSyncLog(`Restored ${id} from Trash`);
+  renderTree(); renderLibrary();
+}
 
+async function permanentDelete(id){
+  const records = readLocalRecords();
+  const rec = records.find(r=>r.id===id);
+  if(!rec) return showToast('Record not found',2);
+  if(accessToken){
+    try{
+      if(rec.driveId){ await deleteDriveFile(rec.driveId); appendSyncLog(`Deleted remote record file ${rec.driveId}`); }
+      for(const im of (rec.images||[])){ if(im.driveId){ try{ await deleteDriveFile(im.driveId); appendSyncLog(`Deleted remote image ${im.driveId}`); }catch(e){ appendSyncLog(`Failed to delete remote image ${im.driveId}`); } } }
+    }catch(e){
+      appendSyncLog('Permanent delete remote attempt failed: ' + e.message);
+    }
+  }
+  for(const im of (rec.images||[])){ try{ await idbDelete(im.id); }catch(e){} }
+  const updated = records.filter(r=>r.id!==id);
+  writeLocalRecords(updated);
+  appendSyncLog(`Permanently deleted ${id} locally`);
+  renderTree(); renderLibrary();
+}
+
+/* Auto purge Trash older than retention days (runs at startup) */
+async function autoPurgeTrash(){
+  try{
+    const records = readLocalRecords();
+    const now = Date.now();
+    const retentionMs = TRASH_RETENTION_DAYS * 24 * 3600 * 1000;
+    const toPurge = records.filter(r=>r.deleted && r.deletedAt && (now - new Date(r.deletedAt).getTime() > retentionMs));
+    for(const r of toPurge){
+      appendSyncLog(`Auto-purging ${r.id} from Trash (older than ${TRASH_RETENTION_DAYS} days)`);
+      if(accessToken){
+        try{
+          if(r.driveId){ await deleteDriveFile(r.driveId); appendSyncLog(`Deleted remote record file ${r.driveId}`); }
+          for(const im of (r.images||[])){ if(im.driveId){ try{ await deleteDriveFile(im.driveId); appendSyncLog(`Deleted remote image ${im.driveId}`); }catch(e){ appendSyncLog(`Failed to delete remote image ${im.driveId}`); } } }
+        }catch(e){
+          appendSyncLog('Auto purge remote delete failed: ' + e.message);
+        }
+      }
+      for(const im of (r.images||[])){ try{ await idbDelete(im.id); }catch(e){} }
+    }
+    const remaining = records.filter(r=>!(r.deleted && r.deletedAt && (now - new Date(r.deletedAt).getTime() > retentionMs)));
+    writeLocalRecords(remaining);
+    if(toPurge.length) { appendSyncLog(`Auto-purged ${toPurge.length} items from Trash`); renderTree(); renderLibrary(); }
+  }catch(e){ console.error('autoPurgeTrash error', e); appendSyncLog('Auto purge failed: ' + e.message); }
+}
+
+/* ---------- UI & Tree & Library ---------- */
+const svg = d3.select('#treeSvg');
+const inner = svg.append('g').attr('class','innerGroup');
+const miniSvg = d3.select('#miniSvg');
+const treeLayout = d3.tree();
+let root = d3.hierarchy({name:'Life',children:[]});
+function buildTreeDataFromLocal(){
+  const records = readLocalRecords().filter(r=>!r.deleted);
+  const root = {name:'Life',children:[]};
+  for(const r of records){
+    const levels = r.taxonomy && r.taxonomy.length ? r.taxonomy : ['Unclassified'];
+    let cursor = root;
+    for(const lvl of levels){
+      let child = cursor.children.find(c=>c.name===lvl);
+      if(!child){ child = {name: lvl, children: []}; cursor.children.push(child); }
+      cursor = child;
+    }
+    cursor.children = cursor.children || [];
+    cursor.children.push({name: r.scientificName || r.id, species:true, recordId: r.id});
+  }
+  if(root.children.length===0) return {name:'Life',children:[{name:'No records yet',children:[]}]};
+  return root;
+}
+function collapseAll(d, depth=0, maxDepth=2){ if(d.children){ d.children.forEach(c=>collapseAll(c, depth+1, maxDepth)); if(depth>=maxDepth){ d._children = d.children; d.children = null; } } }
+function truncate(s,n){ if(!s) return ''; return s.length>n? s.slice(0,n-1)+'…':s; }
+function renderTree(){
+  try{
+    const data = buildTreeDataFromLocal();
+    root = d3.hierarchy(data);
+    collapseAll(root,0,2);
+    const svgW = svg.node().clientWidth; const svgH = +svg.attr('height');
+    treeLayout.size([svgW-40, svgH-40]); treeLayout(root);
+    const links = inner.selectAll('.link').data(root.links(), d=>d.target.data.name + '_' + d.target.depth);
+    links.join(enter => enter.append('path').attr('class','link').attr('d', d=>linkPath(d)), update => update.attr('d', d=>linkPath(d)), exit => exit.remove());
+    const nodes = inner.selectAll('.node').data(root.descendants(), d=>d.data.name + '_' + d.depth);
+    const nodeEnter = nodes.enter().append('g').attr('class','node').attr('transform', d=>`translate(${d.x},${d.y})`);
+    nodeEnter.append('circle').attr('r', d=> d.children || d._children ? 6 : 5).attr('fill', d=> d.children || d._children ? 'var(--accent)' : '#fff').attr('stroke','var(--accent)');
+    nodeEnter.append('text').attr('x',0).attr('y',-10).attr('text-anchor','middle').text(d=>truncate(d.data.name,28)).style('font-size','13px');
+    nodes.merge(nodeEnter).transition().duration(200).attr('transform', d=>`translate(${d.x},${d.y})`);
+    inner.selectAll('.node').on('click', (event,d)=>{ event.stopPropagation(); if(d.children){ d._children = d.children; d.children = null; } else { d.children = d._children; d._children = null; } renderTree(); if(d.data.species && d.data.recordId){ showSection('#pageLibrary'); setTimeout(()=> showLocalRecord(d.data.recordId), 300); } });
+    updateMinimap();
+    updateSpeciesCount();
+  }catch(e){ console.warn('renderTree error', e); }
+}
+function linkPath(d){ const x1=d.source.x,y1=d.source.y,x2=d.target.x,y2=d.target.y,midY=(y1+y2)/2; return `M${x1},${y1} C${x1},${midY} ${x2},${midY} ${x2},${y2}`; }
+const zoom = d3.zoom().scaleExtent([0.4,6]).on('zoom', (event)=>{ inner.attr('transform', event.transform); updateMinimapViewport(event.transform); });
+svg.call(zoom).on('dblclick.zoom', null);
+document.getElementById('zoomIn').addEventListener('click', ()=> svg.transition().call(zoom.scaleBy, 1.2));
+document.getElementById('zoomOut').addEventListener('click', ()=> svg.transition().call(zoom.scaleBy, 1/1.2));
+document.getElementById('resetView').addEventListener('click', ()=> fitToScreen());
+function fitToScreen(){ const nodes = root.descendants(); if(!nodes.length) return; const minX=d3.min(nodes,d=>d.x), maxX=d3.max(nodes,d=>d.x), minY=d3.min(nodes,d=>d.y), maxY=d3.max(nodes,d=>d.y); const contentW=maxX-minX+200, contentH=maxY-minY+200; const svgW=svg.node().clientWidth, svgH=+svg.attr('height'); const scale=Math.min(svgW/contentW, svgH/contentH,1); const tx=(svgW - scale*(minX+maxX))/2; const ty=(svgH - scale*(minY+maxY))/2; const t = d3.zoomIdentity.translate(tx,ty).scale(scale); svg.transition().duration(600).call(zoom.transform, t); }
+function updateMinimap(){ const nodes = root.descendants(); if(!nodes.length) return; const maxX=d3.max(nodes,d=>d.x), maxY=d3.max(nodes,d=>d.y), minX=d3.min(nodes,d=>d.x), minY=d3.min(nodes,d=>d.y); miniSvg.attr('viewBox', `${minX} ${minY} ${Math.max(1, maxX-minX)} ${Math.max(1, maxY-minY)}`); miniSvg.selectAll('*').remove(); miniSvg.selectAll('circle').data(nodes).enter().append('circle').attr('cx',d=>d.x).attr('cy',d=>d.y).attr('r',1.2).attr('fill','#cfeee0'); miniSvg.append('rect').attr('id','miniViewport').attr('x',0).attr('y',0).attr('width',10).attr('height',10).attr('fill','rgba(43,184,106,0.12)').attr('stroke','#2fb86a'); updateMinimapViewport(); }
+function updateMinimapViewport(transform){ const t = transform || d3.zoomTransform(svg.node()); const svgW = svg.node().clientWidth, svgH = +svg.attr('height'); const x0=(0 - t.x)/t.k, y0=(0 - t.y)/t.k, x1=(svgW - t.x)/t.k, y1=(svgH - t.y)/t.k; miniSvg.select('#miniViewport').attr('x', x0).attr('y', y0).attr('width', Math.max(1, x1-x0)).attr('height', Math.max(1, y1-y0)); }
+
+/* ---------- Navigation & UI binding ---------- */
+window.addEventListener('DOMContentLoaded', ()=> {
+  const navButtons = document.querySelectorAll('.navBtn');
+  const headerEl = document.getElementById('appHeader');
+
+  function showSection(hash){
+    document.querySelectorAll('section.card').forEach(s=>s.style.display='none');
+    const el = document.querySelector(hash) || document.getElementById('pageHome');
+    if(el) el.style.display='block';
+    navButtons.forEach(b=>b.classList.remove('active'));
+    const active = document.querySelector(`a[href="${hash}"]`);
+    if(active) active.classList.add('active');
+
+    setTimeout(()=>{
+      try{
+        const headerHeight = headerEl ? headerEl.getBoundingClientRect().height : 0;
+        const rect = el.getBoundingClientRect();
+        const targetY = window.scrollY + rect.top - headerHeight - 8;
+        window.scrollTo({ top: Math.max(0, targetY), behavior: 'smooth' });
+      }catch(e){
+        window.scrollTo({ top:0, behavior:'smooth' });
+      }
+    }, 80);
+
+    if(el && el.id === 'pageAdd'){
+      setTimeout(()=>{ const first = document.getElementById('speciesName'); if(first){ first.focus({preventScroll:true}); } }, 220);
+    }
+
+    const treeWrap = document.querySelector('.treeWrap');
+    if(el && el.id === 'pageHome'){ if(treeWrap) treeWrap.style.display=''; try{ renderTree(); fitToScreen(); }catch(e){} } else { if(treeWrap) treeWrap.style.display='none'; }
+    updateSpeciesCount();
+    if(el && el.id === 'pageLibrary') renderLibrary();
+  }
+
+  navButtons.forEach(a=>{
+    a.addEventListener('click', (e)=>{
+      e.preventDefault();
+      const href = a.getAttribute('href') || '#pageHome';
+      history.replaceState(null,'',href);
+      showSection(href);
+    });
+  });
+
+  window.addEventListener('hashchange', ()=> { const h = location.hash && document.querySelector(location.hash) ? location.hash : '#pageHome'; showSection(h); });
+
+  document.getElementById('searchBtn').addEventListener('click', ()=> {
+    const q = document.getElementById('treeSearch').value.trim().toLowerCase();
+    if(!q) return;
+    const found = root.descendants().find(d => (d.data.name||'').toLowerCase().includes(q));
+    if(found){ let p = found.parent; while(p){ if(p._children){ p.children = p._children; p._children = null; } p = p.parent; } renderTree(); fitToScreen(); } else showToast('No match found',2);
+  });
+  document.getElementById('clearSearch').addEventListener('click', ()=> document.getElementById('treeSearch').value = '');
+
+  document.getElementById('saveBtnAdd').addEventListener('click', async ()=> { await handleSaveFromAdd({autoUpload:true}); });
+  document.getElementById('saveLocalOnlyBtnAdd').addEventListener('click', async ()=> { await handleSaveFromAdd({autoUpload:false}); });
+
+  document.getElementById('exportLocalBtnSettings').addEventListener('click', ()=>{
+    const data = JSON.stringify(readLocalRecords(), null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = `exploration_records_${new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')}.json`;
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    showToast('Local JSON exported', 3);
+  });
+  document.getElementById('importLocalBtnSettings').addEventListener('click', ()=> document.getElementById('importFile').click());
+  document.getElementById('importFile').addEventListener('change', async (e)=>{
+    const f = e.target.files[0]; if(!f) return;
+    try{ const txt = await f.text(); const arr = JSON.parse(txt); if(!Array.isArray(arr)) throw new Error('Invalid file'); const existing = readLocalRecords(); const merged = existing.concat(arr); const deduped = merged.filter((v,i,a)=>a.findIndex(x=>x.id===v.id)===i); writeLocalRecords(deduped); showToast('Imported records',2); renderTree(); }catch(err){ showToast('Import failed',3); }
+  });
+
+  document.getElementById('btnSignGrantSettings').addEventListener('click', async ()=>{
+    await initTokenClientIfNeeded();
+    if(tokenClient) tokenClient.requestAccessToken({ prompt: 'consent' });
+    else showToast('Google Identity not available',3);
+  });
+  document.getElementById('btnSignRetrySettings').addEventListener('click', ()=> {
+    if(tokenClient) tokenClient.requestAccessToken({ prompt: 'consent' });
+    else showToast('No token client',2);
+  });
+
+  document.getElementById('backupAllBtn').addEventListener('click', async ()=>{
+    const localOnly = readLocalRecords().filter(r=>!r.deleted && !r.driveId);
+    if(!localOnly.length){ showToast('No local-only records to backup',2); return; }
+    const diffs = { onlyLocal: localOnly, onlyRemote: [], both: [], localDeleted: [] };
+    ensureSettingsThen(()=> renderSyncPreview(diffs));
+  });
+
+  document.getElementById('speciesImages').addEventListener('change', async (e)=>{
+    const files = e.target.files;
+    const thumbs = document.getElementById('thumbs'); thumbs.innerHTML = '';
+    window._tmpFiles = window._tmpFiles || {};
+    for(let i=0;i<files.length;i++){
+      const f = files[i];
+      const url = URL.createObjectURL(f);
+      const id = 'tmp_' + Date.now() + '_' + i;
+      window._tmpFiles[id] = f;
+      const item = createThumbElement({ id, url, name: f.name, isProfile: false }, true);
+      thumbs.appendChild(item);
+    }
+  });
+
+  const speciesNameInput = document.getElementById('speciesName');
+  speciesNameInput.addEventListener('input', ()=>{
+    const val = speciesNameInput.value.trim();
+    const parts = val.split(/\s+/);
+    document.getElementById('taxGenus').value = parts[0] || '';
+    document.getElementById('taxSpecies').value = parts[1] || '';
+  });
+
+  document.getElementById('thumbs').addEventListener('click', async (e)=>{
+    const btn = e.target.closest('button[data-action]');
+    if(!btn) return;
+    const action = btn.dataset.action;
+    const id = btn.dataset.id;
+    if(action === 'delete'){
+      if(id && id.startsWith('tmp_')){ delete window._tmpFiles[id]; const el = document.querySelector(`.thumbItem[data-id="${id}"]`); if(el) el.remove(); }
+      else { window._deletedImages = window._deletedImages || []; window._deletedImages.push(id); const el = document.querySelector(`.thumbItem[data-id="${id}"]`); if(el) el.remove(); }
+    } else if(action === 'profile'){
+      document.querySelectorAll('.thumbItem').forEach(t=> t.classList.remove('profileSelected'));
+      const el = document.querySelector(`.thumbItem[data-id="${id}"]`);
+      if(el) el.classList.add('profileSelected');
+      window._selectedProfile = id;
+    }
+  });
+
+  document.getElementById('pageLibrary').addEventListener('click', (e)=>{
+    const editBtn = e.target.closest('button[data-edit-id]');
+    const delBtn = e.target.closest('button[data-delete-id]');
+    if(editBtn){ const id = editBtn.dataset.editId; populateEditForm(id); showSection('#pageAdd'); setTimeout(()=> document.getElementById('pageAdd').scrollIntoView({behavior:'smooth', block:'start'}),120); }
+    else if(delBtn){ const id = delBtn.dataset.deleteId; softDeleteRecord(id); }
+    else {
+      const grpBtn = e.target.closest('button[data-toggle-group]');
+      if(grpBtn){ const target = document.querySelector(grpBtn.dataset.toggleGroup); if(target) target.classList.toggle('hidden'); grpBtn.innerText = target.classList.contains('hidden') ? '▸' : '▾'; }
+      const subBtn = e.target.closest('button[data-toggle-sub]');
+      if(subBtn){ const target = document.querySelector(subBtn.dataset.toggleSub); if(target) target.classList.toggle('hidden'); subBtn.innerText = target.classList.contains('hidden') ? '▸' : '▾'; }
+    }
+  });
+
+  document.getElementById('openTrashBtn').addEventListener('click', ()=> ensureSettingsThen(()=> openTrashModal()));
+
+  const initial = location.hash && document.querySelector(location.hash) ? location.hash : '#pageHome';
+  showSection(initial);
+  try{ renderTree(); fitToScreen(); }catch(e){}
+  updateSpeciesCount();
+
+  // auto purge trash at startup
+  setTimeout(()=>{ autoPurgeTrash().catch(()=>{}); }, 600);
+
+  setInterval(()=>{ if(accessToken) attemptSyncQueue().catch(()=>{}); }, 60000);
+});
+
+/* ---------- thumb element helper ---------- */
+function createThumbElement(imgRef, isTmp=false){
+  const d = document.createElement('div'); d.className='thumbItem'; d.dataset.id = imgRef.id; if(imgRef.name) d.dataset.name = imgRef.name;
+  const img = document.createElement('img'); img.alt = imgRef.name || '';
+  if(imgRef.url) img.src = imgRef.url;
+  d.appendChild(img);
+  const controls = document.createElement('div'); controls.className='thumbControls';
+  const btnProfile = document.createElement('button'); btnProfile.className='thumbBtn profile'; btnProfile.title='Set as profile'; btnProfile.dataset.action='profile'; btnProfile.dataset.id = imgRef.id; btnProfile.innerText='★';
+  const btnDel = document.createElement('button'); btnDel.className='thumbBtn'; btnDel.title='Delete'; btnDel.dataset.action='delete'; btnDel.dataset.id = imgRef.id; btnDel.innerText='✕';
+  controls.appendChild(btnProfile); controls.appendChild(btnDel);
+  d.appendChild(controls);
+  if(imgRef.isProfile){ const badge = document.createElement('div'); badge.className='thumbBadge'; badge.innerText='Profile'; d.appendChild(badge); d.classList.add('profileSelected'); window._selectedProfile = imgRef.id; }
+  return d;
+}
+
+/* ---------- Library rendering ---------- */
 function renderLibrary(){
   const container = document.getElementById('libraryContent'); container.innerHTML = '';
   const records = readLocalRecords().filter(r=>!r.deleted);
@@ -365,7 +1083,11 @@ function renderLibrary(){
           const card = document.createElement('div'); card.className='speciesCard';
           const thumbWrap = document.createElement('div'); thumbWrap.className='speciesThumb';
           const imgEl = document.createElement('img'); imgEl.alt = s.scientificName || '';
-          imgEl.src = ''; thumbWrap.appendChild(imgEl);
+          const profileRef = (s.images||[]).find(im => im.isProfile) || (s.images && s.images[0]) || null;
+          if(profileRef){
+            (async ()=>{ const blob = await idbGet(profileRef.id).catch(()=>null); if(blob) imgEl.src = URL.createObjectURL(blob); })();
+          } else { imgEl.src = ''; }
+          thumbWrap.appendChild(imgEl);
           const info = document.createElement('div'); info.className='speciesInfo';
           const sName = document.createElement('div'); sName.className='speciesName'; sName.innerText = s.scientificName || 'Unnamed';
           const cName = document.createElement('div'); cName.className='commonName'; cName.innerText = s.commonName || '';
@@ -383,75 +1105,188 @@ function renderLibrary(){
     });
     kWrap.appendChild(kBody); container.appendChild(kWrap);
   });
-  // attach toggles
   document.querySelectorAll('[data-toggle-group]').forEach(btn=>{ btn.addEventListener('click', ()=>{ const sel = btn.dataset.toggleGroup; const el = document.querySelector(sel); if(!el) return; el.classList.toggle('hidden'); btn.innerText = el.classList.contains('hidden') ? '▸' : '▾'; }); });
   document.querySelectorAll('[data-toggle-sub]').forEach(btn=>{ btn.addEventListener('click', ()=>{ const sel = btn.dataset.toggleSub; const el = document.querySelector(sel); if(!el) return; el.classList.toggle('hidden'); btn.innerText = el.classList.contains('hidden') ? '▸' : '▾'; }); });
 }
 
-/* Navigation wiring */
-function showSection(hash){
-  document.querySelectorAll('section.card').forEach(s=>s.style.display='none');
-  const el = document.querySelector(hash) || document.getElementById('pageHome');
-  if(el) el.style.display='block';
-  document.querySelectorAll('.navBtn').forEach(b=>b.classList.remove('active'));
-  const active = document.querySelector(`a[href="${hash}"]`);
-  if(active) active.classList.add('active');
-  setTimeout(()=> {
-    try{
-      const headerHeight = document.getElementById('appHeader').getBoundingClientRect().height;
-      const rect = el.getBoundingClientRect();
-      const targetY = window.scrollY + rect.top - headerHeight - 8;
-      window.scrollTo({ top: Math.max(0, targetY), behavior: 'smooth' });
-    }catch(e){ window.scrollTo({ top:0, behavior:'smooth' }); }
-  }, 80);
-  if(el && el.id === 'pageLibrary') renderLibrary();
-  updateSpeciesCount();
+/* ---------- Edit/Save ---------- */
+function populateEditForm(id){
+  const records = readLocalRecords(); const r = records.find(x=>x.id===id); if(!r) return showToast('Record not found',2);
+  document.getElementById('speciesName').value = r.scientificName || '';
+  document.getElementById('commonName').value = r.commonName || '';
+  document.getElementById('taxKingdom').value = r.taxonomy[0] || '';
+  document.getElementById('taxPhylum').value = r.taxonomy[1] || '';
+  document.getElementById('taxClass').value = r.taxonomy[2] || '';
+  document.getElementById('taxOrder').value = r.taxonomy[3] || '';
+  document.getElementById('taxFamily').value = r.taxonomy[4] || '';
+  const parts = (r.scientificName || '').split(/\s+/);
+  document.getElementById('taxGenus').value = r.taxonomy[5] || parts[0] || '';
+  document.getElementById('taxSpecies').value = r.taxonomy[6] || parts[1] || '';
+  document.getElementById('locationInput').value = r.location || '';
+  document.getElementById('behaviourInput').value = r.behaviours || '';
+  document.getElementById('otherNotesInput').value = r.otherNotes || '';
+  const thumbs = document.getElementById('thumbs'); thumbs.innerHTML = '';
+  window._tmpFiles = {}; window._deletedImages = []; window._selectedProfile = null;
+  (async ()=>{ for(const im of (r.images||[])){ const blob = await idbGet(im.id).catch(()=>null); const url = blob ? URL.createObjectURL(blob) : ''; const item = createThumbElement({ id: im.id, url, name: im.name, isProfile: !!im.isProfile }, false); thumbs.appendChild(item); } })();
+  document.getElementById('saveBtnAdd').dataset.editing = id; document.getElementById('saveBtnAdd').innerText = 'Save Changes';
+  document.getElementById('saveLocalOnlyBtnAdd').dataset.editing = id; document.getElementById('saveLocalOnlyBtnAdd').innerText = 'Save Local Only (Edit)';
 }
 
-document.addEventListener('DOMContentLoaded', ()=>{
-  document.querySelectorAll('.navBtn').forEach(a=>{
-    a.addEventListener('click', (e)=>{
-      e.preventDefault();
-      const href = a.getAttribute('href') || '#pageHome';
-      history.replaceState(null,'',href);
-      showSection(href);
+async function handleSaveFromAdd({ autoUpload = true } = {}){
+  try{
+    const editingId = document.getElementById('saveBtnAdd').dataset.editing || null;
+    const scientific = document.getElementById('speciesName').value.trim();
+    if(!scientific) return alert('Please enter scientific name.');
+    const common = document.getElementById('commonName').value.trim();
+    const taxonomy = [
+      document.getElementById('taxKingdom').value.trim(),
+      document.getElementById('taxPhylum').value.trim(),
+      document.getElementById('taxClass').value.trim(),
+      document.getElementById('taxOrder').value.trim(),
+      document.getElementById('taxFamily').value.trim(),
+      document.getElementById('taxGenus').value.trim(),
+      document.getElementById('taxSpecies').value.trim()
+    ].filter(Boolean);
+    const location = document.getElementById('locationInput').value.trim();
+    const behaviours = document.getElementById('behaviourInput').value.trim();
+    const otherNotes = document.getElementById('otherNotesInput').value.trim();
+
+    const thumbsEls = Array.from(document.querySelectorAll('.thumbItem'));
+    const imageRefsPlaceholder = thumbsEls.map((el, idx) => {
+      const id = el.dataset.id;
+      const isTmp = id && id.startsWith('tmp_');
+      if(isTmp){
+        return { id, name: el.dataset.name || `image_${idx}`, isProfile: el.classList.contains('profileSelected') || (window._selectedProfile === id), pending:true };
+      } else {
+        return { id, name: el.dataset.name || `image_${idx}`, isProfile: el.classList.contains('profileSelected') || (window._selectedProfile === id), pending:false };
+      }
     });
-  });
-  window.addEventListener('hashchange', ()=> { const h = location.hash && document.querySelector(location.hash) ? location.hash : '#pageHome'; showSection(h); });
-  const initial = location.hash && document.querySelector(location.hash) ? location.hash : '#pageHome';
-  history.replaceState(null,'',initial);
-  showSection(initial);
 
-  // Backup button
-  document.getElementById('backupAllBtn').addEventListener('click', ()=>{
-    const localOnly = readLocalRecords().filter(r=>!r.deleted && !r.driveId);
-    const diffs = { onlyLocal: localOnly, onlyRemote: [], both: [], localDeleted: [] };
+    if(editingId){
+      const records = readLocalRecords(); const rec = records.find(r=>r.id===editingId); if(!rec) return alert('Record not found');
+      rec.scientificName = scientific; rec.commonName = common; rec.taxonomy = taxonomy; rec.location = location; rec.behaviours = behaviours; rec.otherNotes = otherNotes; rec.updatedAt = new Date().toISOString();
+      rec.images = imageRefsPlaceholder;
+      writeLocalRecords(records);
+      showToast('Saved locally (processing images in background)',2);
+      delete document.getElementById('saveBtnAdd').dataset.editing;
+      delete document.getElementById('saveLocalOnlyBtnAdd').dataset.editing;
+      document.getElementById('saveBtnAdd').innerText='Save Record';
+      document.getElementById('saveLocalOnlyBtnAdd').innerText='Save Local Only';
+      processImagesAndSync(rec.id, autoUpload).catch(err=>console.error('background process error', err));
+      clearAddForm();
+      renderTree(); renderLibrary();
+      return;
+    }
+
+    const recordId = 'rec_' + Date.now() + '_' + Math.floor(Math.random()*10000);
+    const record = { id: recordId, scientificName:scientific, commonName:common, taxonomy, location, behaviours, otherNotes, images:imageRefsPlaceholder, createdAt:new Date().toISOString(), status:'pending' };
+    const records = readLocalRecords(); records.push(record); writeLocalRecords(records);
+    showToast('Saved locally (processing images in background)',2);
+    processImagesAndSync(recordId, autoUpload).catch(err=>console.error('background process error', err));
+    clearAddForm();
+    renderTree(); renderLibrary();
+  }catch(e){ console.error(e); showToast('Save failed',3); }
+}
+
+function clearAddForm(){
+  document.getElementById('speciesName').value = '';
+  document.getElementById('commonName').value = '';
+  document.getElementById('taxKingdom').value = '';
+  document.getElementById('taxPhylum').value = '';
+  document.getElementById('taxClass').value = '';
+  document.getElementById('taxOrder').value = '';
+  document.getElementById('taxFamily').value = '';
+  document.getElementById('taxGenus').value = '';
+  document.getElementById('taxSpecies').value = '';
+  document.getElementById('locationInput').value = '';
+  document.getElementById('behaviourInput').value = '';
+  document.getElementById('otherNotesInput').value = '';
+  document.getElementById('speciesImages').value = '';
+  document.getElementById('thumbs').innerHTML = '';
+  window._tmpFiles = {};
+  window._deletedImages = [];
+  window._selectedProfile = null;
+}
+
+/* Background: compress tmp files, store to IDB, update record images, queue for sync */
+async function processImagesAndSync(recordId, autoUpload=true){
+  try{
+    const recs = readLocalRecords(); const rec = recs.find(r=>r.id===recordId); if(!rec) return;
+    const tmpFiles = window._tmpFiles || {};
+    const finalImageRefs = [];
+    for(const imgRef of rec.images || []){
+      if(imgRef.pending && imgRef.id && imgRef.id.startsWith('tmp_')){
+        const tmp = tmpFiles[imgRef.id];
+        if(!tmp) continue;
+        try{
+          const compressed = await compressImageFile(tmp, 1200, 0.75);
+          const imgId = 'img_' + Date.now() + '_' + Math.floor(Math.random()*10000);
+          await idbPut(imgId, compressed);
+          finalImageRefs.push({ id: imgId, name: tmp.name || imgRef.name, isProfile: !!imgRef.isProfile });
+        }catch(e){
+          console.warn('image compress/store failed', e);
+        }
+      } else {
+        finalImageRefs.push({ id: imgRef.id, name: imgRef.name, isProfile: !!imgRef.isProfile, driveId: imgRef.driveId || null });
+      }
+    }
+    const updatedRecords = readLocalRecords().map(r => r.id===recordId ? ({...r, images: finalImageRefs}) : r);
+    writeLocalRecords(updatedRecords);
+    appendSyncLog(`Images processed for ${recordId}`);
+    if(autoUpload && accessToken){
+      const q = readSyncQueue(); if(!q.includes(recordId)){ q.push(recordId); writeSyncQueue(q); appendSyncLog(`Queued ${recordId} for sync`); }
+      const ok = await attemptSyncQueue();
+      if(ok) showToast('Saved and synced',2); else showToast('Saved locally (queued)',2);
+    } else if(autoUpload){
+      const q = readSyncQueue(); if(!q.includes(recordId)){ q.push(recordId); writeSyncQueue(q); appendSyncLog(`Queued ${recordId} (not signed)`); }
+      showToast('Saved locally (queued)',2);
+    } else {
+      appendSyncLog(`Saved local-only ${recordId}`);
+    }
+  }catch(e){
+    console.error('processImagesAndSync error', e);
+    appendSyncLog('Background processing failed: ' + (e && e.message ? e.message : String(e)));
+  } finally {
+    window._tmpFiles = {};
+  }
+}
+
+/* image compression helper */
+async function compressImageFile(file, maxDim=1200, quality=0.75){
+  return new Promise((resolve,reject)=>{
+    const fr = new FileReader(); const img = new Image();
+    fr.onload = ()=> img.src = fr.result; fr.onerror = ()=> reject(fr.error);
+    img.onload = ()=>{ const w=img.width,h=img.height; let nw=w,nh=h; if(Math.max(w,h)>maxDim){ if(w>h){ nw=maxDim; nh=Math.round(h*(maxDim/w)); } else { nh=maxDim; nw=Math.round(w*(maxDim/h)); } } const canvas=document.createElement('canvas'); canvas.width=nw; canvas.height=nh; const ctx=canvas.getContext('2d'); ctx.drawImage(img,0,0,nw,nh); canvas.toBlob(blob=>resolve(blob),'image/jpeg',quality); };
+    img.onerror = ()=> reject(new Error('Image load error')); fr.readAsDataURL(file);
+  });
+}
+
+/* show single record (viewer placeholder) */
+async function showLocalRecord(id){
+  const records = readLocalRecords(); const r = records.find(x=>x.id===id); if(!r) return showToast('Record not found',2);
+  // For simplicity, navigate to Library and highlight is used; detailed viewer omitted here
+  showToast('Opened record: ' + (r.scientificName || r.id), 2);
+}
+
+/* update species count */
+function updateSpeciesCount(){ document.getElementById('speciesCount').innerText = `Species recorded: ${readLocalRecords().filter(r=>!r.deleted).length}`; }
+
+/* loginSync orchestration (conservative) */
+async function loginSync(){
+  try{
+    appendSyncLog('Starting loginSync compare');
+    const remote = await listRemoteRecordsInFolder();
+    const local = readLocalRecords();
+    const diffs = computeDiffs(local, remote);
     ensureSettingsThen(()=> renderSyncPreview(diffs));
-  });
+  }catch(e){
+    console.error('loginSync error', e);
+    appendSyncLog('loginSync failed: ' + (e && e.message ? e.message : String(e)));
+  }
+}
 
-  // Trash button
-  document.getElementById('openTrashBtn').addEventListener('click', ()=> ensureSettingsThen(()=> openTrashModal()));
-
-  // Save sample record (for testing alignment)
-  document.getElementById('saveBtnAdd').addEventListener('click', ()=>{
-    const scientific = document.getElementById('speciesName').value.trim() || ('Specimen ' + (Math.floor(Math.random()*1000)));
-    const rec = { id: 'rec_' + Date.now(), scientificName: scientific, commonName: document.getElementById('commonName').value.trim(), taxonomy: [document.getElementById('taxKingdom').value.trim(), document.getElementById('taxPhylum').value.trim(), document.getElementById('taxClass').value.trim()].filter(Boolean), createdAt: new Date().toISOString() };
-    const arr = readLocalRecords(); arr.push(rec); writeLocalRecords(arr); showToast('Saved locally',2); renderLibrary(); updateSpeciesCount(); history.replaceState(null,'','#pageLibrary'); showSection('#pageLibrary');
-  });
-
-  // Open import file
-  document.getElementById('importLocalBtnSettings').addEventListener('click', ()=> document.getElementById('importFile').click());
-  document.getElementById('importFile').addEventListener('change', async (e)=>{
-    const f = e.target.files[0]; if(!f) return;
-    try{ const txt = await f.text(); const arr = JSON.parse(txt); if(!Array.isArray(arr)) throw new Error('Invalid file'); const existing = readLocalRecords(); const merged = existing.concat(arr); const deduped = merged.filter((v,i,a)=>a.findIndex(x=>x.id===v.id)===i); writeLocalRecords(deduped); showToast('Imported records',2); renderLibrary(); }catch(err){ showToast('Import failed',3); }
-  });
-
-  // simple image preview
-  document.getElementById('speciesImages').addEventListener('change', (e)=>{
-    const files = e.target.files; const thumbs = document.getElementById('thumbs'); thumbs.innerHTML = '';
-    for(let i=0;i<files.length;i++){ const f = files[i]; const url = URL.createObjectURL(f); const d = document.createElement('div'); d.className='thumbItem'; d.dataset.id = 'tmp_' + i; const img = document.createElement('img'); img.src = url; img.alt = f.name; d.appendChild(img); const controls = document.createElement('div'); controls.className='thumbControls'; const p = document.createElement('button'); p.className='thumbBtn profile'; p.dataset.action='profile'; p.dataset.id=d.dataset.id; p.innerText='★'; const del = document.createElement('button'); del.className='thumbBtn'; del.dataset.action='delete'; del.dataset.id=d.dataset.id; del.innerText='✕'; controls.appendChild(p); controls.appendChild(del); d.appendChild(controls); thumbs.appendChild(d); }
-  });
-});
+/* prevent iOS pinch zoom */
+document.addEventListener('gesturestart', e=> e.preventDefault());
 </script>
 </body>
 </html>
