@@ -3,10 +3,9 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Jeffrey's exploration — Complete</title>
+<title>Jeffrey's Exploration — Full App</title>
 <meta name="theme-color" content="#2fb86a">
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;800&display=swap" rel="stylesheet">
-<!-- Google Identity will be loaded dynamically by script below when needed -->
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <style>
 :root{
@@ -45,7 +44,7 @@ h1{font-size:18px;margin:0;font-weight:800;white-space:nowrap;overflow:hidden;te
   position:fixed;
   left:0;
   right:0;
-  bottom:0;
+  bottom:env(safe-area-inset-bottom,0);
   height:calc(var(--nav-height) + env(safe-area-inset-bottom,0px));
   background:linear-gradient(180deg,#fff,#f6fff6);
   border-top:1px solid #e9f3ea;
@@ -69,13 +68,13 @@ h1{font-size:18px;margin:0;font-weight:800;white-space:nowrap;overflow:hidden;te
 .container{
   max-width:1100px;
   margin:0 auto;
-  padding: calc(var(--header-height) + var(--safe-top) + 12px) 14px calc(var(--nav-height) + var(--safe-bottom) + 18px);
-  min-height: calc(100vh - (var(--header-height) + var(--nav-height) + var(--safe-top) + var(--safe-bottom) + 30px));
+  padding: calc(var(--header-height) + var(--safe-top) + 12px) 14px calc(var(--nav-height) + env(safe-area-inset-bottom,0px) + 12px);
+  min-height: calc(100vh - (var(--header-height) + var(--nav-height) + var(--safe-top) + var(--safe-bottom) + 24px));
   box-sizing:border-box;
 }
 
 /* Cards and sections */
-.card{background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:18px;box-shadow:var(--shadow);overflow:visible}
+.card{background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:12px;box-shadow:var(--shadow);overflow:visible}
 .sectionTitle{display:block;background:linear-gradient(180deg,#f3fff6,#fff);border-radius:10px;padding:8px 12px;color:var(--accent-dark);font-weight:800;margin:-16px -16px 12px -16px}
 
 /* Inputs: softer green/white, circular */
@@ -140,31 +139,6 @@ textarea{min-height:84px;resize:vertical}
   border-color:rgba(0,0,0,0.06);
 }
 
-/* Library styles: left aligned headings */
-.libraryGroup{margin-bottom:12px;border-radius:10px;background:#fff;padding:8px;box-shadow:var(--shadow)}
-.groupHeader{
-  display:flex;
-  align-items:center;
-  justify-content:flex-start;
-  gap:12px;
-  cursor:pointer;
-  padding:6px 8px;
-  border-radius:8px;
-  background:linear-gradient(180deg,#f7fff7,#fff);
-}
-.groupTitle{font-weight:900;color:#145a3f;margin:0;text-align:left;flex:1}
-.subGroup{margin-left:12px;margin-top:8px;border-left:2px dashed #eef6ef;padding-left:12px}
-.subHeader{
-  display:flex;
-  align-items:center;
-  justify-content:flex-start;
-  gap:12px;
-  cursor:pointer;
-  padding:4px 6px;
-  border-radius:6px;
-}
-.subHeader > div{flex:1;text-align:left}
-
 /* species card */
 .speciesGrid{display:flex;flex-wrap:wrap;gap:12px;margin-top:8px}
 .speciesCard{width:220px;background:#fff;border-radius:12px;padding:12px;box-shadow:0 8px 20px rgba(10,30,20,0.04);display:flex;gap:10px;align-items:center}
@@ -173,6 +147,15 @@ textarea{min-height:84px;resize:vertical}
 .speciesInfo{flex:1}
 .speciesName{font-weight:800;color:#145a3f}
 .commonName{color:#6b6b6b;font-size:13px}
+
+/* Thumb grid */
+.thumbGrid{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.thumbItem{position:relative;width:84px;height:84px;border-radius:12px;overflow:hidden;border:1px solid #eef6ef;background:#fff;display:flex;align-items:center;justify-content:center}
+.thumbItem img{width:100%;height:100%;object-fit:cover;display:block}
+.thumbControls{position:absolute;right:6px;top:6px;display:flex;gap:6px;z-index:30}
+.thumbBtn{width:28px;height:28px;border-radius:8px;border:none;background:rgba(0,0,0,0.45);color:#fff;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px}
+.thumbBtn.profile{background:rgba(43,184,106,0.95)}
+.thumbBadge{position:absolute;left:6px;bottom:6px;background:rgba(0,0,0,0.55);color:#fff;padding:2px 6px;border-radius:999px;font-size:12px}
 
 /* Trash button style in Settings (rounded green) */
 .openTrashBtn{
@@ -190,7 +173,7 @@ textarea{min-height:84px;resize:vertical}
 }
 
 /* Toast & modal */
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--nav-height) + 18px + var(--safe-bottom));background:rgba(15,80,50,0.95);color:#fff;padding:12px 18px;border-radius:12px;font-weight:700;z-index:2000;opacity:0;transition:opacity .2s}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--nav-height) + 18px + env(safe-area-inset-bottom,0px));background:rgba(15,80,50,0.95);color:#fff;padding:12px 18px;border-radius:12px;font-weight:700;z-index:2000;opacity:0;transition:opacity .2s}
 .toast.show{opacity:1}
 .modalBackdrop{position:fixed;left:0;top:0;right:0;bottom:0;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;z-index:2500}
 .modal{background:#fff;border-radius:12px;padding:16px;max-width:920px;width:92%;max-height:80vh;overflow:auto}
@@ -215,6 +198,7 @@ textarea{min-height:84px;resize:vertical}
 </header>
 
 <div class="container" id="mainContainer">
+  <!-- HOME -->
   <section id="pageHome" class="card" aria-labelledby="homeTitle">
     <div class="sectionTitle" id="homeTitle">Overview</div>
     <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
@@ -246,14 +230,17 @@ textarea{min-height:84px;resize:vertical}
       </div>
 
       <div class="treeWrap" style="margin-top:10px">
-        <div class="treeCanvas" id="treeCanvas">
+        <div class="treeCanvas" id="treeCanvas" style="position:relative">
           <svg id="treeSvg" width="100%" height="520" style="touch-action:none"></svg>
-          <div id="minimap" aria-hidden="true"><div style="font-weight:700;margin-bottom:6px">Overview</div><svg id="miniSvg"></svg></div>
+          <div id="minimap" aria-hidden="true" style="position:absolute;right:12px;bottom:12px;background:rgba(255,255,255,0.9);padding:8px;border-radius:8px;border:1px solid #eef6ef">
+            <div style="font-weight:700;margin-bottom:6px">Overview</div><svg id="miniSvg" width="120" height="80"></svg>
+          </div>
         </div>
       </div>
     </div>
   </section>
 
+  <!-- ADD -->
   <section id="pageAdd" class="card" aria-labelledby="addTitle" style="display:none">
     <div class="sectionTitle" id="addTitle">Add New Species</div>
     <div class="formFull">
@@ -292,6 +279,7 @@ textarea{min-height:84px;resize:vertical}
     </div>
   </section>
 
+  <!-- LIBRARY -->
   <section id="pageLibrary" class="card" aria-labelledby="libraryTitle" style="display:none">
     <div class="sectionTitle" id="libraryTitle">Library</div>
     <div style="margin-bottom:8px;display:flex;gap:8px;align-items:center">
@@ -300,6 +288,7 @@ textarea{min-height:84px;resize:vertical}
     <div id="libraryContent" style="margin-top:8px"></div>
   </section>
 
+  <!-- SETTINGS -->
   <section id="pageSettings" class="card" aria-labelledby="settingsTitle" style="display:none">
     <div class="sectionTitle" id="settingsTitle">Settings</div>
     <div style="display:flex;flex-direction:column;gap:10px">
@@ -350,26 +339,36 @@ textarea{min-height:84px;resize:vertical}
 <div id="trashModal" style="display:none"></div>
 
 <script>
-/* -------------------------
-   Complete app script
-   - Navigation (hash)
-   - Local storage + IDB for images
-   - Sign-in with Google Identity (dynamic load + token client)
-   - Sync preview (conservative) shown only in Settings
-   - Trash relocated to Settings
-   - UI: rounded toggles, soft inputs
-   ------------------------- */
+/* ---------------------------
+   Full app JS: local storage, IDB images, UI, Drive sign-in + sync queue,
+   trash, export/import, taxonomy tree (D3), thumbnails, search, zoom, minimap.
+   Key points:
+   - No automatic sign-in loops: sign-in only on user click; guarded by tokenRequestInProgress.
+   - Bottom nav flush to bottom; container padding adjusted.
+   - All features implemented in a single-file app for local testing.
+   --------------------------- */
 
-/* ---------- Config & Keys ---------- */
+/* ---------- Config ---------- */
 const CLIENT_ID = "58009415485-8qvhrvbasmrq5ugms01dv8vt7pneen6u.apps.googleusercontent.com";
 const SCOPES = "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive";
 
 /* ---------- Storage keys ---------- */
-const LOCAL_KEY = 'exploration_records_complete_v1';
-const SYNC_QUEUE_KEY = 'exploration_sync_queue_complete_v1';
+const LOCAL_KEY = 'exploration_records_full_v1';
+const SYNC_QUEUE_KEY = 'exploration_sync_queue_full_v1';
 const TRASH_RETENTION_DAYS = 30;
 
-/* ---------- Simple storage helpers ---------- */
+/* ---------- State ---------- */
+let tokenClient = null;
+let accessToken = null;
+let cachedFolderId = null;
+let tokenRequestInProgress = false;
+
+/* ---------- Helpers ---------- */
+function showToast(msg, s=3){ const t = document.getElementById('toast'); t.innerText = msg; t.classList.add('show'); clearTimeout(t._t); t._t = setTimeout(()=> t.classList.remove('show'), s*1000); }
+function escapeHtml(s){ return (s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+function appendSyncLog(line){ const el = document.getElementById('syncLog'); const now = new Date().toLocaleString(); const entry = `${now} — ${line}`; const prev = el.dataset.log ? JSON.parse(el.dataset.log) : []; prev.push(entry); el.dataset.log = JSON.stringify(prev); el.innerHTML = prev.slice().reverse().map(l=>`<div>${escapeHtml(l)}</div>`).join(''); console.info('[SYNC]', line); }
+
+/* ---------- Local storage helpers ---------- */
 function readLocalRecords(){ try{ return JSON.parse(localStorage.getItem(LOCAL_KEY) || '[]'); }catch(e){ return []; } }
 function writeLocalRecords(arr){ localStorage.setItem(LOCAL_KEY, JSON.stringify(arr)); }
 function readSyncQueue(){ try{ return JSON.parse(localStorage.getItem(SYNC_QUEUE_KEY) || '[]'); }catch(e){ return []; } }
@@ -379,7 +378,7 @@ function writeSyncQueue(q){ localStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify(
 function openDb(){
   if(window._dbPromise) return window._dbPromise;
   window._dbPromise = new Promise((resolve,reject)=>{
-    const req = indexedDB.open('exploration_images_db_complete_v1',1);
+    const req = indexedDB.open('exploration_images_db_full_v1',1);
     req.onupgradeneeded = e => { const db = e.target.result; if(!db.objectStoreNames.contains('images')) db.createObjectStore('images',{keyPath:'id'}); };
     req.onsuccess = ()=> resolve(req.result);
     req.onerror = ()=> reject(req.error);
@@ -414,30 +413,20 @@ async function idbDelete(id){
   });
 }
 
-/* ---------- UI helpers ---------- */
-function showToast(msg, s=3){ const t = document.getElementById('toast'); t.innerText = msg; t.classList.add('show'); clearTimeout(t._t); t._t = setTimeout(()=> t.classList.remove('show'), s*1000); }
-function escapeHtml(s){ return (s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
-function appendSyncLog(line){ const el = document.getElementById('syncLog'); const now = new Date().toLocaleString(); const entry = `${now} — ${line}`; const prev = el.dataset.log ? JSON.parse(el.dataset.log) : []; prev.push(entry); el.dataset.log = JSON.stringify(prev); el.innerHTML = prev.slice().reverse().map(l=>`<div>${escapeHtml(l)}</div>`).join(''); console.info('[SYNC]', line); }
-
-/* ---------- Google Identity (dynamic load + token client) ---------- */
-let tokenClient = null;
-let accessToken = null;
-let cachedFolderId = null;
-let gsiLoaded = false;
-
+/* ---------- Google Identity dynamic load + token client ---------- */
 function ensureGsiLoaded(timeoutMs = 8000){
   return new Promise((resolve,reject)=>{
-    if(window.google && google.accounts && google.accounts.oauth2){ gsiLoaded = true; return resolve(true); }
-    if(document.querySelector('script[data-gsi-injected]')) {
+    if(window.google && google.accounts && google.accounts.oauth2) return resolve(true);
+    if(document.querySelector('script[data-gsi-injected]')){
       const start = Date.now();
-      const iv = setInterval(()=>{ if(window.google && google.accounts && google.accounts.oauth2){ clearInterval(iv); gsiLoaded = true; resolve(true); } else if(Date.now()-start>timeoutMs){ clearInterval(iv); reject(new Error('GSI load timeout')); } }, 150);
+      const iv = setInterval(()=>{ if(window.google && google.accounts && google.accounts.oauth2){ clearInterval(iv); resolve(true); } else if(Date.now()-start>timeoutMs){ clearInterval(iv); reject(new Error('GSI load timeout')); } }, 150);
       return;
     }
     const s = document.createElement('script');
     s.src = 'https://accounts.google.com/gsi/client';
     s.async = true; s.defer = true;
     s.setAttribute('data-gsi-injected','1');
-    s.onload = ()=> { gsiLoaded = true; resolve(true); };
+    s.onload = ()=> resolve(true);
     s.onerror = ()=> reject(new Error('GSI script failed to load'));
     document.head.appendChild(s);
   });
@@ -451,14 +440,17 @@ async function initTokenClientIfNeeded(){
     client_id: CLIENT_ID,
     scope: SCOPES,
     callback: (resp) => {
+      tokenRequestInProgress = false;
       if(resp && resp.access_token){
         accessToken = resp.access_token;
         document.getElementById('signedDot').classList.add('green');
         document.getElementById('signedText').innerText = 'Signed';
         appendSyncLog('Signed in to Google');
         showToast('Signed in', 2);
-        // Optionally trigger loginSync here
+        // after sign-in, attempt sync
+        attemptSyncQueue().catch(()=>{});
       } else {
+        console.warn('Token callback returned no access_token', resp);
         showToast('Sign in cancelled or failed', 3);
       }
       setSignButtonsEnabled(true);
@@ -471,15 +463,15 @@ function setSignButtonsEnabled(enabled){
   const btn = document.getElementById('btnSignGrantSettings');
   const retry = document.getElementById('btnSignRetrySettings');
   if(enabled){
-    btn.disabled = false; btn.innerText = 'Sign in & Grant Drive Access'; btn.style.opacity = 1;
-    retry.disabled = false; retry.style.opacity = 1;
+    btn.disabled = false; btn.innerText = 'Sign in & Grant Drive Access'; btn.style.opacity = 1; btn.setAttribute('aria-busy','false');
+    retry.disabled = false; retry.style.opacity = 1; retry.setAttribute('aria-busy','false');
   } else {
-    btn.disabled = true; btn.innerText = 'Signing...'; btn.style.opacity = 0.7;
-    retry.disabled = true; retry.style.opacity = 0.6;
+    btn.disabled = true; btn.innerText = 'Signing...'; btn.style.opacity = 0.7; btn.setAttribute('aria-busy','true');
+    retry.disabled = true; retry.style.opacity = 0.6; retry.setAttribute('aria-busy','true');
   }
 }
 
-/* ---------- Drive helpers (basic wrappers) ---------- */
+/* ---------- Drive wrappers ---------- */
 async function driveFetch(url, opts = {}){
   if(!accessToken) throw new Error('No access token');
   opts.headers = opts.headers || {};
@@ -575,16 +567,6 @@ async function attemptSyncQueue(){
     document.getElementById('syncDot').classList.remove('green');
     document.getElementById('syncText').innerText = 'Sync';
     return false;
-  }
-}
-
-/* ---------- ensure Settings then run ---------- */
-function ensureSettingsThen(fn){
-  if(location.hash !== '#pageSettings'){
-    history.replaceState(null, '', '#pageSettings');
-    setTimeout(fn, 220);
-  } else {
-    fn();
   }
 }
 
@@ -876,12 +858,235 @@ async function autoPurgeTrash(){
   }catch(e){ console.error('autoPurgeTrash error', e); appendSyncLog('Auto purge failed: ' + e.message); }
 }
 
-/* ---------- Tree & Library rendering (D3 placeholder) ---------- */
+/* ---------- Tree (D3) rendering ---------- */
 const svg = d3.select('#treeSvg');
-svg.append('text').attr('x',20).attr('y',40).text('Taxonomy tree placeholder').style('font-size','14px').style('fill','#145a3f');
+const inner = svg.append('g').attr('class','innerGroup');
+const miniSvg = d3.select('#miniSvg');
+const treeLayout = d3.tree();
+let root = d3.hierarchy({name:'Life',children:[]});
 
-function updateSpeciesCount(){ document.getElementById('speciesCount').innerText = `Species recorded: ${readLocalRecords().filter(r=>!r.deleted).length}`; }
+function buildTreeDataFromLocal(){
+  const records = readLocalRecords().filter(r=>!r.deleted);
+  const root = {name:'Life',children:[]};
+  for(const r of records){
+    const levels = r.taxonomy && r.taxonomy.length ? r.taxonomy : ['Unclassified'];
+    let cursor = root;
+    for(const lvl of levels){
+      let child = (cursor.children || []).find(c=>c.name===lvl);
+      if(!child){ child = {name: lvl, children: []}; cursor.children = cursor.children || []; cursor.children.push(child); }
+      cursor = child;
+    }
+    cursor.children = cursor.children || [];
+    cursor.children.push({name: r.scientificName || r.id, species:true, recordId: r.id});
+  }
+  if(!root.children || root.children.length===0) return {name:'Life',children:[{name:'No records yet',children:[]}]};
+  return root;
+}
+function collapseAll(d, depth=0, maxDepth=2){ if(d.children){ d.children.forEach(c=>collapseAll(c, depth+1, maxDepth)); if(depth>=maxDepth){ d._children = d.children; d.children = null; } } }
+function truncate(s,n){ if(!s) return ''; return s.length>n? s.slice(0,n-1)+'…':s; }
 
+function renderTree(){
+  try{
+    const data = buildTreeDataFromLocal();
+    root = d3.hierarchy(data);
+    collapseAll(root,0,2);
+    const svgW = svg.node().clientWidth; const svgH = +svg.attr('height');
+    treeLayout.size([svgW-40, svgH-40]); treeLayout(root);
+    const links = inner.selectAll('.link').data(root.links(), d=>d.target.data.name + '_' + d.target.depth);
+    links.join(enter => enter.append('path').attr('class','link').attr('d', d=>linkPath(d)).attr('fill','none').attr('stroke','#cfeee0').attr('stroke-width',2),
+               update => update.attr('d', d=>linkPath(d)),
+               exit => exit.remove());
+    const nodes = inner.selectAll('.node').data(root.descendants(), d=>d.data.name + '_' + d.depth);
+    const nodeEnter = nodes.enter().append('g').attr('class','node').attr('transform', d=>`translate(${d.x},${d.y})`);
+    nodeEnter.append('circle').attr('r', d=> d.children || d._children ? 6 : 5).attr('fill', d=> d.children || d._children ? 'var(--accent)' : '#fff').attr('stroke','var(--accent)');
+    nodeEnter.append('text').attr('x',0).attr('y',-10).attr('text-anchor','middle').text(d=>truncate(d.data.name,28)).style('font-size','13px');
+    nodes.merge(nodeEnter).transition().duration(200).attr('transform', d=>`translate(${d.x},${d.y})`);
+    inner.selectAll('.node').on('click', (event,d)=>{ event.stopPropagation(); if(d.children){ d._children = d.children; d.children = null; } else { d.children = d._children; d._children = null; } renderTree(); if(d.data.species && d.data.recordId){ showSection('#pageLibrary'); setTimeout(()=> showLocalRecord(d.data.recordId), 300); } });
+    updateMinimap();
+    updateSpeciesCount();
+  }catch(e){ console.warn('renderTree error', e); }
+}
+function linkPath(d){ const x1=d.source.x,y1=d.source.y,x2=d.target.x,y2=d.target.y,midY=(y1+y2)/2; return `M${x1},${y1} C${x1},${midY} ${x2},${midY} ${x2},${y2}`; }
+const zoom = d3.zoom().scaleExtent([0.4,6]).on('zoom', (event)=>{ inner.attr('transform', event.transform); updateMinimapViewport(event.transform); });
+svg.call(zoom).on('dblclick.zoom', null);
+document.getElementById('zoomIn').addEventListener('click', ()=> svg.transition().call(zoom.scaleBy, 1.2));
+document.getElementById('zoomOut').addEventListener('click', ()=> svg.transition().call(zoom.scaleBy, 1/1.2));
+document.getElementById('resetView').addEventListener('click', ()=> fitToScreen());
+function fitToScreen(){ const nodes = root.descendants(); if(!nodes.length) return; const minX=d3.min(nodes,d=>d.x), maxX=d3.max(nodes,d=>d.x), minY=d3.min(nodes,d=>d.y), maxY=d3.max(nodes,d=>d.y); const contentW=maxX-minX+200, contentH=maxY-minY+200; const svgW=svg.node().clientWidth, svgH=+svg.attr('height'); const scale=Math.min(svgW/contentW, svgH/contentH,1); const tx=(svgW - scale*(minX+maxX))/2; const ty=(svgH - scale*(minY+maxY))/2; const t = d3.zoomIdentity.translate(tx,ty).scale(scale); svg.transition().duration(600).call(zoom.transform, t); }
+function updateMinimap(){ const nodes = root.descendants(); if(!nodes.length) return; const maxX=d3.max(nodes,d=>d.x), maxY=d3.max(nodes,d=>d.y), minX=d3.min(nodes,d=>d.x), minY=d3.min(nodes,d=>d.y); const w = Math.max(1, maxX-minX); const h = Math.max(1, maxY-minY); miniSvg.attr('viewBox', `${minX} ${minY} ${w} ${h}`); miniSvg.selectAll('*').remove(); miniSvg.selectAll('circle').data(nodes).enter().append('circle').attr('cx',d=>d.x).attr('cy',d=>d.y).attr('r',1.2).attr('fill','#cfeee0'); miniSvg.append('rect').attr('id','miniViewport').attr('x',0).attr('y',0).attr('width',10).attr('height',10).attr('fill','rgba(43,184,106,0.12)').attr('stroke','#2fb86a'); updateMinimapViewport(); }
+function updateMinimapViewport(transform){ const t = transform || d3.zoomTransform(svg.node()); const svgW = svg.node().clientWidth, svgH = +svg.attr('height'); const x0=(0 - t.x)/t.k, y0=(0 - t.y)/t.k, x1=(svgW - t.x)/t.k, y1=(svgH - t.y)/t.k; miniSvg.select('#miniViewport').attr('x', x0).attr('y', y0).attr('width', Math.max(1, x1-x0)).attr('height', Math.max(1, y1-y0)); }
+
+/* ---------- UI & Navigation ---------- */
+function showSection(hash){
+  document.querySelectorAll('section.card').forEach(s=>s.style.display='none');
+  const el = document.querySelector(hash) || document.getElementById('pageHome');
+  if(el) el.style.display='block';
+  document.querySelectorAll('.navBtn').forEach(b=>b.classList.remove('active'));
+  const active = document.querySelector(`a[href="${hash}"]`);
+  if(active) active.classList.add('active');
+
+  setTimeout(()=>{
+    try{
+      const headerHeight = document.getElementById('appHeader').getBoundingClientRect().height;
+      const rect = el.getBoundingClientRect();
+      const targetY = window.scrollY + rect.top - headerHeight - 8;
+      window.scrollTo({ top: Math.max(0, targetY), behavior: 'smooth' });
+    }catch(e){
+      window.scrollTo({ top:0, behavior:'smooth' });
+    }
+  }, 80);
+
+  if(el && el.id === 'pageAdd'){
+    setTimeout(()=>{ const first = document.getElementById('speciesName'); if(first){ first.focus({preventScroll:true}); } }, 220);
+  }
+
+  const treeWrap = document.querySelector('.treeWrap');
+  if(el && el.id === 'pageHome'){ if(treeWrap) treeWrap.style.display=''; try{ renderTree(); fitToScreen(); }catch(e){} } else { if(treeWrap) treeWrap.style.display='none'; }
+  updateSpeciesCount();
+  if(el && el.id === 'pageLibrary') renderLibrary();
+}
+
+/* ---------- Event wiring ---------- */
+document.addEventListener('DOMContentLoaded', ()=> {
+  const navButtons = document.querySelectorAll('.navBtn');
+  const headerEl = document.getElementById('appHeader');
+
+  navButtons.forEach(a=>{
+    a.addEventListener('click', (e)=>{
+      e.preventDefault();
+      const href = a.getAttribute('href') || '#pageHome';
+      history.replaceState(null,'',href);
+      showSection(href);
+    });
+  });
+
+  window.addEventListener('hashchange', ()=> { const h = location.hash && document.querySelector(location.hash) ? location.hash : '#pageHome'; showSection(h); });
+
+  document.getElementById('searchBtn').addEventListener('click', ()=> {
+    const q = document.getElementById('treeSearch').value.trim().toLowerCase();
+    if(!q) return;
+    const found = root.descendants().find(d => (d.data.name||'').toLowerCase().includes(q));
+    if(found){ let p = found.parent; while(p){ if(p._children){ p.children = p._children; p._children = null; } p = p.parent; } renderTree(); fitToScreen(); } else showToast('No match found',2);
+  });
+  document.getElementById('clearSearch').addEventListener('click', ()=> document.getElementById('treeSearch').value = '');
+
+  document.getElementById('saveBtnAdd').addEventListener('click', async ()=> { await handleSaveFromAdd({autoUpload:true}); });
+  document.getElementById('saveLocalOnlyBtnAdd').addEventListener('click', async ()=> { await handleSaveFromAdd({autoUpload:false}); });
+
+  document.getElementById('exportLocalBtnSettings').addEventListener('click', ()=>{
+    const data = JSON.stringify(readLocalRecords(), null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = `exploration_records_${new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')}.json`;
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    showToast('Local JSON exported', 3);
+  });
+  document.getElementById('importLocalBtnSettings').addEventListener('click', ()=> document.getElementById('importFile').click());
+  document.getElementById('importFile').addEventListener('change', async (e)=>{
+    const f = e.target.files[0]; if(!f) return;
+    try{ const txt = await f.text(); const arr = JSON.parse(txt); if(!Array.isArray(arr)) throw new Error('Invalid file'); const existing = readLocalRecords(); const merged = existing.concat(arr); const deduped = merged.filter((v,i,a)=>a.findIndex(x=>x.id===v.id)===i); writeLocalRecords(deduped); showToast('Imported records',2); renderTree(); renderLibrary(); }catch(err){ showToast('Import failed',3); }
+  });
+
+  document.getElementById('btnSignGrantSettings').addEventListener('click', async ()=>{
+    if(tokenRequestInProgress){ console.info('Sign-in already in progress'); return; }
+    tokenRequestInProgress = true;
+    setSignButtonsEnabled(false);
+    try{
+      await initTokenClientIfNeeded();
+      if(tokenClient) tokenClient.requestAccessToken({ prompt: 'consent' });
+      else { showToast('Google Identity not available',3); setSignButtonsEnabled(true); tokenRequestInProgress = false; }
+    }catch(err){ console.error('Sign in error', err); showToast('Sign in failed',3); setSignButtonsEnabled(true); tokenRequestInProgress = false; }
+  });
+  document.getElementById('btnSignRetrySettings').addEventListener('click', async ()=>{
+    if(tokenRequestInProgress){ console.info('Retry blocked: request in progress'); return; }
+    tokenRequestInProgress = true;
+    setSignButtonsEnabled(false);
+    try{
+      await initTokenClientIfNeeded();
+      if(tokenClient) tokenClient.requestAccessToken({ prompt: 'consent' });
+      else { showToast('No token client',3); setSignButtonsEnabled(true); tokenRequestInProgress = false; }
+    }catch(err){ console.error('Retry error', err); showToast('Retry failed',3); setSignButtonsEnabled(true); tokenRequestInProgress = false; }
+  });
+
+  document.getElementById('backupAllBtn').addEventListener('click', async ()=>{
+    const localOnly = readLocalRecords().filter(r=>!r.deleted && !r.driveId);
+    if(!localOnly.length){ showToast('No local-only records to backup',2); return; }
+    const diffs = { onlyLocal: localOnly, onlyRemote: [], both: [], localDeleted: [] };
+    ensureSettingsThen(()=> renderSyncPreview(diffs));
+  });
+
+  document.getElementById('openTrashBtn').addEventListener('click', ()=> ensureSettingsThen(()=> openTrashModal()));
+
+  document.getElementById('speciesImages').addEventListener('change', async (e)=>{
+    const files = e.target.files;
+    const thumbs = document.getElementById('thumbs'); thumbs.innerHTML = '';
+    window._tmpFiles = window._tmpFiles || {};
+    for(let i=0;i<files.length;i++){
+      const f = files[i];
+      const url = URL.createObjectURL(f);
+      const id = 'tmp_' + Date.now() + '_' + i;
+      window._tmpFiles[id] = f;
+      const item = createThumbElement({ id, url, name: f.name, isProfile: false }, true);
+      thumbs.appendChild(item);
+    }
+  });
+
+  const speciesNameInput = document.getElementById('speciesName');
+  speciesNameInput.addEventListener('input', ()=>{
+    const val = speciesNameInput.value.trim();
+    const parts = val.split(/\s+/);
+    document.getElementById('taxGenus').value = parts[0] || '';
+    document.getElementById('taxSpecies').value = parts[1] || '';
+  });
+
+  document.getElementById('thumbs').addEventListener('click', async (e)=>{
+    const btn = e.target.closest('button[data-action]');
+    if(!btn) return;
+    const action = btn.dataset.action;
+    const id = btn.dataset.id;
+    if(action === 'delete'){
+      if(id && id.startsWith('tmp_')){ delete window._tmpFiles[id]; const el = document.querySelector(`.thumbItem[data-id="${id}"]`); if(el) el.remove(); }
+      else { window._deletedImages = window._deletedImages || []; window._deletedImages.push(id); const el = document.querySelector(`.thumbItem[data-id="${id}"]`); if(el) el.remove(); }
+    } else if(action === 'profile'){
+      document.querySelectorAll('.thumbItem').forEach(t=> t.classList.remove('profileSelected'));
+      const el = document.querySelector(`.thumbItem[data-id="${id}"]`);
+      if(el) el.classList.add('profileSelected');
+      window._selectedProfile = id;
+    }
+  });
+
+  document.getElementById('pageLibrary').addEventListener('click', (e)=>{
+    const editBtn = e.target.closest('button[data-edit-id]');
+    const delBtn = e.target.closest('button[data-delete-id]');
+    if(editBtn){ const id = editBtn.dataset.editId; populateEditForm(id); showSection('#pageAdd'); setTimeout(()=> document.getElementById('pageAdd').scrollIntoView({behavior:'smooth', block:'start'}),120); }
+    else if(delBtn){ const id = delBtn.dataset.deleteId; softDeleteRecord(id); }
+  });
+
+  const initial = location.hash && document.querySelector(location.hash) ? location.hash : '#pageHome';
+  showSection(initial);
+  try{ renderTree(); fitToScreen(); }catch(e){}
+  updateSpeciesCount();
+
+  setTimeout(()=>{ autoPurgeTrash().catch(()=>{}); }, 600);
+  setInterval(()=>{ if(accessToken) attemptSyncQueue().catch(()=>{}); }, 60000);
+});
+
+/* ---------- thumb element helper ---------- */
+function createThumbElement(imgRef, isTmp=false){
+  const d = document.createElement('div'); d.className='thumbItem'; d.dataset.id = imgRef.id; if(imgRef.name) d.dataset.name = imgRef.name;
+  const img = document.createElement('img'); img.alt = imgRef.name || '';
+  if(imgRef.url) img.src = imgRef.url;
+  d.appendChild(img);
+  const controls = document.createElement('div'); controls.className='thumbControls';
+  const btnProfile = document.createElement('button'); btnProfile.className='thumbBtn profile'; btnProfile.title='Set as profile'; btnProfile.dataset.action='profile'; btnProfile.dataset.id = imgRef.id; btnProfile.innerText='★';
+  const btnDel = document.createElement('button'); btnDel.className='thumbBtn'; btnDel.title='Delete'; btnDel.dataset.action='delete'; btnDel.dataset.id = imgRef.id; btnDel.innerText='✕';
+  controls.appendChild(btnProfile); controls.appendChild(btnDel);
+  d.appendChild(controls);
+  if(imgRef.isProfile){ const badge = document.createElement('div'); badge.className='thumbBadge'; badge.innerText='Profile'; d.appendChild(badge); d.classList.add('profileSelected'); window._selectedProfile = imgRef.id; }
+  return d;
+}
+
+/* ---------- Library rendering ---------- */
 function renderLibrary(){
   const container = document.getElementById('libraryContent'); container.innerHTML = '';
   const records = readLocalRecords().filter(r=>!r.deleted);
@@ -916,7 +1121,11 @@ function renderLibrary(){
           const card = document.createElement('div'); card.className='speciesCard';
           const thumbWrap = document.createElement('div'); thumbWrap.className='speciesThumb';
           const imgEl = document.createElement('img'); imgEl.alt = s.scientificName || '';
-          imgEl.src = ''; thumbWrap.appendChild(imgEl);
+          const profileRef = (s.images||[]).find(im => im.isProfile) || (s.images && s.images[0]) || null;
+          if(profileRef){
+            (async ()=>{ const blob = await idbGet(profileRef.id).catch(()=>null); if(blob) imgEl.src = URL.createObjectURL(blob); })();
+          } else { imgEl.src = ''; }
+          thumbWrap.appendChild(imgEl);
           const info = document.createElement('div'); info.className='speciesInfo';
           const sName = document.createElement('div'); sName.className='speciesName'; sName.innerText = s.scientificName || 'Unnamed';
           const cName = document.createElement('div'); cName.className='commonName'; cName.innerText = s.commonName || '';
@@ -934,19 +1143,11 @@ function renderLibrary(){
     });
     kWrap.appendChild(kBody); container.appendChild(kWrap);
   });
-  document.querySelectorAll('.groupToggle').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      btn.classList.toggle('active');
-      const sel = btn.dataset.toggleGroup || btn.dataset.toggleSub;
-      const el = document.querySelector(sel);
-      if(!el) return;
-      el.classList.toggle('hidden');
-      btn.innerText = el.classList.contains('hidden') ? '▸' : '▾';
-    });
-  });
+  document.querySelectorAll('[data-toggle-group]').forEach(btn=>{ btn.addEventListener('click', ()=>{ const sel = btn.dataset.toggleGroup; const el = document.querySelector(sel); if(!el) return; el.classList.toggle('hidden'); btn.innerText = el.classList.contains('hidden') ? '▸' : '▾'; }); });
+  document.querySelectorAll('[data-toggle-sub]').forEach(btn=>{ btn.addEventListener('click', ()=>{ const sel = btn.dataset.toggleSub; const el = document.querySelector(sel); if(!el) return; el.classList.toggle('hidden'); btn.innerText = el.classList.contains('hidden') ? '▸' : '▾'; }); });
 }
 
-/* ---------- Edit/Save handlers (local + background image processing) ---------- */
+/* ---------- Edit/Save ---------- */
 function populateEditForm(id){
   const records = readLocalRecords(); const r = records.find(x=>x.id===id); if(!r) return showToast('Record not found',2);
   document.getElementById('speciesName').value = r.scientificName || '';
@@ -1098,154 +1299,17 @@ async function compressImageFile(file, maxDim=1200, quality=0.75){
   });
 }
 
-/* ---------- UI: thumbs helper ---------- */
-function createThumbElement(imgRef, isTmp=false){
-  const d = document.createElement('div'); d.className='thumbItem'; d.dataset.id = imgRef.id; if(imgRef.name) d.dataset.name = imgRef.name;
-  const img = document.createElement('img'); img.alt = imgRef.name || '';
-  if(imgRef.url) img.src = imgRef.url;
-  d.appendChild(img);
-  const controls = document.createElement('div'); controls.className='thumbControls';
-  const btnProfile = document.createElement('button'); btnProfile.className='thumbBtn profile'; btnProfile.title='Set as profile'; btnProfile.dataset.action='profile'; btnProfile.dataset.id = imgRef.id; btnProfile.innerText='★';
-  const btnDel = document.createElement('button'); btnDel.className='thumbBtn'; btnDel.title='Delete'; btnDel.dataset.action='delete'; btnDel.dataset.id = imgRef.id; btnDel.innerText='✕';
-  controls.appendChild(btnProfile); controls.appendChild(btnDel);
-  d.appendChild(controls);
-  if(imgRef.isProfile){ const badge = document.createElement('div'); badge.className='thumbBadge'; badge.innerText='Profile'; d.appendChild(badge); d.classList.add('profileSelected'); window._selectedProfile = imgRef.id; }
-  return d;
+/* show single record (viewer placeholder) */
+async function showLocalRecord(id){
+  const records = readLocalRecords(); const r = records.find(x=>x.id===id); if(!r) return showToast('Record not found',2);
+  // Simple viewer: scroll to library and highlight
+  showToast('Opened record: ' + (r.scientificName || r.id), 2);
 }
 
-/* ---------- Navigation & event wiring ---------- */
-function showSection(hash){
-  document.querySelectorAll('section.card').forEach(s=>s.style.display='none');
-  const el = document.querySelector(hash) || document.getElementById('pageHome');
-  if(el) el.style.display='block';
-  document.querySelectorAll('.navBtn').forEach(b=>b.classList.remove('active'));
-  const active = document.querySelector(`a[href="${hash}"]`);
-  if(active) active.classList.add('active');
-  setTimeout(()=> {
-    try{
-      const headerHeight = document.getElementById('appHeader').getBoundingClientRect().height;
-      const rect = el.getBoundingClientRect();
-      const targetY = window.scrollY + rect.top - headerHeight - 8;
-      window.scrollTo({ top: Math.max(0, targetY), behavior: 'smooth' });
-    }catch(e){ window.scrollTo({ top:0, behavior:'smooth' }); }
-  }, 80);
-  if(el && el.id === 'pageLibrary') renderLibrary();
-  updateSpeciesCount();
-}
+/* update species count */
+function updateSpeciesCount(){ document.getElementById('speciesCount').innerText = `Species recorded: ${readLocalRecords().filter(r=>!r.deleted).length}`; }
 
-document.addEventListener('DOMContentLoaded', ()=>{
-  document.querySelectorAll('.navBtn').forEach(a=>{
-    a.addEventListener('click', (e)=>{
-      e.preventDefault();
-      const href = a.getAttribute('href') || '#pageHome';
-      history.replaceState(null,'',href);
-      showSection(href);
-    });
-  });
-  window.addEventListener('hashchange', ()=> { const h = location.hash && document.querySelector(location.hash) ? location.hash : '#pageHome'; showSection(h); });
-  const initial = location.hash && document.querySelector(location.hash) ? location.hash : '#pageHome';
-  history.replaceState(null,'',initial);
-  showSection(initial);
-
-  // Sign-in buttons
-  document.getElementById('btnSignGrantSettings').addEventListener('click', async ()=>{
-    setSignButtonsEnabled(false);
-    try{
-      await initTokenClientIfNeeded();
-      if(tokenClient) tokenClient.requestAccessToken({ prompt: 'consent' });
-      else { showToast('Google Identity not available',3); setSignButtonsEnabled(true); }
-    }catch(err){ console.error('Sign in error', err); showToast('Sign in failed',3); setSignButtonsEnabled(true); }
-  });
-  document.getElementById('btnSignRetrySettings').addEventListener('click', async ()=>{
-    setSignButtonsEnabled(false);
-    try{
-      await initTokenClientIfNeeded();
-      if(tokenClient) tokenClient.requestAccessToken({ prompt: 'consent' });
-      else { showToast('No token client',3); setSignButtonsEnabled(true); }
-    }catch(err){ console.error('Retry error', err); showToast('Retry failed',3); setSignButtonsEnabled(true); }
-  });
-
-  // Backup button
-  document.getElementById('backupAllBtn').addEventListener('click', async ()=>{
-    const localOnly = readLocalRecords().filter(r=>!r.deleted && !r.driveId);
-    if(!localOnly.length){ showToast('No local-only records to backup',2); return; }
-    const diffs = { onlyLocal: localOnly, onlyRemote: [], both: [], localDeleted: [] };
-    ensureSettingsThen(()=> renderSyncPreview(diffs));
-  });
-
-  // Open Trash in Settings
-  document.getElementById('openTrashBtn').addEventListener('click', ()=> ensureSettingsThen(()=> openTrashModal()));
-
-  // Save handlers
-  document.getElementById('saveBtnAdd').addEventListener('click', async ()=> { await handleSaveFromAdd({autoUpload:true}); });
-  document.getElementById('saveLocalOnlyBtnAdd').addEventListener('click', async ()=> { await handleSaveFromAdd({autoUpload:false}); });
-
-  // Export / Import
-  document.getElementById('exportLocalBtnSettings').addEventListener('click', ()=>{
-    const data = JSON.stringify(readLocalRecords(), null, 2);
-    const blob = new Blob([data], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = `exploration_records_${new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')}.json`;
-    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-    showToast('Local JSON exported', 3);
-  });
-  document.getElementById('importLocalBtnSettings').addEventListener('click', ()=> document.getElementById('importFile').click());
-  document.getElementById('importFile').addEventListener('change', async (e)=>{
-    const f = e.target.files[0]; if(!f) return;
-    try{ const txt = await f.text(); const arr = JSON.parse(txt); if(!Array.isArray(arr)) throw new Error('Invalid file'); const existing = readLocalRecords(); const merged = existing.concat(arr); const deduped = merged.filter((v,i,a)=>a.findIndex(x=>x.id===v.id)===i); writeLocalRecords(deduped); showToast('Imported records',2); renderTree(); }catch(err){ showToast('Import failed',3); }
-  });
-
-  // Image preview input
-  document.getElementById('speciesImages').addEventListener('change', async (e)=>{
-    const files = e.target.files;
-    const thumbs = document.getElementById('thumbs'); thumbs.innerHTML = '';
-    window._tmpFiles = window._tmpFiles || {};
-    for(let i=0;i<files.length;i++){
-      const f = files[i];
-      const url = URL.createObjectURL(f);
-      const id = 'tmp_' + Date.now() + '_' + i;
-      window._tmpFiles[id] = f;
-      const item = createThumbElement({ id, url, name: f.name, isProfile: false }, true);
-      thumbs.appendChild(item);
-    }
-  });
-
-  // Thumb controls (delegate)
-  document.getElementById('thumbs').addEventListener('click', async (e)=>{
-    const btn = e.target.closest('button[data-action]');
-    if(!btn) return;
-    const action = btn.dataset.action;
-    const id = btn.dataset.id;
-    if(action === 'delete'){
-      if(id && id.startsWith('tmp_')){ delete window._tmpFiles[id]; const el = document.querySelector(`.thumbItem[data-id="${id}"]`); if(el) el.remove(); }
-      else { window._deletedImages = window._deletedImages || []; window._deletedImages.push(id); const el = document.querySelector(`.thumbItem[data-id="${id}"]`); if(el) el.remove(); }
-    } else if(action === 'profile'){
-      document.querySelectorAll('.thumbItem').forEach(t=> t.classList.remove('profileSelected'));
-      const el = document.querySelector(`.thumbItem[data-id="${id}"]`);
-      if(el) el.classList.add('profileSelected');
-      window._selectedProfile = id;
-    }
-  });
-
-  // Library edit/delete handlers
-  document.getElementById('pageLibrary').addEventListener('click', (e)=>{
-    const editBtn = e.target.closest('button[data-edit-id]');
-    const delBtn = e.target.closest('button[data-delete-id]');
-    if(editBtn){ const id = editBtn.dataset.editId; populateEditForm(id); showSection('#pageAdd'); setTimeout(()=> document.getElementById('pageAdd').scrollIntoView({behavior:'smooth', block:'start'}),120); }
-    else if(delBtn){ const id = delBtn.dataset.deleteId; softDeleteRecord(id); }
-  });
-
-  // initial render
-  try{ renderTree(); }catch(e){}
-  updateSpeciesCount();
-  setTimeout(()=>{ autoPurgeTrash().catch(()=>{}); }, 600);
-  setInterval(()=>{ if(accessToken) attemptSyncQueue().catch(()=>{}); }, 60000);
-});
-
-/* ---------- Minimal tree render placeholder ---------- */
-function renderTree(){ /* placeholder kept minimal to avoid heavy layout changes */ }
-
-/* ---------- loginSync orchestration (conservative) ---------- */
+/* ---------- Remote listing & loginSync ---------- */
 async function listRemoteRecordsInFolder(){
   try{
     const folderId = await getOrCreateFolderId('EcologyApp_Records');
@@ -1303,6 +1367,16 @@ async function loginSync(){
   }catch(e){
     console.error('loginSync error', e);
     appendSyncLog('loginSync failed: ' + (e && e.message ? e.message : String(e)));
+  }
+}
+
+/* ---------- ensure Settings then run ---------- */
+function ensureSettingsThen(fn){
+  if(location.hash !== '#pageSettings'){
+    history.replaceState(null, '', '#pageSettings');
+    setTimeout(fn, 220);
+  } else {
+    fn();
   }
 }
 
