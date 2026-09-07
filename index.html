@@ -240,6 +240,10 @@ textarea{min-height:84px;resize:vertical}
           <div><span class="kv">Longitude:</span> <span id="locLon"></span></div>
         </div>
 
+        <label style="margin-top:8px">Commonly found location
+          <input id="commonlyFoundInput" type="text" placeholder="e.g. Under rocks, near rivers, forest canopy" autocomplete="off">
+        </label>
+
         <label style="margin-top:8px">Behaviours<textarea id="behaviourInput" placeholder="Observed behaviours"></textarea></label>
         <label style="margin-top:8px">Other notes<textarea id="otherNotesInput" placeholder="Other notes"></textarea></label>
       </div>
@@ -690,6 +694,7 @@ function populateEditForm(id){
   document.getElementById('taxSpecies').value = (r.taxonomy && r.taxonomy[6]) || '';
   document.getElementById('locationInput').value = r.location || '';
   if(r.coords){ document.getElementById('locationInput').dataset.lat = r.coords.lat; document.getElementById('locationInput').dataset.lon = r.coords.lon; document.getElementById('locLat').innerText = r.coords.lat.toFixed(6); document.getElementById('locLon').innerText = r.coords.lon.toFixed(6); document.getElementById('locationMeta').style.display = 'block'; } else { document.getElementById('locationMeta').style.display = 'none'; delete document.getElementById('locationInput').dataset.lat; delete document.getElementById('locationInput').dataset.lon; }
+  document.getElementById('commonlyFoundInput').value = r.commonlyFound || '';
   document.getElementById('behaviourInput').value = r.behaviours || '';
   document.getElementById('otherNotesInput').value = r.otherNotes || '';
   var thumbs = document.getElementById('thumbs'); thumbs.innerHTML = '';
@@ -719,6 +724,7 @@ async function handleSaveFromAdd(opts){
     var locationText = document.getElementById('locationInput').value.trim();
     var lat = document.getElementById('locationInput').dataset.lat ? parseFloat(document.getElementById('locationInput').dataset.lat) : null;
     var lon = document.getElementById('locationInput').dataset.lon ? parseFloat(document.getElementById('locationInput').dataset.lon) : null;
+    var commonlyFound = document.getElementById('commonlyFoundInput').value.trim();
     var behaviours = document.getElementById('behaviourInput').value.trim();
     var otherNotes = document.getElementById('otherNotesInput').value.trim();
 
@@ -735,7 +741,7 @@ async function handleSaveFromAdd(opts){
 
     if(editingId){
       var records = readLocalRecords(); var rec = records.find(function(r){ return r.id===editingId; }); if(!rec){ showToast('Record not found', 3); return; }
-      rec.scientificName = scientific; rec.commonName = common; rec.taxonomy = taxonomy; rec.location = locationText; rec.coords = lat && lon ? { lat: lat, lon: lon } : null; rec.behaviours = behaviours; rec.otherNotes = otherNotes; rec.updatedAt = new Date().toISOString();
+      rec.scientificName = scientific; rec.commonName = common; rec.taxonomy = taxonomy; rec.location = locationText; rec.coords = lat && lon ? { lat: lat, lon: lon } : null; rec.commonlyFound = commonlyFound; rec.behaviours = behaviours; rec.otherNotes = otherNotes; rec.updatedAt = new Date().toISOString();
       rec.images = imageRefsPlaceholder;
       writeLocalRecords(records);
       showToast('Saved locally (processing images in background)',2);
@@ -750,7 +756,7 @@ async function handleSaveFromAdd(opts){
     }
 
     var recordId = 'rec_' + Date.now() + '_' + Math.floor(Math.random()*10000);
-    var record = { id: recordId, scientificName:scientific, commonName:common, taxonomy:taxonomy, location: locationText || null, coords: lat && lon ? { lat: lat, lon: lon } : null, behaviours:behaviours, otherNotes:otherNotes, images:imageRefsPlaceholder, createdAt:new Date().toISOString(), status:'pending' };
+    var record = { id: recordId, scientificName:scientific, commonName:common, taxonomy:taxonomy, location: locationText || null, coords: lat && lon ? { lat: lat, lon: lon } : null, commonlyFound: commonlyFound, behaviours:behaviours, otherNotes:otherNotes, images:imageRefsPlaceholder, createdAt:new Date().toISOString(), status:'pending' };
     var allRecords = readLocalRecords(); allRecords.push(record); writeLocalRecords(allRecords);
     showToast('Saved locally (processing images in background)',2);
     processImagesAndSync(recordId, autoUpload).catch(function(err){ console.error('background process error', err); });
@@ -773,6 +779,7 @@ function clearAddForm(){
   delete document.getElementById('locationInput').dataset.lat;
   delete document.getElementById('locationInput').dataset.lon;
   document.getElementById('locationMeta').style.display = 'none';
+  document.getElementById('commonlyFoundInput').value = '';
   document.getElementById('behaviourInput').value = '';
   document.getElementById('otherNotesInput').value = '';
   document.getElementById('speciesImages').value = '';
@@ -861,7 +868,6 @@ function buildTreeDataFromLocal(){
     cursor.children = cursor.children || [];
     cursor.children.push({name: r.scientificName || r.id, species:true, recordId: r.id});
   }
-  if(!treeRoot.children || treeRoot.children.length===0) return {name:'Life',children:[{name:'No records yet',children:[]}]};
   return treeRoot;
 }
 function collapseAll(d, depth, maxDepth){ depth = depth || 0; maxDepth = maxDepth || 2; if(d.children){ d.children.forEach(function(c){ collapseAll(c, depth+1, maxDepth); }); if(depth>=maxDepth){ d._children = d.children; d.children = null; } } }
@@ -907,24 +913,58 @@ function renderLibrary(){
   if(!records.length){ container.innerHTML = '<div>No records yet</div>'; return; }
   records.sort(function(a,b){ return (a.scientificName||'').localeCompare(b.scientificName||''); });
   records.forEach(function(s){
-    var card = document.createElement('div'); card.className='card'; card.style.display='flex'; card.style.justifyContent='space-between'; card.style.alignItems='center';
-    var left = document.createElement('div');
+    var card = document.createElement('div'); card.className='card'; card.style.display='flex'; card.style.gap='12px'; card.style.alignItems='center';
+
+    // Profile picture area
+    var picWrap = document.createElement('div');
+    picWrap.style.cssText = 'flex:0 0 64px;width:64px;height:64px;border-radius:12px;overflow:hidden;background:#eaf9ef;display:flex;align-items:center;justify-content:center;border:1px solid #daf0de;';
+    var profileImg = (s.images || []).find(function(im){ return im.isProfile; }) || (s.images && s.images[0]) || null;
+    if(profileImg && profileImg.id){
+      var imgEl = document.createElement('img');
+      imgEl.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
+      imgEl.alt = s.scientificName || '';
+      picWrap.appendChild(imgEl);
+      // Load from IDB async
+      (function(el, imgId){
+        idbGet(imgId).then(function(blob){
+          if(blob) el.src = URL.createObjectURL(blob);
+          else el.parentNode.innerHTML = '<div style="color:#aaa;font-size:24px;text-align:center;">&#127793;</div>';
+        }).catch(function(){
+          el.parentNode.innerHTML = '<div style="color:#aaa;font-size:24px;text-align:center;">&#127793;</div>';
+        });
+      })(imgEl, profileImg.id);
+    } else {
+      picWrap.innerHTML = '<div style="color:#aaa;font-size:24px;text-align:center;">&#127793;</div>';
+    }
+    card.appendChild(picWrap);
+
+    // Info area
+    var mid = document.createElement('div'); mid.style.cssText = 'flex:1;min-width:0;';
     var title = document.createElement('div'); title.style.fontWeight='800'; title.style.color='#145a3f'; title.innerText = s.scientificName || 'Unnamed';
     var sub = document.createElement('div'); sub.style.color='#666'; sub.innerText = s.commonName || '';
-    var loc = document.createElement('div'); loc.style.color='#666'; loc.style.fontSize='13px'; loc.style.marginTop='6px';
+    mid.appendChild(title); mid.appendChild(sub);
+    if(s.commonlyFound){
+      var cfDiv = document.createElement('div'); cfDiv.style.cssText='color:#666;font-size:13px;margin-top:4px;';
+      cfDiv.innerHTML = 'Commonly found: ' + escapeHtml(s.commonlyFound);
+      mid.appendChild(cfDiv);
+    }
+    var loc = document.createElement('div'); loc.style.color='#666'; loc.style.fontSize='13px'; loc.style.marginTop='4px';
     if(s.coords && s.coords.lat && s.coords.lon){
       loc.innerHTML = 'Location: ' + (s.location ? escapeHtml(s.location) + ' \u2014 ' : '') + '<strong>' + s.coords.lat.toFixed(6) + ', ' + s.coords.lon.toFixed(6) + '</strong>';
     } else {
       loc.innerHTML = 'Location: ' + (s.location ? escapeHtml(s.location) : '\u2014');
     }
-    left.appendChild(title); left.appendChild(sub); left.appendChild(loc);
-    var right = document.createElement('div'); right.style.display='flex'; right.style.flexDirection='column'; right.style.gap='8px';
+    mid.appendChild(loc);
+    card.appendChild(mid);
+
+    // Action buttons
+    var right = document.createElement('div'); right.style.display='flex'; right.style.flexDirection='column'; right.style.gap='8px'; right.style.flexShrink='0';
     var editBtn = document.createElement('button'); editBtn.className='btn small'; editBtn.innerText='Edit';
     editBtn.addEventListener('click', (function(recId){ return function(){ populateEditForm(recId); showSection('#pageAdd'); setTimeout(function(){ document.getElementById('pageAdd').scrollIntoView({behavior:'smooth', block:'start'}); },120); }; })(s.id));
     var delBtn = document.createElement('button'); delBtn.className='btn small ghost'; delBtn.innerText='Delete';
     delBtn.addEventListener('click', (function(recId){ return function(){ softDeleteRecord(recId); }; })(s.id));
     right.appendChild(editBtn); right.appendChild(delBtn);
-    card.appendChild(left); card.appendChild(right);
+    card.appendChild(right);
     container.appendChild(card);
   });
 }
@@ -1081,6 +1121,24 @@ document.addEventListener('DOMContentLoaded', function(){
     }
   });
 
+  // Auto-populate Genus and Species from scientific name
+  document.getElementById('speciesName').addEventListener('input', function(){
+    var val = this.value.trim();
+    var parts = val.split(/\s+/);
+    var genusField = document.getElementById('taxGenus');
+    var speciesField = document.getElementById('taxSpecies');
+    if(parts.length >= 1 && parts[0]){
+      genusField.value = parts[0].charAt(0).toUpperCase() + parts[0].slice(1).toLowerCase();
+    } else {
+      genusField.value = '';
+    }
+    if(parts.length >= 2 && parts[1]){
+      speciesField.value = parts[1].toLowerCase();
+    } else {
+      speciesField.value = '';
+    }
+  });
+
   // Map modal wiring
   document.getElementById('btnPickOnMap').addEventListener('click', function(){
     var lat = parseFloat(document.getElementById('locationInput').dataset.lat || 0) || null;
@@ -1133,10 +1191,23 @@ document.addEventListener('DOMContentLoaded', function(){
       if(id && id.startsWith('tmp_')){ delete window._tmpFiles[id]; var el = document.querySelector('.thumbItem[data-id="' + id + '"]'); if(el) el.remove(); }
       else { window._deletedImages = window._deletedImages || []; window._deletedImages.push(id); var el2 = document.querySelector('.thumbItem[data-id="' + id + '"]'); if(el2) el2.remove(); }
     } else if(action === 'profile'){
-      document.querySelectorAll('.thumbItem').forEach(function(t){ t.classList.remove('profileSelected'); });
+      // Remove profileSelected and badge from all thumbs
+      document.querySelectorAll('.thumbItem').forEach(function(t){
+        t.classList.remove('profileSelected');
+        var oldBadge = t.querySelector('.thumbBadge');
+        if(oldBadge) oldBadge.remove();
+      });
       var el3 = document.querySelector('.thumbItem[data-id="' + id + '"]');
-      if(el3) el3.classList.add('profileSelected');
+      if(el3){
+        el3.classList.add('profileSelected');
+        // Add "Profile" badge
+        var badge = document.createElement('div');
+        badge.className = 'thumbBadge';
+        badge.innerText = 'Profile';
+        el3.appendChild(badge);
+      }
       window._selectedProfile = id;
+      showToast('Set as profile photo', 1);
     }
   });
 
