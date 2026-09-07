@@ -3,10 +3,16 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Jeffrey's Exploration — Full App</title>
+<title>Jeffrey's Exploration — Fixed</title>
 <meta name="theme-color" content="#2fb86a">
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;800&display=swap" rel="stylesheet">
+<!-- Preload Google Identity so popup is triggered from user gesture -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<!-- D3 + Leaflet -->
 <script src="https://d3js.org/d3.v7.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <style>
 :root{
   --accent:#2fb86a; --accent-dark:#238a55; --bg:#f2faf4; --card:#ffffff; --muted:#6b6b6b;
@@ -17,9 +23,17 @@
   --btn-radius: 999px;
   --soft-green: #eaf9ef;
 }
-*{box-sizing:border-box}
-html,body{height:100%;margin:0;padding:0;font-family:"Baloo 2",system-ui,-apple-system,"Segoe UI",Roboto,Arial;background:var(--bg);color:#0b2b1f; -webkit-text-size-adjust:100%;}
-html, body { transform: none !important; -webkit-transform:none !important; }
+
+/* Reset & layout */
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  -webkit-text-size-adjust: 100%;
+  background: var(--bg);
+  font-family: "Baloo 2", system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+  color: #0b2b1f;
+}
 
 /* Header */
 header{
@@ -39,36 +53,33 @@ h1{font-size:18px;margin:0;font-weight:800;white-space:nowrap;overflow:hidden;te
 .dot{width:10px;height:10px;border-radius:999px;background:#d9534f;box-shadow:0 2px 6px rgba(0,0,0,0.08)}
 .dot.green{background:#2fb86a}
 
-/* Bottom nav: flush to bottom including safe area */
+/* Bottom nav: fixed and flush to bottom */
 .bottomNav{
   position:fixed;
   left:0;
   right:0;
-  bottom:env(safe-area-inset-bottom,0);
-  height:calc(var(--nav-height) + env(safe-area-inset-bottom,0px));
+  bottom:0; /* flush to bottom */
+  height:calc(var(--nav-height) + env(safe-area-inset-bottom, 0px));
+  padding:8px 12px;
+  padding-bottom:calc(env(safe-area-inset-bottom, 0px));
+  box-sizing:border-box;
   background:linear-gradient(180deg,#fff,#f6fff6);
   border-top:1px solid #e9f3ea;
   display:flex;
   align-items:center;
   justify-content:space-around;
   z-index:1300;
-  padding:8px 12px;
-  padding-bottom:calc(env(safe-area-inset-bottom,0px));
-  box-sizing:border-box;
   box-shadow:0 -6px 20px rgba(10,30,20,0.03);
-  margin:0;
-  transform:none !important;
-  -webkit-transform:none !important;
 }
 .navBtn{flex:1;text-align:center;color:#3b6b52;font-weight:800;cursor:pointer;padding:8px 6px;text-decoration:none;display:block}
 .navBtn.active{color:var(--accent-dark)}
 .navIcon{display:block;font-size:20px;margin-bottom:6px}
 
-/* Container: account for fixed header/footer using padding */
+/* Container: reserve space for header/footer but don't push nav up */
 .container{
   max-width:1100px;
   margin:0 auto;
-  padding: calc(var(--header-height) + var(--safe-top) + 12px) 14px calc(var(--nav-height) + env(safe-area-inset-bottom,0px) + 12px);
+  padding: calc(var(--header-height) + var(--safe-top) + 12px) 14px calc(var(--nav-height) + env(safe-area-inset-bottom, 0px) + 12px);
   min-height: calc(100vh - (var(--header-height) + var(--nav-height) + var(--safe-top) + var(--safe-bottom) + 24px));
   box-sizing:border-box;
 }
@@ -77,7 +88,7 @@ h1{font-size:18px;margin:0;font-weight:800;white-space:nowrap;overflow:hidden;te
 .card{background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:12px;box-shadow:var(--shadow);overflow:visible}
 .sectionTitle{display:block;background:linear-gradient(180deg,#f3fff6,#fff);border-radius:10px;padding:8px 12px;color:var(--accent-dark);font-weight:800;margin:-16px -16px 12px -16px}
 
-/* Inputs: softer green/white, circular */
+/* Inputs & buttons */
 input[type="text"],textarea,select, input[type="file"]{
   width:100%;
   padding:12px 14px;
@@ -87,68 +98,13 @@ input[type="text"],textarea,select, input[type="file"]{
   box-shadow:inset 0 1px 0 rgba(255,255,255,0.6);
   font-size:15px;
   outline:none;
-  transition:box-shadow .15s, border-color .15s, transform .08s;
-}
-input[type="text"]:focus, textarea:focus, select:focus{
-  border-color:var(--accent);
-  box-shadow:0 6px 18px rgba(43,184,106,0.08);
-  transform:translateY(-1px);
 }
 textarea{min-height:84px;resize:vertical}
-
-/* Buttons: primary rounded green style */
-.btn{
-  background:linear-gradient(180deg,var(--accent),var(--accent-dark));
-  color:#fff;
-  border:none;
-  padding:8px 14px;
-  border-radius:var(--btn-radius);
-  cursor:pointer;
-  font-weight:800;
-  box-shadow:0 6px 18px rgba(43,184,106,0.12);
-}
-.btn.ghost{
-  background:transparent;
-  color:var(--accent-dark);
-  border:1px solid rgba(35,138,85,0.12);
-  box-shadow:none;
-}
+.btn{background:linear-gradient(180deg,var(--accent),var(--accent-dark));color:#fff;border:none;padding:8px 14px;border-radius:var(--btn-radius);cursor:pointer;font-weight:800;box-shadow:0 6px 18px rgba(43,184,106,0.12)}
+.btn.ghost{background:transparent;color:var(--accent-dark);border:1px solid rgba(35,138,85,0.12);box-shadow:none}
 .btn.small{padding:6px 10px;font-size:13px;border-radius:999px}
-.btn:active{transform:translateY(1px)}
 
-/* Toggle button style (roundish green) */
-.groupToggle{
-  width:40px;
-  height:40px;
-  border-radius:999px;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  background:var(--soft-green);
-  color:var(--accent-dark);
-  border:1px solid rgba(43,184,106,0.12);
-  box-shadow:0 6px 14px rgba(43,184,106,0.06);
-  cursor:pointer;
-  font-weight:900;
-  font-size:14px;
-}
-.groupToggle:hover{ transform:translateY(-2px); box-shadow:0 10px 22px rgba(43,184,106,0.09); }
-.groupToggle.active{
-  background:linear-gradient(180deg,var(--accent),var(--accent-dark));
-  color:#fff;
-  border-color:rgba(0,0,0,0.06);
-}
-
-/* species card */
-.speciesGrid{display:flex;flex-wrap:wrap;gap:12px;margin-top:8px}
-.speciesCard{width:220px;background:#fff;border-radius:12px;padding:12px;box-shadow:0 8px 20px rgba(10,30,20,0.04);display:flex;gap:10px;align-items:center}
-.speciesThumb{width:72px;height:72px;border-radius:50%;overflow:hidden;border:1px solid #eef6ef;display:flex;align-items:center;justify-content:center;background:#f6fff6;flex-shrink:0}
-.speciesThumb img{width:100%;height:100%;object-fit:cover;display:block;border-radius:50%}
-.speciesInfo{flex:1}
-.speciesName{font-weight:800;color:#145a3f}
-.commonName{color:#6b6b6b;font-size:13px}
-
-/* Thumb grid */
+/* Thumbs */
 .thumbGrid{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
 .thumbItem{position:relative;width:84px;height:84px;border-radius:12px;overflow:hidden;border:1px solid #eef6ef;background:#fff;display:flex;align-items:center;justify-content:center}
 .thumbItem img{width:100%;height:100%;object-fit:cover;display:block}
@@ -157,31 +113,20 @@ textarea{min-height:84px;resize:vertical}
 .thumbBtn.profile{background:rgba(43,184,106,0.95)}
 .thumbBadge{position:absolute;left:6px;bottom:6px;background:rgba(0,0,0,0.55);color:#fff;padding:2px 6px;border-radius:999px;font-size:12px}
 
-/* Trash button style in Settings (rounded green) */
-.openTrashBtn{
-  display:inline-flex;
-  align-items:center;
-  gap:8px;
-  padding:10px 14px;
-  border-radius:999px;
-  background:linear-gradient(180deg,var(--accent),var(--accent-dark));
-  color:#fff;
-  border:none;
-  font-weight:800;
-  box-shadow:0 8px 20px rgba(43,184,106,0.12);
-  cursor:pointer;
-}
-
 /* Toast & modal */
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--nav-height) + 18px + env(safe-area-inset-bottom,0px));background:rgba(15,80,50,0.95);color:#fff;padding:12px 18px;border-radius:12px;font-weight:700;z-index:2000;opacity:0;transition:opacity .2s}
 .toast.show{opacity:1}
 .modalBackdrop{position:fixed;left:0;top:0;right:0;bottom:0;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;z-index:2500}
 .modal{background:#fff;border-radius:12px;padding:16px;max-width:920px;width:92%;max-height:80vh;overflow:auto}
 
+/* Map */
+.leaflet-container{width:100%;height:420px;border-radius:10px}
+.mapControls{display:flex;gap:8px;align-items:center;margin-top:8px}
+.kv{font-weight:700;color:#145a3f}
+
 /* Responsive */
 @media (max-width:900px){
-  input[type="text"],textarea,select{font-size:16px}
-  .speciesCard{width:calc(50% - 12px)}
+  .thumbItem{width:72px;height:72px}
 }
 </style>
 </head>
@@ -198,7 +143,7 @@ textarea{min-height:84px;resize:vertical}
 </header>
 
 <div class="container" id="mainContainer">
-  <!-- HOME -->
+  <!-- Home -->
   <section id="pageHome" class="card" aria-labelledby="homeTitle">
     <div class="sectionTitle" id="homeTitle">Overview</div>
     <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
@@ -229,18 +174,16 @@ textarea{min-height:84px;resize:vertical}
         </div>
       </div>
 
-      <div class="treeWrap" style="margin-top:10px">
-        <div class="treeCanvas" id="treeCanvas" style="position:relative">
-          <svg id="treeSvg" width="100%" height="520" style="touch-action:none"></svg>
-          <div id="minimap" aria-hidden="true" style="position:absolute;right:12px;bottom:12px;background:rgba(255,255,255,0.9);padding:8px;border-radius:8px;border:1px solid #eef6ef">
-            <div style="font-weight:700;margin-bottom:6px">Overview</div><svg id="miniSvg" width="120" height="80"></svg>
-          </div>
+      <div class="treeWrap" style="margin-top:10px;position:relative">
+        <svg id="treeSvg" width="100%" height="520" style="touch-action:none"></svg>
+        <div id="minimap" aria-hidden="true" style="position:absolute;right:12px;bottom:12px;background:rgba(255,255,255,0.9);padding:8px;border-radius:8px;border:1px solid #eef6ef">
+          <div style="font-weight:700;margin-bottom:6px">Overview</div><svg id="miniSvg" width="120" height="80"></svg>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ADD -->
+  <!-- Add -->
   <section id="pageAdd" class="card" aria-labelledby="addTitle" style="display:none">
     <div class="sectionTitle" id="addTitle">Add New Species</div>
     <div class="formFull">
@@ -262,7 +205,21 @@ textarea{min-height:84px;resize:vertical}
       </div>
 
       <div style="margin-top:10px">
-        <label>Location<input id="locationInput" placeholder="Where observed"></label>
+        <label>Location (where found)
+          <input id="locationInput" type="text" placeholder="Address or place name">
+        </label>
+
+        <div style="margin-top:8px;display:flex;gap:8px;align-items:center">
+          <button id="btnUseGPS" class="btn small">Use current location</button>
+          <button id="btnPickOnMap" class="btn small ghost">Pick on map</button>
+          <div style="color:var(--muted);font-size:13px">or type location manually</div>
+        </div>
+
+        <div id="locationMeta" style="margin-top:8px;color:#666;font-size:13px;display:none">
+          <div><span class="kv">Latitude:</span> <span id="locLat"></span></div>
+          <div><span class="kv">Longitude:</span> <span id="locLon"></span></div>
+        </div>
+
         <label style="margin-top:8px">Behaviours<textarea id="behaviourInput" placeholder="Observed behaviours"></textarea></label>
         <label style="margin-top:8px">Other notes<textarea id="otherNotesInput" placeholder="Other notes"></textarea></label>
       </div>
@@ -279,16 +236,13 @@ textarea{min-height:84px;resize:vertical}
     </div>
   </section>
 
-  <!-- LIBRARY -->
+  <!-- Library -->
   <section id="pageLibrary" class="card" aria-labelledby="libraryTitle" style="display:none">
     <div class="sectionTitle" id="libraryTitle">Library</div>
-    <div style="margin-bottom:8px;display:flex;gap:8px;align-items:center">
-      <div style="margin-left:auto;color:var(--muted);font-size:13px">Cards grouped by taxonomy</div>
-    </div>
     <div id="libraryContent" style="margin-top:8px"></div>
   </section>
 
-  <!-- SETTINGS -->
+  <!-- Settings -->
   <section id="pageSettings" class="card" aria-labelledby="settingsTitle" style="display:none">
     <div class="sectionTitle" id="settingsTitle">Settings</div>
     <div style="display:flex;flex-direction:column;gap:10px">
@@ -334,27 +288,39 @@ textarea{min-height:84px;resize:vertical}
   <a href="#pageSettings" id="navSettings" class="navBtn"><span class="navIcon">⚙️</span>Settings</a>
 </nav>
 
-<!-- Modals -->
+<!-- Map modal -->
+<div id="mapModal" style="display:none">
+  <div class="modalBackdrop">
+    <div class="modal" role="dialog" aria-modal="true" aria-label="Pick location on map">
+      <h3 style="margin-top:0">Pick location on map</h3>
+      <div id="mapContainer" class="leaflet-container"></div>
+      <div class="mapControls">
+        <button id="mapConfirm" class="btn small">Confirm location</button>
+        <button id="mapCancel" class="btn small ghost">Cancel</button>
+        <div style="margin-left:auto;color:#666;font-size:13px">Click map to place marker; drag marker to adjust</div>
+      </div>
+      <div style="margin-top:8px;color:#666;font-size:13px">Selected: <span id="mapSelLat">—</span>, <span id="mapSelLon">—</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- Sync preview & Trash modals -->
 <div id="syncPreviewModal" style="display:none"></div>
 <div id="trashModal" style="display:none"></div>
 
 <script>
-/* ---------------------------
-   Full app JS: local storage, IDB images, UI, Drive sign-in + sync queue,
-   trash, export/import, taxonomy tree (D3), thumbnails, search, zoom, minimap.
-   Key points:
-   - No automatic sign-in loops: sign-in only on user click; guarded by tokenRequestInProgress.
-   - Bottom nav flush to bottom; container padding adjusted.
-   - All features implemented in a single-file app for local testing.
-   --------------------------- */
+/* Full app JS with fixes:
+   - bottom nav flush to bottom via CSS (bottom:0 + safe-area)
+   - Google Identity script preloaded in head so popup is triggered from user gesture
+   - tokenClient initialized on DOMContentLoaded (best-effort) and requestAccessToken called directly inside click handler
+   - other app features preserved (local storage, IDB images, map pick, D3 tree placeholders)
+*/
 
-/* ---------- Config ---------- */
+/* ---------- Config & storage ---------- */
 const CLIENT_ID = "58009415485-8qvhrvbasmrq5ugms01dv8vt7pneen6u.apps.googleusercontent.com";
 const SCOPES = "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive";
-
-/* ---------- Storage keys ---------- */
-const LOCAL_KEY = 'exploration_records_full_v1';
-const SYNC_QUEUE_KEY = 'exploration_sync_queue_full_v1';
+const LOCAL_KEY = 'exploration_records_fixed_v1';
+const SYNC_QUEUE_KEY = 'exploration_sync_queue_fixed_v1';
 const TRASH_RETENTION_DAYS = 30;
 
 /* ---------- State ---------- */
@@ -365,7 +331,7 @@ let tokenRequestInProgress = false;
 
 /* ---------- Helpers ---------- */
 function showToast(msg, s=3){ const t = document.getElementById('toast'); t.innerText = msg; t.classList.add('show'); clearTimeout(t._t); t._t = setTimeout(()=> t.classList.remove('show'), s*1000); }
-function escapeHtml(s){ return (s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+function escapeHtml(s){ return (s||'').toString().replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
 function appendSyncLog(line){ const el = document.getElementById('syncLog'); const now = new Date().toLocaleString(); const entry = `${now} — ${line}`; const prev = el.dataset.log ? JSON.parse(el.dataset.log) : []; prev.push(entry); el.dataset.log = JSON.stringify(prev); el.innerHTML = prev.slice().reverse().map(l=>`<div>${escapeHtml(l)}</div>`).join(''); console.info('[SYNC]', line); }
 
 /* ---------- Local storage helpers ---------- */
@@ -378,7 +344,7 @@ function writeSyncQueue(q){ localStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify(
 function openDb(){
   if(window._dbPromise) return window._dbPromise;
   window._dbPromise = new Promise((resolve,reject)=>{
-    const req = indexedDB.open('exploration_images_db_full_v1',1);
+    const req = indexedDB.open('exploration_images_db_fixed_v1',1);
     req.onupgradeneeded = e => { const db = e.target.result; if(!db.objectStoreNames.contains('images')) db.createObjectStore('images',{keyPath:'id'}); };
     req.onsuccess = ()=> resolve(req.result);
     req.onerror = ()=> reject(req.error);
@@ -413,50 +379,37 @@ async function idbDelete(id){
   });
 }
 
-/* ---------- Google Identity dynamic load + token client ---------- */
-function ensureGsiLoaded(timeoutMs = 8000){
-  return new Promise((resolve,reject)=>{
-    if(window.google && google.accounts && google.accounts.oauth2) return resolve(true);
-    if(document.querySelector('script[data-gsi-injected]')){
-      const start = Date.now();
-      const iv = setInterval(()=>{ if(window.google && google.accounts && google.accounts.oauth2){ clearInterval(iv); resolve(true); } else if(Date.now()-start>timeoutMs){ clearInterval(iv); reject(new Error('GSI load timeout')); } }, 150);
-      return;
+/* ---------- Google Identity init (best-effort at load) ---------- */
+function initTokenClientIfNeeded(){
+  try{
+    if(tokenClient) return tokenClient;
+    if(!(window.google && google.accounts && google.accounts.oauth2)) {
+      console.warn('GSI not available yet');
+      return null;
     }
-    const s = document.createElement('script');
-    s.src = 'https://accounts.google.com/gsi/client';
-    s.async = true; s.defer = true;
-    s.setAttribute('data-gsi-injected','1');
-    s.onload = ()=> resolve(true);
-    s.onerror = ()=> reject(new Error('GSI script failed to load'));
-    document.head.appendChild(s);
-  });
-}
-
-async function initTokenClientIfNeeded(){
-  if(tokenClient) return tokenClient;
-  await ensureGsiLoaded();
-  if(!(window.google && google.accounts && google.accounts.oauth2)) throw new Error('google.accounts.oauth2 not available');
-  tokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: CLIENT_ID,
-    scope: SCOPES,
-    callback: (resp) => {
-      tokenRequestInProgress = false;
-      if(resp && resp.access_token){
-        accessToken = resp.access_token;
-        document.getElementById('signedDot').classList.add('green');
-        document.getElementById('signedText').innerText = 'Signed';
-        appendSyncLog('Signed in to Google');
-        showToast('Signed in', 2);
-        // after sign-in, attempt sync
-        attemptSyncQueue().catch(()=>{});
-      } else {
-        console.warn('Token callback returned no access_token', resp);
-        showToast('Sign in cancelled or failed', 3);
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: CLIENT_ID,
+      scope: SCOPES,
+      callback: (resp) => {
+        tokenRequestInProgress = false;
+        if(resp && resp.access_token){
+          accessToken = resp.access_token;
+          document.getElementById('signedDot').classList.add('green');
+          document.getElementById('signedText').innerText = 'Signed';
+          appendSyncLog('Signed in to Google');
+          showToast('Signed in', 2);
+          attemptSyncQueue().catch(()=>{});
+        } else {
+          showToast('Sign in cancelled or failed', 3);
+        }
+        setSignButtonsEnabled(true);
       }
-      setSignButtonsEnabled(true);
-    }
-  });
-  return tokenClient;
+    });
+    return tokenClient;
+  }catch(e){
+    console.warn('initTokenClientIfNeeded error', e);
+    return null;
+  }
 }
 
 function setSignButtonsEnabled(enabled){
@@ -471,14 +424,13 @@ function setSignButtonsEnabled(enabled){
   }
 }
 
-/* ---------- Drive wrappers ---------- */
+/* ---------- Drive wrappers (same as before) ---------- */
 async function driveFetch(url, opts = {}){
   if(!accessToken) throw new Error('No access token');
   opts.headers = opts.headers || {};
   opts.headers['Authorization'] = 'Bearer ' + accessToken;
   return fetch(url, opts);
 }
-
 async function getOrCreateFolderId(folderName){
   if(cachedFolderId) return cachedFolderId;
   const q = `mimeType='application/vnd.google-apps.folder' and name='${folderName.replace(/'/g,"\\'")}' and trashed=false`;
@@ -497,7 +449,6 @@ async function getOrCreateFolderId(folderName){
   cachedFolderId = cj.id;
   return cachedFolderId;
 }
-
 async function uploadJsonRecordToFolder(name, obj, folderId){
   const metadata = { name: `${name}.json`, mimeType: 'application/json', parents: folderId ? [folderId] : undefined };
   const blob = new Blob([JSON.stringify(obj)], { type: 'application/json' });
@@ -508,7 +459,6 @@ async function uploadJsonRecordToFolder(name, obj, folderId){
   if(!r.ok) throw new Error('Upload JSON failed: ' + r.status);
   return r.json();
 }
-
 async function uploadImageBlobToFolder(blob, nameHint, folderId){
   const meta = { name: nameHint, mimeType: blob.type, parents: folderId ? [folderId] : undefined };
   const form = new FormData();
@@ -518,7 +468,6 @@ async function uploadImageBlobToFolder(blob, nameHint, folderId){
   if(!r.ok) throw new Error('Upload image failed: ' + r.status);
   return r.json();
 }
-
 async function deleteDriveFile(driveId){
   if(!accessToken) throw new Error('Not signed');
   const url = `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(driveId)}`;
@@ -528,7 +477,7 @@ async function deleteDriveFile(driveId){
   throw new Error('Drive delete failed: ' + (j && j.error && j.error.message ? j.error.message : res.status));
 }
 
-/* ---------- Sync queue processing ---------- */
+/* ---------- Sync queue processing (unchanged logic) ---------- */
 async function attemptSyncQueue(){
   try{
     if(!accessToken){ document.getElementById('syncDot').classList.remove('green'); document.getElementById('syncText').innerText = 'Sync'; appendSyncLog('Not signed — sync skipped'); return false; }
@@ -549,7 +498,7 @@ async function attemptSyncQueue(){
         imRef.driveId = up.id;
         appendSyncLog(`Uploaded image ${imRef.id} -> ${up.id}`);
       }
-      const recToUpload = { id: rec.id, scientificName: rec.scientificName, commonName: rec.commonName, taxonomy: rec.taxonomy, location: rec.location, behaviours: rec.behaviours, otherNotes: rec.otherNotes, images: (rec.images||[]).map(i=>({ driveId: i.driveId || null, name: i.name || null })), createdAt: rec.createdAt };
+      const recToUpload = { id: rec.id, scientificName: rec.scientificName, commonName: rec.commonName, taxonomy: rec.taxonomy, location: rec.location, coords: rec.coords || null, behaviours: rec.behaviours, otherNotes: rec.otherNotes, images: (rec.images||[]).map(i=>({ driveId: i.driveId || null, name: i.name || null })), createdAt: rec.createdAt };
       const uploaded = await uploadJsonRecordToFolder(rec.scientificName || rec.id, recToUpload, folderId);
       const updated = readLocalRecords().map(r => r.id===recId ? ({...r, status:'uploaded', driveId: uploaded.id, images: r.images}) : r);
       writeLocalRecords(updated);
@@ -570,509 +519,81 @@ async function attemptSyncQueue(){
   }
 }
 
-/* ---------- Sync preview UI ---------- */
-function renderSyncPreview(diffResult){
-  const modalRoot = document.getElementById('syncPreviewModal');
-  modalRoot.innerHTML = '';
-  const backdrop = document.createElement('div'); backdrop.className='modalBackdrop';
-  const modal = document.createElement('div'); modal.className='modal';
-  modal.innerHTML = `<h3 style="margin-top:0">Sync Preview</h3><p style="color:#666">以下為 Drive 與本地之差異。採用保守策略，請逐項確認要執行的動作。</p>`;
-  const sections = document.createElement('div'); sections.style.display='grid'; sections.style.gap='12px';
+/* ---------- Map modal & Leaflet setup ---------- */
+let map = null;
+let mapMarker = null;
+let mapInitialized = false;
+let mapSelectedLat = null;
+let mapSelectedLon = null;
 
-  function createRow(contentEl, defaultAction, actions){
-    const row = document.createElement('div'); row.style.display='flex'; row.style.alignItems='center'; row.style.justifyContent='space-between'; row.style.padding='8px'; row.style.borderBottom='1px dashed #f0f8f0';
-    const left = document.createElement('div'); left.style.flex='1'; left.appendChild(contentEl);
-    const right = document.createElement('div'); right.style.display='flex'; right.style.gap='8px';
-    actions.forEach(a=>{
-      const btn = document.createElement('button'); btn.className='btn small'; btn.innerText = a.label;
-      if(a.ghost) btn.classList.add('ghost');
-      btn.addEventListener('click', ()=>{ row.dataset.action = a.action; row.style.background = a.bg || 'transparent'; });
-      right.appendChild(btn);
-    });
-    row.appendChild(left); row.appendChild(right);
-    row.dataset.action = defaultAction || 'keep';
-    return row;
-  }
-
-  // Only Local
-  const onlyLocalWrap = document.createElement('div'); onlyLocalWrap.style.border='1px solid #eef6ef'; onlyLocalWrap.style.padding='8px'; onlyLocalWrap.style.borderRadius='8px';
-  const t1 = document.createElement('div'); t1.style.fontWeight='800'; t1.innerText = `Only Local (${diffResult.onlyLocal.length})`; onlyLocalWrap.appendChild(t1);
-  const list1 = document.createElement('div'); list1.style.marginTop='8px';
-  diffResult.onlyLocal.forEach(l=>{
-    const content = document.createElement('div');
-    content.innerHTML = `<div style="font-weight:800">${escapeHtml(l.scientificName||l.id)}</div><div style="color:#666">${escapeHtml(l.commonName||'')}</div>`;
-    const row = createRow(content, 'upload', [{label:'Upload', action:'upload', bg:'#f7fff7'},{label:'Keep', action:'keep', ghost:true}]);
-    row.dataset.item = JSON.stringify(l);
-    list1.appendChild(row);
-  });
-  onlyLocalWrap.appendChild(list1);
-  sections.appendChild(onlyLocalWrap);
-
-  // Only Remote
-  const onlyRemoteWrap = document.createElement('div'); onlyRemoteWrap.style.border='1px solid #eef6ef'; onlyRemoteWrap.style.padding='8px'; onlyRemoteWrap.style.borderRadius='8px';
-  const t2 = document.createElement('div'); t2.style.fontWeight='800'; t2.innerText = `Only Remote (${diffResult.onlyRemote.length})`; onlyRemoteWrap.appendChild(t2);
-  const list2 = document.createElement('div'); list2.style.marginTop='8px';
-  diffResult.onlyRemote.forEach(r=>{
-    const content = document.createElement('div');
-    content.innerHTML = `<div style="font-weight:800">${escapeHtml(r.scientificName||r.id||r._driveFile.name)}</div><div style="color:#666">remote file: ${escapeHtml(r._driveFile && r._driveFile.name || '')}</div>`;
-    const row = createRow(content, 'download', [{label:'Download', action:'download', bg:'#f7f7ff'},{label:'Keep', action:'keep', ghost:true}]);
-    row.dataset.item = JSON.stringify(r);
-    list2.appendChild(row);
-  });
-  onlyRemoteWrap.appendChild(list2);
-  sections.appendChild(onlyRemoteWrap);
-
-  // Both (conflicts)
-  const bothWrap = document.createElement('div'); bothWrap.style.border='1px solid #eef6ef'; bothWrap.style.padding='8px'; bothWrap.style.borderRadius='8px';
-  const t3 = document.createElement('div'); t3.style.fontWeight='800'; t3.innerText = `Both (conflicts) (${diffResult.both.length})`; bothWrap.appendChild(t3);
-  const list3 = document.createElement('div'); list3.style.marginTop='8px';
-  diffResult.both.forEach(pair=>{
-    const local = pair.local; const remote = pair.remote;
-    const content = document.createElement('div');
-    const table = document.createElement('div'); table.style.display='grid'; table.style.gridTemplateColumns='1fr 1fr'; table.style.gap='8px';
-    const leftCol = document.createElement('div'); leftCol.innerHTML = `<div style="font-weight:700;color:#145a3f">Local</div>
-      <div><strong>${escapeHtml(local.scientificName||'')}</strong></div><div style="color:#666">${escapeHtml(local.commonName||'')}</div>
-      <div style="margin-top:6px"><em>Taxonomy:</em> ${escapeHtml((local.taxonomy||[]).join(' › '))}</div>
-      <div><em>Location:</em> ${escapeHtml(local.location||'')}</div>
-      <div><em>Behaviours:</em> ${escapeHtml(local.behaviours||'')}</div>
-      <div style="margin-top:6px"><em>Images (local):</em></div>`;
-    const rightCol = document.createElement('div'); rightCol.innerHTML = `<div style="font-weight:700;color:#145a3f">Remote</div>
-      <div><strong>${escapeHtml(remote.scientificName||remote.id||'')}</strong></div><div style="color:#666">remote file: ${escapeHtml(remote._driveFile && remote._driveFile.name||'')}</div>
-      <div style="margin-top:6px"><em>Taxonomy:</em> ${escapeHtml((remote.taxonomy||[]).join(' › '))}</div>
-      <div><em>Location:</em> ${escapeHtml(remote.location||'')}</div>
-      <div><em>Behaviours:</em> ${escapeHtml(remote.behaviours||'')}</div>
-      <div style="margin-top:6px"><em>Images (remote):</em></div>`;
-    table.appendChild(leftCol); table.appendChild(rightCol);
-    content.appendChild(table);
-
-    const localImgsWrap = document.createElement('div'); localImgsWrap.style.display='flex'; localImgsWrap.style.gap='6px'; localImgsWrap.style.marginTop='6px';
-    (async ()=>{
-      for(const im of (local.images||[])){
-        const b = await idbGet(im.id).catch(()=>null);
-        const img = document.createElement('img'); img.style.width='64px'; img.style.height='64px'; img.style.objectFit='cover'; img.style.borderRadius='6px'; img.alt = im.name || '';
-        if(b) img.src = URL.createObjectURL(b); else img.alt = 'missing';
-        localImgsWrap.appendChild(img);
-      }
-    })();
-    leftCol.appendChild(localImgsWrap);
-
-    const remoteImgsWrap = document.createElement('div'); remoteImgsWrap.style.display='flex'; remoteImgsWrap.style.flexDirection='column'; remoteImgsWrap.style.gap='4px'; remoteImgsWrap.style.marginTop='6px';
-    (remote.images||[]).forEach(im=>{
-      const el = document.createElement('div'); el.style.fontSize='12px'; el.style.color='#666'; el.innerText = `${im.name || 'image'} ${im.driveId ? '('+im.driveId+')' : ''}`; remoteImgsWrap.appendChild(el);
-    });
-    rightCol.appendChild(remoteImgsWrap);
-
-    const row = createRow(content, 'keep', [{label:'Download', action:'download', bg:'#f7f7ff'},{label:'Upload', action:'upload', bg:'#f7fff7'},{label:'Keep', action:'keep', ghost:true}]);
-    row.dataset.item = JSON.stringify(pair);
-    list3.appendChild(row);
-  });
-  bothWrap.appendChild(list3);
-  sections.appendChild(bothWrap);
-
-  // Local deleted
-  const ldWrap = document.createElement('div'); ldWrap.style.border='1px solid #eef6ef'; ldWrap.style.padding='8px'; ldWrap.style.borderRadius='8px';
-  const t4 = document.createElement('div'); t4.style.fontWeight='800'; t4.innerText = `Local deleted (remote exists) (${diffResult.localDeleted.length})`; ldWrap.appendChild(t4);
-  const list4 = document.createElement('div'); list4.style.marginTop='8px';
-  diffResult.localDeleted.forEach(pair=>{
-    const content = document.createElement('div');
-    content.innerHTML = `<div style="font-weight:800">${escapeHtml(pair.local.scientificName||pair.local.id)}</div><div style="color:#666">remote file: ${escapeHtml(pair.remote._driveFile && pair.remote._driveFile.name||'')}</div>`;
-    const row = createRow(content, 'keep', [{label:'Delete remote', action:'deleteRemote', bg:'#fff7f7'},{label:'Restore local', action:'restore', ghost:true}]);
-    row.dataset.item = JSON.stringify(pair);
-    list4.appendChild(row);
-  });
-  ldWrap.appendChild(list4);
-  sections.appendChild(ldWrap);
-
-  modal.appendChild(sections);
-
-  const footer = document.createElement('div'); footer.style.display='flex'; footer.style.justifyContent='space-between'; footer.style.gap='8px'; footer.style.marginTop='12px';
-  const leftInfo = document.createElement('div'); leftInfo.style.color='#666'; leftInfo.style.fontSize='13px'; leftInfo.innerText = '保守模式：所有會改動遠端或覆寫本地的操作都需要你確認。';
-  const rightBtns = document.createElement('div'); rightBtns.style.display='flex'; rightBtns.style.gap='8px';
-  const btnCancel = document.createElement('button'); btnCancel.className='btn small ghost'; btnCancel.innerText='Cancel'; btnCancel.addEventListener('click', ()=> { modalRoot.innerHTML=''; modalRoot.style.display='none'; });
-  const btnApply = document.createElement('button'); btnApply.className='btn small'; btnApply.innerText='Apply selected actions'; btnApply.addEventListener('click', async ()=>{
-    const rows = modal.querySelectorAll('div[data-item]');
-    const actions = [];
-    rows.forEach(r=>{
-      const action = r.dataset.action || 'keep';
-      const item = JSON.parse(r.dataset.item);
-      actions.push({ action, item });
-    });
-    modalRoot.innerHTML=''; modalRoot.style.display='none';
-    await applySyncActions(actions);
-  });
-  rightBtns.appendChild(btnCancel); rightBtns.appendChild(btnApply);
-  footer.appendChild(leftInfo); footer.appendChild(rightBtns);
-  modal.appendChild(footer);
-  backdrop.appendChild(modal);
-  modalRoot.appendChild(backdrop);
-  modalRoot.style.display='block';
-}
-
-/* Apply actions chosen in preview */
-async function applySyncActions(actions){
-  for(const a of actions){
-    try{
-      if(a.action === 'upload'){
-        const local = a.item;
-        const q = readSyncQueue(); if(!q.includes(local.id)){ q.push(local.id); writeSyncQueue(q); appendSyncLog(`Queued ${local.id} for upload`); }
-        await attemptSyncQueue();
-      } else if(a.action === 'download'){
-        const remote = a.item;
-        const localRecords = readLocalRecords();
-        const existing = localRecords.find(r=>r.id === remote.id || (r.driveId && r.driveId === (remote._driveFile && remote._driveFile.id)));
-        if(existing){
-          appendSyncLog(`Skipped automatic overwrite for ${existing.id || remote.id}`);
-        } else {
-          const newRec = {
-            id: remote.id || ('rec_' + Date.now() + '_' + Math.floor(Math.random()*10000)),
-            scientificName: remote.scientificName || '',
-            commonName: remote.commonName || '',
-            taxonomy: remote.taxonomy || [],
-            location: remote.location || '',
-            behaviours: remote.behaviours || '',
-            otherNotes: remote.otherNotes || '',
-            images: (remote.images||[]).map(im=>({ id: 'img_remote_' + Math.floor(Math.random()*1000000), name: im.name || '', isProfile: false, driveId: im.driveId || null })),
-            createdAt: remote.createdAt || new Date().toISOString(),
-            updatedAt: remote.updatedAt || new Date().toISOString(),
-            driveId: remote._driveFile && remote._driveFile.id,
-            status: 'uploaded'
-          };
-          localRecords.push(newRec);
-          writeLocalRecords(localRecords);
-          appendSyncLog(`Downloaded remote ${newRec.id} into local`);
-        }
-      } else if(a.action === 'deleteRemote'){
-        const pair = a.item;
-        const driveId = (pair.remote && pair.remote._driveFile && pair.remote._driveFile.id) || (pair.driveId);
-        if(driveId && accessToken){
-          try{ await deleteDriveFile(driveId); appendSyncLog(`Deleted remote file ${driveId}`); }
-          catch(e){ appendSyncLog(`Failed to delete remote ${driveId}: ${e.message}`); }
-        } else {
-          appendSyncLog(`No driveId or not signed; skipped deleteRemote`);
-        }
-      } else if(a.action === 'restore'){
-        const pair = a.item;
-        if(pair.local && pair.local.id) restoreFromTrash(pair.local.id);
-      } else {
-        // keep: do nothing
-      }
-    }catch(e){
-      console.error('applySyncActions error', e);
-      appendSyncLog('Action failed: ' + (e && e.message ? e.message : String(e)));
+function openMapModal(initialLat, initialLon){
+  const modal = document.getElementById('mapModal');
+  modal.style.display = 'block';
+  setTimeout(()=> {
+    if(!mapInitialized){
+      map = L.map('mapContainer', { center: [initialLat || 22.32, initialLon || 114.17], zoom: initialLat ? 14 : 6 });
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
+      map.on('click', (e)=> {
+        placeMapMarker(e.latlng.lat, e.latlng.lng);
+      });
+      mapInitialized = true;
+    } else {
+      map.invalidateSize();
+      if(initialLat && initialLon) map.setView([initialLat, initialLon], 14);
     }
+    if(initialLat && initialLon) placeMapMarker(initialLat, initialLon);
+  }, 120);
+}
+function closeMapModal(){ document.getElementById('mapModal').style.display = 'none'; }
+function placeMapMarker(lat, lon){
+  mapSelectedLat = lat; mapSelectedLon = lon;
+  document.getElementById('mapSelLat').innerText = lat.toFixed(6);
+  document.getElementById('mapSelLon').innerText = lon.toFixed(6);
+  if(mapMarker){
+    mapMarker.setLatLng([lat, lon]);
+  } else {
+    mapMarker = L.marker([lat, lon], { draggable: true }).addTo(map);
+    mapMarker.on('dragend', function(e){ const p = e.target.getLatLng(); placeMapMarker(p.lat, p.lng); });
   }
-  renderTree(); renderLibrary();
+  map.setView([lat, lon], 14);
 }
 
-/* ---------- Trash ---------- */
-function softDeleteRecord(id){
-  const records = readLocalRecords();
-  const rec = records.find(r=>r.id===id);
-  if(!rec) return showToast('Record not found',2);
-  rec.deleted = true; rec.deletedAt = new Date().toISOString();
-  writeLocalRecords(records);
-  appendSyncLog(`Moved ${id} to Trash`);
-  renderTree(); renderLibrary();
-}
-
-function openTrashModal(){
-  const modalRoot = document.getElementById('trashModal');
-  modalRoot.innerHTML = '';
-  const backdrop = document.createElement('div'); backdrop.className='modalBackdrop';
-  const modal = document.createElement('div'); modal.className='modal';
-  modal.innerHTML = `<h3 style="margin-top:0">Trash</h3><p style="color:#666">已刪除的紀錄會保留 ${TRASH_RETENTION_DAYS} 天。你可以還原或永久刪除。</p>`;
-  const list = document.createElement('div'); list.style.display='grid'; list.style.gap='8px';
-  const records = readLocalRecords().filter(r=>r.deleted);
-  if(!records.length){ list.innerHTML = '<div>No items in Trash</div>'; }
-  records.forEach(r=>{
-    const row = document.createElement('div'); row.style.display='flex'; row.style.justifyContent='space-between'; row.style.alignItems='center'; row.style.padding='8px'; row.style.border='1px solid #eef6ef'; row.style.borderRadius='8px';
-    const left = document.createElement('div'); left.innerHTML = `<div style="font-weight:800">${escapeHtml(r.scientificName||r.id)}</div><div style="color:#666">${escapeHtml(r.commonName||'')}</div><div style="color:#999;font-size:12px">Deleted: ${new Date(r.deletedAt).toLocaleString()}</div>`;
-    const right = document.createElement('div'); right.style.display='flex'; right.style.gap='8px';
-    const btnRestore = document.createElement('button'); btnRestore.className='btn small'; btnRestore.innerText='Restore'; btnRestore.addEventListener('click', ()=>{ restoreFromTrash(r.id); modalRoot.innerHTML=''; modalRoot.style.display='none'; });
-    const btnPerm = document.createElement('button'); btnPerm.className='btn small ghost'; btnPerm.innerText='Delete permanently'; btnPerm.addEventListener('click', ()=>{ permanentDelete(r.id); modalRoot.innerHTML=''; modalRoot.style.display='none'; });
-    right.appendChild(btnRestore); right.appendChild(btnPerm);
-    row.appendChild(left); row.appendChild(right);
-    list.appendChild(row);
-  });
-  modal.appendChild(list);
-  const footer = document.createElement('div'); footer.style.display='flex'; footer.style.justifyContent='flex-end'; footer.style.marginTop='12px';
-  const btnClose = document.createElement('button'); btnClose.className='btn small ghost'; btnClose.innerText='Close'; btnClose.addEventListener('click', ()=>{ modalRoot.innerHTML=''; modalRoot.style.display='none'; });
-  footer.appendChild(btnClose);
-  modal.appendChild(footer);
-  backdrop.appendChild(modal);
-  modalRoot.appendChild(backdrop);
-  modalRoot.style.display='block';
-}
-
-function restoreFromTrash(id){
-  const records = readLocalRecords();
-  const rec = records.find(r=>r.id===id);
-  if(!rec) return showToast('Record not found',2);
-  delete rec.deleted; delete rec.deletedAt;
-  writeLocalRecords(records);
-  appendSyncLog(`Restored ${id} from Trash`);
-  renderTree(); renderLibrary();
-}
-
-async function permanentDelete(id){
-  const records = readLocalRecords();
-  const rec = records.find(r=>r.id===id);
-  if(!rec) return showToast('Record not found',2);
-  if(accessToken){
-    try{
-      if(rec.driveId){ await deleteDriveFile(rec.driveId); appendSyncLog(`Deleted remote record file ${rec.driveId}`); }
-      for(const im of (rec.images||[])){ if(im.driveId){ try{ await deleteDriveFile(im.driveId); appendSyncLog(`Deleted remote image ${im.driveId}`); }catch(e){ appendSyncLog(`Failed to delete remote image ${im.driveId}`); } } }
-    }catch(e){
-      appendSyncLog('Permanent delete remote attempt failed: ' + e.message);
-    }
-  }
-  for(const im of (rec.images||[])){ try{ await idbDelete(im.id); }catch(e){} }
-  const updated = records.filter(r=>r.id!==id);
-  writeLocalRecords(updated);
-  appendSyncLog(`Permanently deleted ${id} locally`);
-  renderTree(); renderLibrary();
-}
-
-/* Auto purge Trash older than retention days (runs at startup) */
-async function autoPurgeTrash(){
+/* ---------- Reverse geocode (Nominatim) ---------- */
+async function reverseGeocode(lat, lon){
   try{
-    const records = readLocalRecords();
-    const now = Date.now();
-    const retentionMs = TRASH_RETENTION_DAYS * 24 * 3600 * 1000;
-    const toPurge = records.filter(r=>r.deleted && r.deletedAt && (now - new Date(r.deletedAt).getTime() > retentionMs));
-    for(const r of toPurge){
-      appendSyncLog(`Auto-purging ${r.id} from Trash (older than ${TRASH_RETENTION_DAYS} days)`);
-      if(accessToken){
-        try{
-          if(r.driveId){ await deleteDriveFile(r.driveId); appendSyncLog(`Deleted remote record file ${r.driveId}`); }
-          for(const im of (r.images||[])){ if(im.driveId){ try{ await deleteDriveFile(im.driveId); appendSyncLog(`Deleted remote image ${im.driveId}`); }catch(e){ appendSyncLog(`Failed to delete remote image ${im.driveId}`); } } }
-        }catch(e){
-          appendSyncLog('Auto purge remote delete failed: ' + e.message);
-        }
-      }
-      for(const im of (r.images||[])){ try{ await idbDelete(im.id); }catch(e){} }
-    }
-    const remaining = records.filter(r=>!(r.deleted && r.deletedAt && (now - new Date(r.deletedAt).getTime() > retentionMs)));
-    writeLocalRecords(remaining);
-    if(toPurge.length) { appendSyncLog(`Auto-purged ${toPurge.length} items from Trash`); renderTree(); renderLibrary(); }
-  }catch(e){ console.error('autoPurgeTrash error', e); appendSyncLog('Auto purge failed: ' + e.message); }
-}
-
-/* ---------- Tree (D3) rendering ---------- */
-const svg = d3.select('#treeSvg');
-const inner = svg.append('g').attr('class','innerGroup');
-const miniSvg = d3.select('#miniSvg');
-const treeLayout = d3.tree();
-let root = d3.hierarchy({name:'Life',children:[]});
-
-function buildTreeDataFromLocal(){
-  const records = readLocalRecords().filter(r=>!r.deleted);
-  const root = {name:'Life',children:[]};
-  for(const r of records){
-    const levels = r.taxonomy && r.taxonomy.length ? r.taxonomy : ['Unclassified'];
-    let cursor = root;
-    for(const lvl of levels){
-      let child = (cursor.children || []).find(c=>c.name===lvl);
-      if(!child){ child = {name: lvl, children: []}; cursor.children = cursor.children || []; cursor.children.push(child); }
-      cursor = child;
-    }
-    cursor.children = cursor.children || [];
-    cursor.children.push({name: r.scientificName || r.id, species:true, recordId: r.id});
+    const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}&accept-language=zh-HK`;
+    const res = await fetch(url, { headers: { 'User-Agent': 'JeffreyExplorationApp/1.0 (contact)' } });
+    if(!res.ok) return null;
+    const j = await res.json();
+    return j.display_name || null;
+  }catch(e){
+    console.warn('reverseGeocode failed', e);
+    return null;
   }
-  if(!root.children || root.children.length===0) return {name:'Life',children:[{name:'No records yet',children:[]}]};
-  return root;
-}
-function collapseAll(d, depth=0, maxDepth=2){ if(d.children){ d.children.forEach(c=>collapseAll(c, depth+1, maxDepth)); if(depth>=maxDepth){ d._children = d.children; d.children = null; } } }
-function truncate(s,n){ if(!s) return ''; return s.length>n? s.slice(0,n-1)+'…':s; }
-
-function renderTree(){
-  try{
-    const data = buildTreeDataFromLocal();
-    root = d3.hierarchy(data);
-    collapseAll(root,0,2);
-    const svgW = svg.node().clientWidth; const svgH = +svg.attr('height');
-    treeLayout.size([svgW-40, svgH-40]); treeLayout(root);
-    const links = inner.selectAll('.link').data(root.links(), d=>d.target.data.name + '_' + d.target.depth);
-    links.join(enter => enter.append('path').attr('class','link').attr('d', d=>linkPath(d)).attr('fill','none').attr('stroke','#cfeee0').attr('stroke-width',2),
-               update => update.attr('d', d=>linkPath(d)),
-               exit => exit.remove());
-    const nodes = inner.selectAll('.node').data(root.descendants(), d=>d.data.name + '_' + d.depth);
-    const nodeEnter = nodes.enter().append('g').attr('class','node').attr('transform', d=>`translate(${d.x},${d.y})`);
-    nodeEnter.append('circle').attr('r', d=> d.children || d._children ? 6 : 5).attr('fill', d=> d.children || d._children ? 'var(--accent)' : '#fff').attr('stroke','var(--accent)');
-    nodeEnter.append('text').attr('x',0).attr('y',-10).attr('text-anchor','middle').text(d=>truncate(d.data.name,28)).style('font-size','13px');
-    nodes.merge(nodeEnter).transition().duration(200).attr('transform', d=>`translate(${d.x},${d.y})`);
-    inner.selectAll('.node').on('click', (event,d)=>{ event.stopPropagation(); if(d.children){ d._children = d.children; d.children = null; } else { d.children = d._children; d._children = null; } renderTree(); if(d.data.species && d.data.recordId){ showSection('#pageLibrary'); setTimeout(()=> showLocalRecord(d.data.recordId), 300); } });
-    updateMinimap();
-    updateSpeciesCount();
-  }catch(e){ console.warn('renderTree error', e); }
-}
-function linkPath(d){ const x1=d.source.x,y1=d.source.y,x2=d.target.x,y2=d.target.y,midY=(y1+y2)/2; return `M${x1},${y1} C${x1},${midY} ${x2},${midY} ${x2},${y2}`; }
-const zoom = d3.zoom().scaleExtent([0.4,6]).on('zoom', (event)=>{ inner.attr('transform', event.transform); updateMinimapViewport(event.transform); });
-svg.call(zoom).on('dblclick.zoom', null);
-document.getElementById('zoomIn').addEventListener('click', ()=> svg.transition().call(zoom.scaleBy, 1.2));
-document.getElementById('zoomOut').addEventListener('click', ()=> svg.transition().call(zoom.scaleBy, 1/1.2));
-document.getElementById('resetView').addEventListener('click', ()=> fitToScreen());
-function fitToScreen(){ const nodes = root.descendants(); if(!nodes.length) return; const minX=d3.min(nodes,d=>d.x), maxX=d3.max(nodes,d=>d.x), minY=d3.min(nodes,d=>d.y), maxY=d3.max(nodes,d=>d.y); const contentW=maxX-minX+200, contentH=maxY-minY+200; const svgW=svg.node().clientWidth, svgH=+svg.attr('height'); const scale=Math.min(svgW/contentW, svgH/contentH,1); const tx=(svgW - scale*(minX+maxX))/2; const ty=(svgH - scale*(minY+maxY))/2; const t = d3.zoomIdentity.translate(tx,ty).scale(scale); svg.transition().duration(600).call(zoom.transform, t); }
-function updateMinimap(){ const nodes = root.descendants(); if(!nodes.length) return; const maxX=d3.max(nodes,d=>d.x), maxY=d3.max(nodes,d=>d.y), minX=d3.min(nodes,d=>d.x), minY=d3.min(nodes,d=>d.y); const w = Math.max(1, maxX-minX); const h = Math.max(1, maxY-minY); miniSvg.attr('viewBox', `${minX} ${minY} ${w} ${h}`); miniSvg.selectAll('*').remove(); miniSvg.selectAll('circle').data(nodes).enter().append('circle').attr('cx',d=>d.x).attr('cy',d=>d.y).attr('r',1.2).attr('fill','#cfeee0'); miniSvg.append('rect').attr('id','miniViewport').attr('x',0).attr('y',0).attr('width',10).attr('height',10).attr('fill','rgba(43,184,106,0.12)').attr('stroke','#2fb86a'); updateMinimapViewport(); }
-function updateMinimapViewport(transform){ const t = transform || d3.zoomTransform(svg.node()); const svgW = svg.node().clientWidth, svgH = +svg.attr('height'); const x0=(0 - t.x)/t.k, y0=(0 - t.y)/t.k, x1=(svgW - t.x)/t.k, y1=(svgH - t.y)/t.k; miniSvg.select('#miniViewport').attr('x', x0).attr('y', y0).attr('width', Math.max(1, x1-x0)).attr('height', Math.max(1, y1-y0)); }
-
-/* ---------- UI & Navigation ---------- */
-function showSection(hash){
-  document.querySelectorAll('section.card').forEach(s=>s.style.display='none');
-  const el = document.querySelector(hash) || document.getElementById('pageHome');
-  if(el) el.style.display='block';
-  document.querySelectorAll('.navBtn').forEach(b=>b.classList.remove('active'));
-  const active = document.querySelector(`a[href="${hash}"]`);
-  if(active) active.classList.add('active');
-
-  setTimeout(()=>{
-    try{
-      const headerHeight = document.getElementById('appHeader').getBoundingClientRect().height;
-      const rect = el.getBoundingClientRect();
-      const targetY = window.scrollY + rect.top - headerHeight - 8;
-      window.scrollTo({ top: Math.max(0, targetY), behavior: 'smooth' });
-    }catch(e){
-      window.scrollTo({ top:0, behavior:'smooth' });
-    }
-  }, 80);
-
-  if(el && el.id === 'pageAdd'){
-    setTimeout(()=>{ const first = document.getElementById('speciesName'); if(first){ first.focus({preventScroll:true}); } }, 220);
-  }
-
-  const treeWrap = document.querySelector('.treeWrap');
-  if(el && el.id === 'pageHome'){ if(treeWrap) treeWrap.style.display=''; try{ renderTree(); fitToScreen(); }catch(e){} } else { if(treeWrap) treeWrap.style.display='none'; }
-  updateSpeciesCount();
-  if(el && el.id === 'pageLibrary') renderLibrary();
 }
 
-/* ---------- Event wiring ---------- */
-document.addEventListener('DOMContentLoaded', ()=> {
-  const navButtons = document.querySelectorAll('.navBtn');
-  const headerEl = document.getElementById('appHeader');
+/* ---------- Use current GPS ---------- */
+function useCurrentLocation(){
+  if(!navigator.geolocation) { showToast('Geolocation not supported',3); return; }
+  showToast('Getting current location…',2);
+  navigator.geolocation.getCurrentPosition(async (pos)=>{
+    const lat = pos.coords.latitude; const lon = pos.coords.longitude;
+    document.getElementById('locLat').innerText = lat.toFixed(6);
+    document.getElementById('locLon').innerText = lon.toFixed(6);
+    document.getElementById('locationMeta').style.display = 'block';
+    const addr = await reverseGeocode(lat, lon);
+    if(addr) document.getElementById('locationInput').value = addr;
+    document.getElementById('locationInput').dataset.lat = lat;
+    document.getElementById('locationInput').dataset.lon = lon;
+    showToast('Location recorded',2);
+  }, (err)=>{
+    console.warn('geolocation error', err);
+    showToast('Unable to get location: ' + (err.message || 'permission denied'),4);
+  }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
+}
 
-  navButtons.forEach(a=>{
-    a.addEventListener('click', (e)=>{
-      e.preventDefault();
-      const href = a.getAttribute('href') || '#pageHome';
-      history.replaceState(null,'',href);
-      showSection(href);
-    });
-  });
-
-  window.addEventListener('hashchange', ()=> { const h = location.hash && document.querySelector(location.hash) ? location.hash : '#pageHome'; showSection(h); });
-
-  document.getElementById('searchBtn').addEventListener('click', ()=> {
-    const q = document.getElementById('treeSearch').value.trim().toLowerCase();
-    if(!q) return;
-    const found = root.descendants().find(d => (d.data.name||'').toLowerCase().includes(q));
-    if(found){ let p = found.parent; while(p){ if(p._children){ p.children = p._children; p._children = null; } p = p.parent; } renderTree(); fitToScreen(); } else showToast('No match found',2);
-  });
-  document.getElementById('clearSearch').addEventListener('click', ()=> document.getElementById('treeSearch').value = '');
-
-  document.getElementById('saveBtnAdd').addEventListener('click', async ()=> { await handleSaveFromAdd({autoUpload:true}); });
-  document.getElementById('saveLocalOnlyBtnAdd').addEventListener('click', async ()=> { await handleSaveFromAdd({autoUpload:false}); });
-
-  document.getElementById('exportLocalBtnSettings').addEventListener('click', ()=>{
-    const data = JSON.stringify(readLocalRecords(), null, 2);
-    const blob = new Blob([data], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = `exploration_records_${new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')}.json`;
-    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-    showToast('Local JSON exported', 3);
-  });
-  document.getElementById('importLocalBtnSettings').addEventListener('click', ()=> document.getElementById('importFile').click());
-  document.getElementById('importFile').addEventListener('change', async (e)=>{
-    const f = e.target.files[0]; if(!f) return;
-    try{ const txt = await f.text(); const arr = JSON.parse(txt); if(!Array.isArray(arr)) throw new Error('Invalid file'); const existing = readLocalRecords(); const merged = existing.concat(arr); const deduped = merged.filter((v,i,a)=>a.findIndex(x=>x.id===v.id)===i); writeLocalRecords(deduped); showToast('Imported records',2); renderTree(); renderLibrary(); }catch(err){ showToast('Import failed',3); }
-  });
-
-  document.getElementById('btnSignGrantSettings').addEventListener('click', async ()=>{
-    if(tokenRequestInProgress){ console.info('Sign-in already in progress'); return; }
-    tokenRequestInProgress = true;
-    setSignButtonsEnabled(false);
-    try{
-      await initTokenClientIfNeeded();
-      if(tokenClient) tokenClient.requestAccessToken({ prompt: 'consent' });
-      else { showToast('Google Identity not available',3); setSignButtonsEnabled(true); tokenRequestInProgress = false; }
-    }catch(err){ console.error('Sign in error', err); showToast('Sign in failed',3); setSignButtonsEnabled(true); tokenRequestInProgress = false; }
-  });
-  document.getElementById('btnSignRetrySettings').addEventListener('click', async ()=>{
-    if(tokenRequestInProgress){ console.info('Retry blocked: request in progress'); return; }
-    tokenRequestInProgress = true;
-    setSignButtonsEnabled(false);
-    try{
-      await initTokenClientIfNeeded();
-      if(tokenClient) tokenClient.requestAccessToken({ prompt: 'consent' });
-      else { showToast('No token client',3); setSignButtonsEnabled(true); tokenRequestInProgress = false; }
-    }catch(err){ console.error('Retry error', err); showToast('Retry failed',3); setSignButtonsEnabled(true); tokenRequestInProgress = false; }
-  });
-
-  document.getElementById('backupAllBtn').addEventListener('click', async ()=>{
-    const localOnly = readLocalRecords().filter(r=>!r.deleted && !r.driveId);
-    if(!localOnly.length){ showToast('No local-only records to backup',2); return; }
-    const diffs = { onlyLocal: localOnly, onlyRemote: [], both: [], localDeleted: [] };
-    ensureSettingsThen(()=> renderSyncPreview(diffs));
-  });
-
-  document.getElementById('openTrashBtn').addEventListener('click', ()=> ensureSettingsThen(()=> openTrashModal()));
-
-  document.getElementById('speciesImages').addEventListener('change', async (e)=>{
-    const files = e.target.files;
-    const thumbs = document.getElementById('thumbs'); thumbs.innerHTML = '';
-    window._tmpFiles = window._tmpFiles || {};
-    for(let i=0;i<files.length;i++){
-      const f = files[i];
-      const url = URL.createObjectURL(f);
-      const id = 'tmp_' + Date.now() + '_' + i;
-      window._tmpFiles[id] = f;
-      const item = createThumbElement({ id, url, name: f.name, isProfile: false }, true);
-      thumbs.appendChild(item);
-    }
-  });
-
-  const speciesNameInput = document.getElementById('speciesName');
-  speciesNameInput.addEventListener('input', ()=>{
-    const val = speciesNameInput.value.trim();
-    const parts = val.split(/\s+/);
-    document.getElementById('taxGenus').value = parts[0] || '';
-    document.getElementById('taxSpecies').value = parts[1] || '';
-  });
-
-  document.getElementById('thumbs').addEventListener('click', async (e)=>{
-    const btn = e.target.closest('button[data-action]');
-    if(!btn) return;
-    const action = btn.dataset.action;
-    const id = btn.dataset.id;
-    if(action === 'delete'){
-      if(id && id.startsWith('tmp_')){ delete window._tmpFiles[id]; const el = document.querySelector(`.thumbItem[data-id="${id}"]`); if(el) el.remove(); }
-      else { window._deletedImages = window._deletedImages || []; window._deletedImages.push(id); const el = document.querySelector(`.thumbItem[data-id="${id}"]`); if(el) el.remove(); }
-    } else if(action === 'profile'){
-      document.querySelectorAll('.thumbItem').forEach(t=> t.classList.remove('profileSelected'));
-      const el = document.querySelector(`.thumbItem[data-id="${id}"]`);
-      if(el) el.classList.add('profileSelected');
-      window._selectedProfile = id;
-    }
-  });
-
-  document.getElementById('pageLibrary').addEventListener('click', (e)=>{
-    const editBtn = e.target.closest('button[data-edit-id]');
-    const delBtn = e.target.closest('button[data-delete-id]');
-    if(editBtn){ const id = editBtn.dataset.editId; populateEditForm(id); showSection('#pageAdd'); setTimeout(()=> document.getElementById('pageAdd').scrollIntoView({behavior:'smooth', block:'start'}),120); }
-    else if(delBtn){ const id = delBtn.dataset.deleteId; softDeleteRecord(id); }
-  });
-
-  const initial = location.hash && document.querySelector(location.hash) ? location.hash : '#pageHome';
-  showSection(initial);
-  try{ renderTree(); fitToScreen(); }catch(e){}
-  updateSpeciesCount();
-
-  setTimeout(()=>{ autoPurgeTrash().catch(()=>{}); }, 600);
-  setInterval(()=>{ if(accessToken) attemptSyncQueue().catch(()=>{}); }, 60000);
-});
-
-/* ---------- thumb element helper ---------- */
-function createThumbElement(imgRef, isTmp=false){
+/* ---------- Thumbs helper ---------- */
+function createThumbElement(imgRef){
   const d = document.createElement('div'); d.className='thumbItem'; d.dataset.id = imgRef.id; if(imgRef.name) d.dataset.name = imgRef.name;
   const img = document.createElement('img'); img.alt = imgRef.name || '';
   if(imgRef.url) img.src = imgRef.url;
@@ -1086,68 +607,7 @@ function createThumbElement(imgRef, isTmp=false){
   return d;
 }
 
-/* ---------- Library rendering ---------- */
-function renderLibrary(){
-  const container = document.getElementById('libraryContent'); container.innerHTML = '';
-  const records = readLocalRecords().filter(r=>!r.deleted);
-  if(!records.length){ container.innerHTML = '<div>No records yet</div>'; return; }
-  const groups = {};
-  for(const r of records){
-    const tax = r.taxonomy || [];
-    const k = tax[0] || 'Unclassified'; const p = tax[1] || 'Unclassified'; const c = tax[2] || 'Unclassified';
-    groups[k] = groups[k] || {}; groups[k][p] = groups[k][p] || {}; groups[k][p][c] = groups[k][p][c] || []; groups[k][p][c].push(r);
-  }
-  const kingdomKeys = Object.keys(groups).sort((a,b)=> a.localeCompare(b));
-  kingdomKeys.forEach((k, kIdx) => {
-    const kWrap = document.createElement('div'); kWrap.className='libraryGroup';
-    const kHeader = document.createElement('div'); kHeader.className='groupHeader';
-    const kTitle = document.createElement('div'); kTitle.className='groupTitle'; kTitle.innerText = `Kingdom: ${k}`;
-    const kToggle = document.createElement('button'); kToggle.className='groupToggle'; kToggle.innerText = '▾'; kToggle.dataset.toggleGroup = `#kingdom_${kIdx}`;
-    kHeader.appendChild(kTitle); kHeader.appendChild(kToggle); kWrap.appendChild(kHeader);
-    const kBody = document.createElement('div'); kBody.id = `kingdom_${kIdx}`;
-    const phylumObj = groups[k]; const phylumKeys = Object.keys(phylumObj).sort((a,b)=> a.localeCompare(b));
-    phylumKeys.forEach((p, pIdx) => {
-      const pHeader = document.createElement('div'); pHeader.className='subHeader';
-      const pTitle = document.createElement('div'); pTitle.style.fontWeight='800'; pTitle.innerText = `Phylum: ${p}`;
-      const pToggle = document.createElement('button'); pToggle.className='groupToggle'; pToggle.innerText = '▾'; pToggle.dataset.toggleSub = `#phylum_${kIdx}_${pIdx}`;
-      pHeader.appendChild(pTitle); pHeader.appendChild(pToggle); kBody.appendChild(pHeader);
-      const pBody = document.createElement('div'); pBody.className='subGroup'; pBody.id = `phylum_${kIdx}_${pIdx}`;
-      const classObj = phylumObj[p]; const classKeys = Object.keys(classObj).sort((a,b)=> a.localeCompare(b));
-      classKeys.forEach((c, cIdx) => {
-        const cTitle = document.createElement('div'); cTitle.style.fontWeight='700'; cTitle.style.margin='6px 0 4px 6px'; cTitle.innerText = `Class: ${c}`; pBody.appendChild(cTitle);
-        const speciesList = classObj[c]; const grid = document.createElement('div'); grid.className='speciesGrid';
-        speciesList.sort((a,b)=> (a.scientificName||'').localeCompare(b.scientificName||''));
-        speciesList.forEach(s => {
-          const card = document.createElement('div'); card.className='speciesCard';
-          const thumbWrap = document.createElement('div'); thumbWrap.className='speciesThumb';
-          const imgEl = document.createElement('img'); imgEl.alt = s.scientificName || '';
-          const profileRef = (s.images||[]).find(im => im.isProfile) || (s.images && s.images[0]) || null;
-          if(profileRef){
-            (async ()=>{ const blob = await idbGet(profileRef.id).catch(()=>null); if(blob) imgEl.src = URL.createObjectURL(blob); })();
-          } else { imgEl.src = ''; }
-          thumbWrap.appendChild(imgEl);
-          const info = document.createElement('div'); info.className='speciesInfo';
-          const sName = document.createElement('div'); sName.className='speciesName'; sName.innerText = s.scientificName || 'Unnamed';
-          const cName = document.createElement('div'); cName.className='commonName'; cName.innerText = s.commonName || '';
-          info.appendChild(sName); info.appendChild(cName);
-          const actions = document.createElement('div'); actions.style.display='flex'; actions.style.flexDirection='column'; actions.style.gap='6px';
-          const editBtn = document.createElement('button'); editBtn.className='btn small'; editBtn.style.padding='6px'; editBtn.dataset.editId = s.id; editBtn.innerText = 'Edit';
-          const delBtn = document.createElement('button'); delBtn.className='btn small ghost'; delBtn.style.padding='6px'; delBtn.dataset.deleteId = s.id; delBtn.innerText = 'Delete';
-          actions.appendChild(editBtn); actions.appendChild(delBtn);
-          card.appendChild(thumbWrap); card.appendChild(info); card.appendChild(actions);
-          grid.appendChild(card);
-        });
-        pBody.appendChild(grid);
-      });
-      kBody.appendChild(pBody);
-    });
-    kWrap.appendChild(kBody); container.appendChild(kWrap);
-  });
-  document.querySelectorAll('[data-toggle-group]').forEach(btn=>{ btn.addEventListener('click', ()=>{ const sel = btn.dataset.toggleGroup; const el = document.querySelector(sel); if(!el) return; el.classList.toggle('hidden'); btn.innerText = el.classList.contains('hidden') ? '▸' : '▾'; }); });
-  document.querySelectorAll('[data-toggle-sub]').forEach(btn=>{ btn.addEventListener('click', ()=>{ const sel = btn.dataset.toggleSub; const el = document.querySelector(sel); if(!el) return; el.classList.toggle('hidden'); btn.innerText = el.classList.contains('hidden') ? '▸' : '▾'; }); });
-}
-
-/* ---------- Edit/Save ---------- */
+/* ---------- Save / Edit (kept concise) ---------- */
 function populateEditForm(id){
   const records = readLocalRecords(); const r = records.find(x=>x.id===id); if(!r) return showToast('Record not found',2);
   document.getElementById('speciesName').value = r.scientificName || '';
@@ -1157,15 +617,15 @@ function populateEditForm(id){
   document.getElementById('taxClass').value = r.taxonomy[2] || '';
   document.getElementById('taxOrder').value = r.taxonomy[3] || '';
   document.getElementById('taxFamily').value = r.taxonomy[4] || '';
-  const parts = (r.scientificName || '').split(/\s+/);
-  document.getElementById('taxGenus').value = r.taxonomy[5] || parts[0] || '';
-  document.getElementById('taxSpecies').value = r.taxonomy[6] || parts[1] || '';
+  document.getElementById('taxGenus').value = r.taxonomy[5] || '';
+  document.getElementById('taxSpecies').value = r.taxonomy[6] || '';
   document.getElementById('locationInput').value = r.location || '';
+  if(r.coords){ document.getElementById('locationInput').dataset.lat = r.coords.lat; document.getElementById('locationInput').dataset.lon = r.coords.lon; document.getElementById('locLat').innerText = r.coords.lat.toFixed(6); document.getElementById('locLon').innerText = r.coords.lon.toFixed(6); document.getElementById('locationMeta').style.display = 'block'; } else { document.getElementById('locationMeta').style.display = 'none'; delete document.getElementById('locationInput').dataset.lat; delete document.getElementById('locationInput').dataset.lon; }
   document.getElementById('behaviourInput').value = r.behaviours || '';
   document.getElementById('otherNotesInput').value = r.otherNotes || '';
   const thumbs = document.getElementById('thumbs'); thumbs.innerHTML = '';
   window._tmpFiles = {}; window._deletedImages = []; window._selectedProfile = null;
-  (async ()=>{ for(const im of (r.images||[])){ const blob = await idbGet(im.id).catch(()=>null); const url = blob ? URL.createObjectURL(blob) : ''; const item = createThumbElement({ id: im.id, url, name: im.name, isProfile: !!im.isProfile }, false); thumbs.appendChild(item); } })();
+  (async ()=>{ for(const im of (r.images||[])){ const blob = await idbGet(im.id).catch(()=>null); const url = blob ? URL.createObjectURL(blob) : ''; const item = createThumbElement({ id: im.id, url, name: im.name, isProfile: !!im.isProfile }); thumbs.appendChild(item); } })();
   document.getElementById('saveBtnAdd').dataset.editing = id; document.getElementById('saveBtnAdd').innerText = 'Save Changes';
   document.getElementById('saveLocalOnlyBtnAdd').dataset.editing = id; document.getElementById('saveLocalOnlyBtnAdd').innerText = 'Save Local Only';
 }
@@ -1185,7 +645,9 @@ async function handleSaveFromAdd({ autoUpload = true } = {}){
       document.getElementById('taxGenus').value.trim(),
       document.getElementById('taxSpecies').value.trim()
     ].filter(Boolean);
-    const location = document.getElementById('locationInput').value.trim();
+    const locationText = document.getElementById('locationInput').value.trim();
+    const lat = document.getElementById('locationInput').dataset.lat ? parseFloat(document.getElementById('locationInput').dataset.lat) : null;
+    const lon = document.getElementById('locationInput').dataset.lon ? parseFloat(document.getElementById('locationInput').dataset.lon) : null;
     const behaviours = document.getElementById('behaviourInput').value.trim();
     const otherNotes = document.getElementById('otherNotesInput').value.trim();
 
@@ -1202,7 +664,7 @@ async function handleSaveFromAdd({ autoUpload = true } = {}){
 
     if(editingId){
       const records = readLocalRecords(); const rec = records.find(r=>r.id===editingId); if(!rec) return alert('Record not found');
-      rec.scientificName = scientific; rec.commonName = common; rec.taxonomy = taxonomy; rec.location = location; rec.behaviours = behaviours; rec.otherNotes = otherNotes; rec.updatedAt = new Date().toISOString();
+      rec.scientificName = scientific; rec.commonName = common; rec.taxonomy = taxonomy; rec.location = locationText; rec.coords = lat && lon ? { lat, lon } : null; rec.behaviours = behaviours; rec.otherNotes = otherNotes; rec.updatedAt = new Date().toISOString();
       rec.images = imageRefsPlaceholder;
       writeLocalRecords(records);
       showToast('Saved locally (processing images in background)',2);
@@ -1217,7 +679,7 @@ async function handleSaveFromAdd({ autoUpload = true } = {}){
     }
 
     const recordId = 'rec_' + Date.now() + '_' + Math.floor(Math.random()*10000);
-    const record = { id: recordId, scientificName:scientific, commonName:common, taxonomy, location, behaviours, otherNotes, images:imageRefsPlaceholder, createdAt:new Date().toISOString(), status:'pending' };
+    const record = { id: recordId, scientificName:scientific, commonName:common, taxonomy, location: locationText || null, coords: lat && lon ? { lat, lon } : null, behaviours, otherNotes, images:imageRefsPlaceholder, createdAt:new Date().toISOString(), status:'pending' };
     const records = readLocalRecords(); records.push(record); writeLocalRecords(records);
     showToast('Saved locally (processing images in background)',2);
     processImagesAndSync(recordId, autoUpload).catch(err=>console.error('background process error', err));
@@ -1237,6 +699,9 @@ function clearAddForm(){
   document.getElementById('taxGenus').value = '';
   document.getElementById('taxSpecies').value = '';
   document.getElementById('locationInput').value = '';
+  delete document.getElementById('locationInput').dataset.lat;
+  delete document.getElementById('locationInput').dataset.lon;
+  document.getElementById('locationMeta').style.display = 'none';
   document.getElementById('behaviourInput').value = '';
   document.getElementById('otherNotesInput').value = '';
   document.getElementById('speciesImages').value = '';
@@ -1299,86 +764,348 @@ async function compressImageFile(file, maxDim=1200, quality=0.75){
   });
 }
 
-/* show single record (viewer placeholder) */
-async function showLocalRecord(id){
-  const records = readLocalRecords(); const r = records.find(x=>x.id===id); if(!r) return showToast('Record not found',2);
-  // Simple viewer: scroll to library and highlight
-  showToast('Opened record: ' + (r.scientificName || r.id), 2);
+/* ---------- Tree (D3) rendering (kept) ---------- */
+const svg = d3.select('#treeSvg');
+const inner = svg.append('g').attr('class','innerGroup');
+const miniSvg = d3.select('#miniSvg');
+const treeLayout = d3.tree();
+let root = d3.hierarchy({name:'Life',children:[]});
+
+function buildTreeDataFromLocal(){
+  const records = readLocalRecords().filter(r=>!r.deleted);
+  const root = {name:'Life',children:[]};
+  for(const r of records){
+    const levels = r.taxonomy && r.taxonomy.length ? r.taxonomy : ['Unclassified'];
+    let cursor = root;
+    for(const lvl of levels){
+      let child = (cursor.children || []).find(c=>c.name===lvl);
+      if(!child){ child = {name: lvl, children: []}; cursor.children = cursor.children || []; cursor.children.push(child); }
+      cursor = child;
+    }
+    cursor.children = cursor.children || [];
+    cursor.children.push({name: r.scientificName || r.id, species:true, recordId: r.id});
+  }
+  if(!root.children || root.children.length===0) return {name:'Life',children:[{name:'No records yet',children:[]}]};
+  return root;
+}
+function collapseAll(d, depth=0, maxDepth=2){ if(d.children){ d.children.forEach(c=>collapseAll(c, depth+1, maxDepth)); if(depth>=maxDepth){ d._children = d.children; d.children = null; } } }
+function truncate(s,n){ if(!s) return ''; return s.length>n? s.slice(0,n-1)+'…':s; }
+
+function renderTree(){
+  try{
+    const data = buildTreeDataFromLocal();
+    root = d3.hierarchy(data);
+    collapseAll(root,0,2);
+    const svgW = svg.node().clientWidth; const svgH = +svg.attr('height');
+    treeLayout.size([svgW-40, svgH-40]); treeLayout(root);
+    const links = inner.selectAll('.link').data(root.links(), d=>d.target.data.name + '_' + d.target.depth);
+    links.join(enter => enter.append('path').attr('class','link').attr('d', d=>linkPath(d)).attr('fill','none').attr('stroke','#cfeee0').attr('stroke-width',2),
+               update => update.attr('d', d=>linkPath(d)),
+               exit => exit.remove());
+    const nodes = inner.selectAll('.node').data(root.descendants(), d=>d.data.name + '_' + d.depth);
+    const nodeEnter = nodes.enter().append('g').attr('class','node').attr('transform', d=>`translate(${d.x},${d.y})`);
+    nodeEnter.append('circle').attr('r', d=> d.children || d._children ? 6 : 5).attr('fill', d=> d.children || d._children ? 'var(--accent)' : '#fff').attr('stroke','var(--accent)');
+    nodeEnter.append('text').attr('x',0).attr('y',-10).attr('text-anchor','middle').text(d=>truncate(d.data.name,28)).style('font-size','13px');
+    nodes.merge(nodeEnter).transition().duration(200).attr('transform', d=>`translate(${d.x},${d.y})`);
+    inner.selectAll('.node').on('click', (event,d)=>{ event.stopPropagation(); if(d.children){ d._children = d.children; d.children = null; } else { d.children = d._children; d._children = null; } renderTree(); if(d.data.species && d.data.recordId){ showSection('#pageLibrary'); setTimeout(()=> showLocalRecord(d.data.recordId), 300); } });
+    updateMinimap();
+    updateSpeciesCount();
+  }catch(e){ console.warn('renderTree error', e); }
+}
+function linkPath(d){ const x1=d.source.x,y1=d.source.y,x2=d.target.x,y2=d.target.y,midY=(y1+y2)/2; return `M${x1},${y1} C${x1},${midY} ${x2},${midY} ${x2},${y2}`; }
+const zoom = d3.zoom().scaleExtent([0.4,6]).on('zoom', (event)=>{ inner.attr('transform', event.transform); updateMinimapViewport(event.transform); });
+svg.call(zoom).on('dblclick.zoom', null);
+document.getElementById('zoomIn').addEventListener('click', ()=> svg.transition().call(zoom.scaleBy, 1.2));
+document.getElementById('zoomOut').addEventListener('click', ()=> svg.transition().call(zoom.scaleBy, 1/1.2));
+document.getElementById('resetView').addEventListener('click', ()=> fitToScreen());
+function fitToScreen(){ const nodes = root.descendants(); if(!nodes.length) return; const minX=d3.min(nodes,d=>d.x), maxX=d3.max(nodes,d=>d.x), minY=d3.min(nodes,d=>d.y), maxY=d3.max(nodes,d=>d.y); const contentW=maxX-minX+200, contentH=maxY-minY+200; const svgW=svg.node().clientWidth, svgH=+svg.attr('height'); const scale=Math.min(svgW/contentW, svgH/contentH,1); const tx=(svgW - scale*(minX+maxX))/2; const ty=(svgH - scale*(minY+maxY))/2; const t = d3.zoomIdentity.translate(tx,ty).scale(scale); svg.transition().duration(600).call(zoom.transform, t); }
+function updateMinimap(){ const nodes = root.descendants(); if(!nodes.length) return; const maxX=d3.max(nodes,d=>d.x), maxY=d3.max(nodes,d=>d.y), minX=d3.min(nodes,d=>d.x), minY=d3.min(nodes,d=>d.y); const w = Math.max(1, maxX-minX); const h = Math.max(1, maxY-minY); miniSvg.attr('viewBox', `${minX} ${minY} ${w} ${h}`); miniSvg.selectAll('*').remove(); miniSvg.selectAll('circle').data(nodes).enter().append('circle').attr('cx',d=>d.x).attr('cy',d=>d.y).attr('r',1.2).attr('fill','#cfeee0'); miniSvg.append('rect').attr('id','miniViewport').attr('x',0).attr('y',0).attr('width',10).attr('height',10).attr('fill','rgba(43,184,106,0.12)').attr('stroke','#2fb86a'); updateMinimapViewport(); }
+function updateMinimapViewport(transform){ const t = transform || d3.zoomTransform(svg.node()); const svgW = svg.node().clientWidth, svgH = +svg.attr('height'); const x0=(0 - t.x)/t.k, y0=(0 - t.y)/t.k, x1=(svgW - t.x)/t.k, y1=(svgH - t.y)/t.k; miniSvg.select('#miniViewport').attr('x', x0).attr('y', y0).attr('width', Math.max(1, x1-x0)).attr('height', Math.max(1, y1-y0)); }
+
+/* ---------- Library rendering (kept) ---------- */
+function renderLibrary(){
+  const container = document.getElementById('libraryContent'); container.innerHTML = '';
+  const records = readLocalRecords().filter(r=>!r.deleted);
+  if(!records.length){ container.innerHTML = '<div>No records yet</div>'; return; }
+  records.sort((a,b)=> (a.scientificName||'').localeCompare(b.scientificName||''));
+  records.forEach(s=>{
+    const card = document.createElement('div'); card.className='card'; card.style.display='flex'; card.style.justifyContent='space-between'; card.style.alignItems='center';
+    const left = document.createElement('div');
+    const title = document.createElement('div'); title.style.fontWeight='800'; title.style.color='#145a3f'; title.innerText = s.scientificName || 'Unnamed';
+    const sub = document.createElement('div'); sub.style.color='#666'; sub.innerText = s.commonName || '';
+    const loc = document.createElement('div'); loc.style.color='#666'; loc.style.fontSize='13px'; loc.style.marginTop='6px';
+    if(s.coords && s.coords.lat && s.coords.lon){
+      loc.innerHTML = `Location: ${s.location ? escapeHtml(s.location) + ' — ' : ''}<strong>${s.coords.lat.toFixed(6)}, ${s.coords.lon.toFixed(6)}</strong>`;
+    } else {
+      loc.innerHTML = `Location: ${s.location ? escapeHtml(s.location) : '—'}`;
+    }
+    left.appendChild(title); left.appendChild(sub); left.appendChild(loc);
+    const right = document.createElement('div'); right.style.display='flex'; right.style.flexDirection='column'; right.style.gap='8px';
+    const editBtn = document.createElement('button'); editBtn.className='btn small'; editBtn.innerText='Edit'; editBtn.addEventListener('click', ()=> { populateEditForm(s.id); showSection('#pageAdd'); setTimeout(()=> document.getElementById('pageAdd').scrollIntoView({behavior:'smooth', block:'start'}),120); });
+    const delBtn = document.createElement('button'); delBtn.className='btn small ghost'; delBtn.innerText='Delete'; delBtn.addEventListener('click', ()=> { softDeleteRecord(s.id); });
+    right.appendChild(editBtn); right.appendChild(delBtn);
+    card.appendChild(left); card.appendChild(right);
+    container.appendChild(card);
+  });
 }
 
-/* update species count */
-function updateSpeciesCount(){ document.getElementById('speciesCount').innerText = `Species recorded: ${readLocalRecords().filter(r=>!r.deleted).length}`; }
+/* ---------- Soft delete & Trash (kept) ---------- */
+function softDeleteRecord(id){
+  const records = readLocalRecords();
+  const rec = records.find(r=>r.id===id);
+  if(!rec) return showToast('Record not found',2);
+  rec.deleted = true; rec.deletedAt = new Date().toISOString();
+  writeLocalRecords(records);
+  appendSyncLog(`Moved ${id} to Trash`);
+  renderTree(); renderLibrary();
+}
+function openTrashModal(){
+  const modalRoot = document.getElementById('trashModal');
+  modalRoot.innerHTML = '';
+  const backdrop = document.createElement('div'); backdrop.className='modalBackdrop';
+  const modal = document.createElement('div'); modal.className='modal';
+  modal.innerHTML = `<h3 style="margin-top:0">Trash</h3><p style="color:#666">已刪除的紀錄會保留 ${TRASH_RETENTION_DAYS} 天。你可以還原或永久刪除。</p>`;
+  const list = document.createElement('div'); list.style.display='grid'; list.style.gap='8px';
+  const records = readLocalRecords().filter(r=>r.deleted);
+  if(!records.length){ list.innerHTML = '<div>No items in Trash</div>'; }
+  records.forEach(r=>{
+    const row = document.createElement('div'); row.style.display='flex'; row.style.justifyContent='space-between'; row.style.alignItems='center'; row.style.padding='8px'; row.style.border='1px solid #eef6ef'; row.style.borderRadius='8px';
+    const left = document.createElement('div'); left.innerHTML = `<div style="font-weight:800">${escapeHtml(r.scientificName||r.id)}</div><div style="color:#666">${escapeHtml(r.commonName||'')}</div><div style="color:#999;font-size:12px">Deleted: ${new Date(r.deletedAt).toLocaleString()}</div>`;
+    const right = document.createElement('div'); right.style.display='flex'; right.style.gap='8px';
+    const btnRestore = document.createElement('button'); btnRestore.className='btn small'; btnRestore.innerText='Restore'; btnRestore.addEventListener('click', ()=>{ restoreFromTrash(r.id); modalRoot.innerHTML=''; modalRoot.style.display='none'; });
+    const btnPerm = document.createElement('button'); btnPerm.className='btn small ghost'; btnPerm.innerText='Delete permanently'; btnPerm.addEventListener('click', ()=>{ permanentDelete(r.id); modalRoot.innerHTML=''; modalRoot.style.display='none'; });
+    right.appendChild(btnRestore); right.appendChild(btnPerm);
+    row.appendChild(left); row.appendChild(right);
+    list.appendChild(row);
+  });
+  modal.appendChild(list);
+  const footer = document.createElement('div'); footer.style.display='flex'; footer.style.justifyContent='flex-end'; footer.style.marginTop='12px';
+  const btnClose = document.createElement('button'); btnClose.className='btn small ghost'; btnClose.innerText='Close'; btnClose.addEventListener('click', ()=>{ modalRoot.innerHTML=''; modalRoot.style.display='none'; });
+  footer.appendChild(btnClose);
+  modal.appendChild(footer);
+  backdrop.appendChild(modal);
+  modalRoot.appendChild(backdrop);
+  modalRoot.style.display='block';
+}
+function restoreFromTrash(id){
+  const records = readLocalRecords();
+  const rec = records.find(r=>r.id===id);
+  if(!rec) return showToast('Record not found',2);
+  delete rec.deleted; delete rec.deletedAt;
+  writeLocalRecords(records);
+  appendSyncLog(`Restored ${id} from Trash`);
+  renderTree(); renderLibrary();
+}
+async function permanentDelete(id){
+  const records = readLocalRecords();
+  const rec = records.find(r=>r.id===id);
+  if(!rec) return showToast('Record not found',2);
+  if(accessToken){
+    try{
+      if(rec.driveId){ await deleteDriveFile(rec.driveId); appendSyncLog(`Deleted remote record file ${rec.driveId}`); }
+      for(const im of (rec.images||[])){ if(im.driveId){ try{ await deleteDriveFile(im.driveId); appendSyncLog(`Deleted remote image ${im.driveId}`); }catch(e){ appendSyncLog(`Failed to delete remote image ${im.driveId}`); } } }
+    }catch(e){
+      appendSyncLog('Permanent delete remote attempt failed: ' + e.message);
+    }
+  }
+  for(const im of (rec.images||[])){ try{ await idbDelete(im.id); }catch(e){} }
+  const updated = records.filter(r=>r.id!==id);
+  writeLocalRecords(updated);
+  appendSyncLog(`Permanently deleted ${id} locally`);
+  renderTree(); renderLibrary();
+}
 
-/* ---------- Remote listing & loginSync ---------- */
-async function listRemoteRecordsInFolder(){
+/* Auto purge Trash older than retention days */
+async function autoPurgeTrash(){
   try{
-    const folderId = await getOrCreateFolderId('EcologyApp_Records');
-    const url = `https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents+and+mimeType='application/json'+and+trashed=false&fields=files(id,name,modifiedTime)`;
-    const res = await driveFetch(url);
-    if(!res.ok) throw new Error('Drive list failed: ' + res.status);
-    const j = await res.json();
-    const files = j.files || [];
-    const remoteRecords = [];
-    for(const f of files){
-      try{
-        const getUrl = `https://www.googleapis.com/drive/v3/files/${f.id}?alt=media`;
-        const r = await driveFetch(getUrl);
-        if(!r.ok) { appendSyncLog(`Failed to fetch remote JSON ${f.id}`); continue; }
-        const obj = await r.json();
-        obj._driveFile = { id: f.id, name: f.name, modifiedTime: f.modifiedTime };
-        remoteRecords.push(obj);
-      }catch(e){
-        console.warn('fetch remote json error', e);
+    const records = readLocalRecords();
+    const now = Date.now();
+    const retentionMs = TRASH_RETENTION_DAYS * 24 * 3600 * 1000;
+    const toPurge = records.filter(r=>r.deleted && r.deletedAt && (now - new Date(r.deletedAt).getTime() > retentionMs));
+    for(const r of toPurge){
+      appendSyncLog(`Auto-purging ${r.id} from Trash (older than ${TRASH_RETENTION_DAYS} days)`);
+      if(accessToken){
+        try{
+          if(r.driveId){ await deleteDriveFile(r.driveId); appendSyncLog(`Deleted remote record file ${r.driveId}`); }
+          for(const im of (r.images||[])){ if(im.driveId){ try{ await deleteDriveFile(im.driveId); appendSyncLog(`Deleted remote image ${im.driveId}`); }catch(e){ appendSyncLog(`Failed to delete remote image ${im.driveId}`); } } }
+        }catch(e){
+          appendSyncLog('Auto purge remote delete failed: ' + e.message);
+        }
       }
+      for(const im of (r.images||[])){ try{ await idbDelete(im.id); }catch(e){} }
     }
-    return remoteRecords;
-  }catch(e){
-    console.error('listRemoteRecordsInFolder error', e);
-    throw e;
-  }
+    const remaining = records.filter(r=>!(r.deleted && r.deletedAt && (now - new Date(r.deletedAt).getTime() > retentionMs)));
+    writeLocalRecords(remaining);
+    if(toPurge.length) { appendSyncLog(`Auto-purged ${toPurge.length} items from Trash`); renderTree(); renderLibrary(); }
+  }catch(e){ console.error('autoPurgeTrash error', e); appendSyncLog('Auto purge failed: ' + e.message); }
 }
 
-function computeDiffs(local, remote){
-  const onlyLocal = []; const onlyRemote = []; const both = []; const localDeleted = [];
-  for(const l of local){
-    if(l.deleted){
-      const rem = (l.driveId && remote.find(r=>r._driveFile && r._driveFile.id === l.driveId)) || (l.id && remote.find(r=>r.id === l.id));
-      if(rem) localDeleted.push({ local: l, remote: rem });
-      continue;
+/* ---------- UI & wiring on DOMContentLoaded ---------- */
+document.addEventListener('DOMContentLoaded', ()=>{
+  // Initialize token client if script already loaded
+  try{ initTokenClientIfNeeded(); }catch(e){ console.warn('early init failed', e); }
+
+  // Navigation
+  document.querySelectorAll('.navBtn').forEach(a=>{
+    a.addEventListener('click', (e)=>{
+      e.preventDefault();
+      const href = a.getAttribute('href') || '#pageHome';
+      history.replaceState(null,'',href);
+      showSection(href);
+    });
+  });
+  window.addEventListener('hashchange', ()=> { const h = location.hash && document.querySelector(location.hash) ? location.hash : '#pageHome'; showSection(h); });
+  const initial = location.hash && document.querySelector(location.hash) ? location.hash : '#pageHome';
+  history.replaceState(null,'',initial);
+  showSection(initial);
+
+  // Sign-in click handler: must call requestAccessToken directly (no await before it)
+  document.getElementById('btnSignGrantSettings').addEventListener('click', (e)=>{
+    if(tokenRequestInProgress){ console.info('Sign-in already in progress'); return; }
+    tokenRequestInProgress = true;
+    setSignButtonsEnabled(false);
+    try{
+      // ensure tokenClient exists (initialized earlier if possible)
+      if(!tokenClient) initTokenClientIfNeeded();
+      if(tokenClient){
+        // Direct call inside user gesture
+        tokenClient.requestAccessToken({ prompt: 'consent' });
+      } else {
+        tokenRequestInProgress = false;
+        setSignButtonsEnabled(true);
+        showToast('Sign-in not ready yet. Please try again.', 3);
+      }
+    }catch(err){
+      console.error('Sign in error', err);
+      tokenRequestInProgress = false;
+      setSignButtonsEnabled(true);
+      showToast('Sign in failed: ' + (err.message || 'unknown'), 4);
     }
-    const rem = (l.driveId && remote.find(r=>r._driveFile && r._driveFile.id === l.driveId)) || (l.id && remote.find(r=>r.id === l.id));
-    if(rem) both.push({ local: l, remote: rem });
-    else onlyLocal.push(l);
-  }
-  for(const r of remote){
-    const localMatch = (r.id && local.find(l=>l.id===r.id)) || (r._driveFile && local.find(l=>l.driveId===r._driveFile.id));
-    if(!localMatch) onlyRemote.push(r);
-  }
-  return { onlyLocal, onlyRemote, both, localDeleted };
+  });
+
+  document.getElementById('btnSignRetrySettings').addEventListener('click', (e)=>{
+    if(tokenRequestInProgress){ console.info('Retry blocked: request in progress'); return; }
+    tokenRequestInProgress = true;
+    setSignButtonsEnabled(false);
+    try{
+      if(!tokenClient) initTokenClientIfNeeded();
+      if(tokenClient) tokenClient.requestAccessToken({ prompt: 'consent' });
+      else { tokenRequestInProgress = false; setSignButtonsEnabled(true); showToast('Sign-in not ready',2); }
+    }catch(err){
+      console.error('Retry error', err);
+      tokenRequestInProgress = false;
+      setSignButtonsEnabled(true);
+      showToast('Retry failed',3);
+    }
+  });
+
+  // Map modal wiring
+  document.getElementById('btnPickOnMap').addEventListener('click', ()=>{
+    const lat = parseFloat(document.getElementById('locationInput').dataset.lat || 0) || null;
+    const lon = parseFloat(document.getElementById('locationInput').dataset.lon || 0) || null;
+    openMapModal(lat, lon);
+  });
+  document.getElementById('mapCancel').addEventListener('click', ()=> closeMapModal());
+  document.getElementById('mapConfirm').addEventListener('click', ()=> {
+    if(mapSelectedLat && mapSelectedLon){
+      document.getElementById('locLat').innerText = mapSelectedLat.toFixed(6);
+      document.getElementById('locLon').innerText = mapSelectedLon.toFixed(6);
+      document.getElementById('locationMeta').style.display = 'block';
+      document.getElementById('locationInput').dataset.lat = mapSelectedLat;
+      document.getElementById('locationInput').dataset.lon = mapSelectedLon;
+      (async ()=>{ const currentText = document.getElementById('locationInput').value.trim(); if(!currentText){ const addr = await reverseGeocode(mapSelectedLat, mapSelectedLon); if(addr) document.getElementById('locationInput').value = addr; } })();
+      showToast('Map location selected',2);
+    } else {
+      showToast('Please click on the map to choose a location',2);
+      return;
+    }
+    closeMapModal();
+  });
+
+  // Use GPS
+  document.getElementById('btnUseGPS').addEventListener('click', ()=> useCurrentLocation());
+
+  // Image input
+  document.getElementById('speciesImages').addEventListener('change', (e)=>{
+    const files = e.target.files; const thumbs = document.getElementById('thumbs'); thumbs.innerHTML = '';
+    window._tmpFiles = window._tmpFiles || {};
+    for(let i=0;i<files.length;i++){ const f = files[i]; const url = URL.createObjectURL(f); const id = 'tmp_' + Date.now() + '_' + i; window._tmpFiles[id] = f; const d = document.createElement('div'); d.className='thumbItem'; d.dataset.id = id; d.dataset.name = f.name; const img = document.createElement('img'); img.src = url; img.alt = f.name; d.appendChild(img); const controls = document.createElement('div'); controls.className='thumbControls'; const p = document.createElement('button'); p.className='thumbBtn profile'; p.dataset.action='profile'; p.dataset.id=d.dataset.id; p.innerText='★'; const del = document.createElement('button'); del.className='thumbBtn'; del.dataset.action='delete'; del.dataset.id=d.dataset.id; del.innerText='✕'; controls.appendChild(p); controls.appendChild(del); d.appendChild(controls); thumbs.appendChild(d); }
+  });
+
+  // Thumbs click
+  document.getElementById('thumbs').addEventListener('click', (e)=>{
+    const btn = e.target.closest('button[data-action]');
+    if(!btn) return;
+    const action = btn.dataset.action;
+    const id = btn.dataset.id;
+    if(action === 'delete'){
+      if(id && id.startsWith('tmp_')){ delete window._tmpFiles[id]; const el = document.querySelector(`.thumbItem[data-id="${id}"]`); if(el) el.remove(); }
+      else { window._deletedImages = window._deletedImages || []; window._deletedImages.push(id); const el = document.querySelector(`.thumbItem[data-id="${id}"]`); if(el) el.remove(); }
+    } else if(action === 'profile'){
+      document.querySelectorAll('.thumbItem').forEach(t=> t.classList.remove('profileSelected'));
+      const el = document.querySelector(`.thumbItem[data-id="${id}"]`);
+      if(el) el.classList.add('profileSelected');
+      window._selectedProfile = id;
+    }
+  });
+
+  // Save buttons
+  document.getElementById('saveBtnAdd').addEventListener('click', async ()=> { await handleSaveFromAdd({autoUpload:true}); });
+  document.getElementById('saveLocalOnlyBtnAdd').addEventListener('click', async ()=> { await handleSaveFromAdd({autoUpload:false}); });
+
+  // Export/Import
+  document.getElementById('exportLocalBtnSettings').addEventListener('click', ()=>{
+    const data = JSON.stringify(readLocalRecords(), null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = `exploration_records_${new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')}.json`;
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    showToast('Local JSON exported', 3);
+  });
+  document.getElementById('importLocalBtnSettings').addEventListener('click', ()=> document.getElementById('importFile').click());
+  document.getElementById('importFile').addEventListener('change', async (e)=>{
+    const f = e.target.files[0]; if(!f) return;
+    try{ const txt = await f.text(); const arr = JSON.parse(txt); if(!Array.isArray(arr)) throw new Error('Invalid file'); const existing = readLocalRecords(); const merged = existing.concat(arr); const deduped = merged.filter((v,i,a)=>a.findIndex(x=>x.id===v.id)===i); writeLocalRecords(deduped); showToast('Imported records',2); renderTree(); renderLibrary(); }catch(err){ showToast('Import failed',3); }
+  });
+
+  // Search
+  document.getElementById('searchBtn').addEventListener('click', ()=> {
+    const q = document.getElementById('treeSearch').value.trim().toLowerCase();
+    if(!q) return;
+    const found = root.descendants().find(d => (d.data.name||'').toLowerCase().includes(q));
+    if(found){ let p = found.parent; while(p){ if(p._children){ p.children = p._children; p._children = null; } p = p.parent; } renderTree(); fitToScreen(); } else showToast('No match found',2);
+  });
+  document.getElementById('clearSearch').addEventListener('click', ()=> document.getElementById('treeSearch').value = '');
+
+  // initial UI
+  renderTree();
+  updateSpeciesCount();
+  renderLibrary();
+  setTimeout(()=>{ autoPurgeTrash().catch(()=>{}); }, 600);
+  setInterval(()=>{ if(accessToken) attemptSyncQueue().catch(()=>{}); }, 60000);
+});
+
+/* ---------- Utility functions ---------- */
+function showSection(hash){
+  document.querySelectorAll('section.card').forEach(s=>s.style.display='none');
+  const el = document.querySelector(hash) || document.getElementById('pageHome');
+  if(el) el.style.display='block';
+  document.querySelectorAll('.navBtn').forEach(b=>b.classList.remove('active'));
+  const active = document.querySelector(`a[href="${hash}"]`);
+  if(active) active.classList.add('active');
+  setTimeout(()=> {
+    try{
+      const headerHeight = document.getElementById('appHeader').getBoundingClientRect().height;
+      const rect = el.getBoundingClientRect();
+      const targetY = window.scrollY + rect.top - headerHeight - 8;
+      window.scrollTo({ top: Math.max(0, targetY), behavior: 'smooth' });
+    }catch(e){ window.scrollTo({ top:0, behavior:'smooth' }); }
+  }, 80);
+  if(el && el.id === 'pageLibrary') renderLibrary();
+  updateSpeciesCount();
 }
 
-async function loginSync(){
-  try{
-    appendSyncLog('Starting loginSync compare');
-    const remote = await listRemoteRecordsInFolder();
-    const local = readLocalRecords();
-    const diffs = computeDiffs(local, remote);
-    ensureSettingsThen(()=> renderSyncPreview(diffs));
-  }catch(e){
-    console.error('loginSync error', e);
-    appendSyncLog('loginSync failed: ' + (e && e.message ? e.message : String(e)));
-  }
-}
-
-/* ---------- ensure Settings then run ---------- */
-function ensureSettingsThen(fn){
-  if(location.hash !== '#pageSettings'){
-    history.replaceState(null, '', '#pageSettings');
-    setTimeout(fn, 220);
-  } else {
-    fn();
-  }
-}
+function updateSpeciesCount(){ document.getElementById('speciesCount').innerText = `Species recorded: ${readLocalRecords().filter(r=>!r.deleted).length}`; }
 
 /* prevent iOS pinch zoom */
 document.addEventListener('gesturestart', e=> e.preventDefault());
