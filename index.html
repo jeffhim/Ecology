@@ -1100,6 +1100,53 @@ function initAutocomplete(){
 }
 
 /* ============================================================
+   AUTO-FILL GENUS & SPECIES FROM SCIENTIFIC NAME
+   ============================================================ */
+
+/**
+ * Parse a binomial scientific name ("Genus species") and auto-fill
+ * the Genus (taxGenus) and Species (taxSpecies) fields.
+ * Also, if the scientific name exactly matches an existing record,
+ * auto-fill ALL taxonomy fields from that record.
+ */
+function autoFillGenusSpecies(){
+  var val = document.getElementById('speciesName').value.trim();
+  if(!val) return;
+
+  /* 1) Check if this exact scientific name exists — if so, copy full taxonomy */
+  var recs = readLocalRecords().filter(function(r){ return !r.deleted; });
+  var match = recs.find(function(r){
+    return (r.scientificName || '').toLowerCase() === val.toLowerCase();
+  });
+  if(match && match.taxonomy && match.taxonomy.length){
+    var fields = ['taxKingdom','taxPhylum','taxClass','taxOrder','taxFamily','taxGenus','taxSpecies'];
+    fields.forEach(function(fid, i){
+      var el = document.getElementById(fid);
+      /* Only fill if field is empty — don't overwrite user's manual edits */
+      if(!el.value.trim() && match.taxonomy[i]){
+        el.value = match.taxonomy[i];
+      }
+    });
+    return;
+  }
+
+  /* 2) Otherwise, parse binomial name: "Genus species" → fill Genus & Species */
+  var parts = val.split(/\s+/);
+  if(parts.length >= 1){
+    var genusEl = document.getElementById('taxGenus');
+    if(!genusEl.value.trim()){
+      genusEl.value = parts[0].charAt(0).toUpperCase() + parts[0].slice(1).toLowerCase();
+    }
+  }
+  if(parts.length >= 2){
+    var speciesEl = document.getElementById('taxSpecies');
+    if(!speciesEl.value.trim()){
+      speciesEl.value = parts.slice(1).join(' ').toLowerCase();
+    }
+  }
+}
+
+/* ============================================================
    DUPLICATE SPECIES WARNING
    ============================================================ */
 function checkDuplicateSpecies(){
@@ -1270,9 +1317,15 @@ document.addEventListener('DOMContentLoaded',function(){
   /* Autocomplete for taxonomy & name fields */
   initAutocomplete();
 
-  /* Duplicate species warning on scientific name input */
-  document.getElementById('speciesName').addEventListener('input', checkDuplicateSpecies);
-  document.getElementById('speciesName').addEventListener('change', checkDuplicateSpecies);
+  /* Auto-fill genus & species + duplicate warning on scientific name input */
+  document.getElementById('speciesName').addEventListener('input', function(){
+    checkDuplicateSpecies();
+    autoFillGenusSpecies();
+  });
+  document.getElementById('speciesName').addEventListener('change', function(){
+    checkDuplicateSpecies();
+    autoFillGenusSpecies();
+  });
   /* "Edit existing record instead" button inside warning */
   document.getElementById('dupWarn').addEventListener('click', function(e){
     var btn = e.target.closest('[data-dup-id]');
