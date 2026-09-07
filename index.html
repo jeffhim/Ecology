@@ -234,7 +234,8 @@ textarea{min-height:84px;resize:vertical}
         <label class="ac-wrap">Species <input id="taxSpecies" placeholder="Species" data-ac="tax6"><div class="ac-list" data-for="taxSpecies"></div></label>
       </div>
       <div style="margin-top:10px">
-        <label class="ac-wrap">Location (where found)<input id="locationInput" type="text" placeholder="Address or place name" autocomplete="off" data-ac="location"><div class="ac-list" data-for="locationInput"></div></label>
+        <label class="ac-wrap">Common location (worldwide habitat)<input id="commonLocationInput" type="text" placeholder="e.g. Tropical forests of Southeast Asia" autocomplete="off" data-ac="commonLocation"><div class="ac-list" data-for="commonLocationInput"></div></label>
+        <label class="ac-wrap" style="margin-top:8px">Discovery location (where you found it)<input id="locationInput" type="text" placeholder="Address or place name" autocomplete="off" data-ac="location"><div class="ac-list" data-for="locationInput"></div></label>
         <div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <button id="btnUseGPS" class="btn small">Use current location</button>
           <button id="btnPickOnMap" class="btn small ghost">Pick on map</button>
@@ -261,6 +262,10 @@ textarea{min-height:84px;resize:vertical}
   <!-- Library -->
   <section id="pageLibrary" class="card" aria-labelledby="libraryTitle" style="display:none">
     <div class="sectionTitle" id="libraryTitle">Library</div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <input id="librarySearch" type="text" placeholder="Search by name, taxonomy, location\u2026" style="flex:1;min-width:180px;padding:10px 14px;border-radius:12px;border:1px solid var(--input-border);font-size:16px;box-sizing:border-box">
+      <button id="libSearchClear" class="btn small ghost">Clear</button>
+    </div>
     <div id="libraryContent" style="margin-top:8px"></div>
   </section>
 
@@ -649,7 +654,7 @@ async function attemptSyncQueue(){
         var up = await uploadImageBlobToFolder(blob, (rec.scientificName||rec.id).replace(/\s+/g,'_')+'_img_'+Date.now()+'_'+i+'.'+((imRef.name||'').split('.').pop()), folderId);
         imRef.driveId = up.id;
       }
-      var recToUpload = {id:rec.id,scientificName:rec.scientificName,commonName:rec.commonName,taxonomy:rec.taxonomy,location:rec.location,coords:rec.coords||null,behaviours:rec.behaviours,otherNotes:rec.otherNotes,images:(rec.images||[]).map(function(im){return{driveId:im.driveId||null,name:im.name||null};}),createdAt:rec.createdAt,updatedAt:rec.updatedAt||null};
+      var recToUpload = {id:rec.id,scientificName:rec.scientificName,commonName:rec.commonName,taxonomy:rec.taxonomy,commonLocation:rec.commonLocation||null,location:rec.location,coords:rec.coords||null,behaviours:rec.behaviours,otherNotes:rec.otherNotes,images:(rec.images||[]).map(function(im){return{driveId:im.driveId||null,name:im.name||null};}),createdAt:rec.createdAt,updatedAt:rec.updatedAt||null};
       var uploaded = await uploadJsonRecordToFolder(rec.scientificName||rec.id, recToUpload, folderId);
       var updated = readLocalRecords().map(function(r){return r.id===recId?Object.assign({},r,{status:'uploaded',driveId:uploaded.id}):r;});
       writeLocalRecords(updated);
@@ -733,6 +738,7 @@ function populateEditForm(id){
   document.getElementById('commonName').value=r.commonName||'';
   var tax=r.taxonomy||[];
   ['taxKingdom','taxPhylum','taxClass','taxOrder','taxFamily','taxGenus','taxSpecies'].forEach(function(fid,i){document.getElementById(fid).value=tax[i]||'';});
+  document.getElementById('commonLocationInput').value=r.commonLocation||'';
   document.getElementById('locationInput').value=r.location||'';
   if(r.coords){document.getElementById('locationInput').dataset.lat=r.coords.lat;document.getElementById('locationInput').dataset.lon=r.coords.lon;document.getElementById('locLat').innerText=r.coords.lat.toFixed(6);document.getElementById('locLon').innerText=r.coords.lon.toFixed(6);document.getElementById('locationMeta').style.display='block';}else{document.getElementById('locationMeta').style.display='none';delete document.getElementById('locationInput').dataset.lat;delete document.getElementById('locationInput').dataset.lon;}
   document.getElementById('behaviourInput').value=r.behaviours||'';
@@ -750,7 +756,8 @@ async function handleSaveFromAdd(opts){
     var scientific=document.getElementById('speciesName').value.trim();
     if(!scientific){showToast('Please enter scientific name.',3);return;}
     var common=document.getElementById('commonName').value.trim();
-    var taxonomy=['taxKingdom','taxPhylum','taxClass','taxOrder','taxFamily','taxGenus','taxSpecies'].map(function(id){return document.getElementById(id).value.trim();}).filter(Boolean);
+    var taxonomy=['taxKingdom','taxPhylum','taxClass','taxOrder','taxFamily','taxGenus','taxSpecies'].map(function(id){return document.getElementById(id).value.trim();});
+    var commonLocation=document.getElementById('commonLocationInput').value.trim();
     var locationText=document.getElementById('locationInput').value.trim();
     var lat=document.getElementById('locationInput').dataset.lat?parseFloat(document.getElementById('locationInput').dataset.lat):null;
     var lon=document.getElementById('locationInput').dataset.lon?parseFloat(document.getElementById('locationInput').dataset.lon):null;
@@ -761,21 +768,21 @@ async function handleSaveFromAdd(opts){
 
     if(editingId){
       var records=readLocalRecords();var rec=records.find(function(r){return r.id===editingId;});if(!rec){showToast('Not found',3);return;}
-      Object.assign(rec,{scientificName:scientific,commonName:common,taxonomy:taxonomy,location:locationText,coords:lat&&lon?{lat:lat,lon:lon}:null,behaviours:behaviours,otherNotes:otherNotes,images:imgRefs,updatedAt:new Date().toISOString()});
+      Object.assign(rec,{scientificName:scientific,commonName:common,taxonomy:taxonomy,commonLocation:commonLocation||null,location:locationText,coords:lat&&lon?{lat:lat,lon:lon}:null,behaviours:behaviours,otherNotes:otherNotes,images:imgRefs,updatedAt:new Date().toISOString()});
       writeLocalRecords(records);showToast('Saved locally',2);
       delete document.getElementById('saveBtnAdd').dataset.editing;delete document.getElementById('saveLocalOnlyBtnAdd').dataset.editing;
       document.getElementById('saveBtnAdd').innerText='Save Record';document.getElementById('saveLocalOnlyBtnAdd').innerText='Save Local Only';
       processImagesAndSync(rec.id,autoUpload).catch(function(){});clearAddForm();renderTree();renderLibrary();return;
     }
     var recordId='rec_'+Date.now()+'_'+Math.floor(Math.random()*10000);
-    var record={id:recordId,scientificName:scientific,commonName:common,taxonomy:taxonomy,location:locationText||null,coords:lat&&lon?{lat:lat,lon:lon}:null,behaviours:behaviours,otherNotes:otherNotes,images:imgRefs,createdAt:new Date().toISOString(),status:'pending'};
+    var record={id:recordId,scientificName:scientific,commonName:common,taxonomy:taxonomy,commonLocation:commonLocation||null,location:locationText||null,coords:lat&&lon?{lat:lat,lon:lon}:null,behaviours:behaviours,otherNotes:otherNotes,images:imgRefs,createdAt:new Date().toISOString(),status:'pending'};
     var all=readLocalRecords();all.push(record);writeLocalRecords(all);
     showToast('Saved locally',2);
     processImagesAndSync(recordId,autoUpload).catch(function(){});clearAddForm();renderTree();renderLibrary();
   }catch(e){console.error(e);showToast('Save failed',3);}
 }
 function clearAddForm(){
-  ['speciesName','commonName','taxKingdom','taxPhylum','taxClass','taxOrder','taxFamily','taxGenus','taxSpecies','locationInput','behaviourInput','otherNotesInput'].forEach(function(id){document.getElementById(id).value='';});
+  ['speciesName','commonName','taxKingdom','taxPhylum','taxClass','taxOrder','taxFamily','taxGenus','taxSpecies','commonLocationInput','locationInput','behaviourInput','otherNotesInput'].forEach(function(id){document.getElementById(id).value='';});
   delete document.getElementById('locationInput').dataset.lat;delete document.getElementById('locationInput').dataset.lon;
   document.getElementById('locationMeta').style.display='none';
   document.getElementById('speciesImages').value='';document.getElementById('thumbs').innerHTML='';
@@ -818,7 +825,7 @@ function buildTreeDataFromLocal(){
   var recs=readLocalRecords().filter(function(r){return!r.deleted;});
   var rt={name:'Life',children:[]};
   recs.forEach(function(r){
-    var levels=r.taxonomy&&r.taxonomy.length?r.taxonomy:['Unclassified'];var cur=rt;
+    var levels=r.taxonomy&&r.taxonomy.length?r.taxonomy.filter(Boolean):['Unclassified'];var cur=rt;
     levels.forEach(function(lvl){var ch=(cur.children||[]).find(function(c){return c.name===lvl;});if(!ch){ch={name:lvl,children:[]};cur.children=cur.children||[];cur.children.push(ch);}cur=ch;});
     cur.children=cur.children||[];cur.children.push({name:r.scientificName||r.id,species:true,recordId:r.id});
   });
@@ -829,8 +836,12 @@ function collapseAll(d,depth,max){depth=depth||0;max=max||2;if(d.children){d.chi
 function truncate(s,n){if(!s)return'';return s.length>n?s.slice(0,n-1)+'\u2026':s;}
 function renderTree(){
   try{
-    var data=buildTreeDataFromLocal();root=d3.hierarchy(data);collapseAll(root,0,2);
-    var svgW=svg.node().clientWidth,svgH=+svg.attr('height');
+    var data=buildTreeDataFromLocal();root=d3.hierarchy(data);collapseAll(root,0,99);
+    var svgW=svg.node().clientWidth;
+    /* Dynamically size tree height: 80px per depth level, min 520 */
+    var maxDepth=0;root.each(function(d){if(d.depth>maxDepth)maxDepth=d.depth;});
+    var svgH=Math.max(520, (maxDepth+1)*80);
+    svg.attr('height',svgH);
     treeLayout.size([svgW-40,svgH-40]);treeLayout(root);
     /* Clear old nodes & links completely, then redraw (fixes stale "No records yet" leftover) */
     inner.selectAll('.node').remove();
@@ -860,10 +871,20 @@ function updateMinimap(){var ns=root.descendants();if(!ns.length)return;var x0=d
 function updateMinimapViewport(tf){var t=tf||d3.zoomTransform(svg.node());var sw=svg.node().clientWidth,sh=+svg.attr('height');var a=(0-t.x)/t.k,b=(0-t.y)/t.k,c=(sw-t.x)/t.k,dd=(sh-t.y)/t.k;miniSvg.select('#miniViewport').attr('x',a).attr('y',b).attr('width',Math.max(1,c-a)).attr('height',Math.max(1,dd-b));}
 
 /* ---------- Library ---------- */
-function renderLibrary(){
+function renderLibrary(filterQuery){
   var el=document.getElementById('libraryContent');el.innerHTML='';
   var recs=readLocalRecords().filter(function(r){return!r.deleted;});
   if(!recs.length){el.innerHTML='<div>No records yet</div>';return;}
+  /* Apply search filter */
+  if(filterQuery===undefined){var si=document.getElementById('librarySearch');if(si)filterQuery=si.value.trim();}
+  if(filterQuery){
+    var q=filterQuery.toLowerCase();
+    recs=recs.filter(function(r){
+      var haystack=[(r.scientificName||''),(r.commonName||''),(r.location||''),(r.commonLocation||''),(r.behaviours||''),(r.otherNotes||'')].concat(r.taxonomy||[]).join(' ').toLowerCase();
+      return haystack.indexOf(q)!==-1;
+    });
+  }
+  if(!recs.length){el.innerHTML='<div style="color:var(--muted)">No matching records</div>';return;}
   recs.sort(function(a,b){return(a.scientificName||'').localeCompare(b.scientificName||'');});
   recs.forEach(function(s){
     var card=document.createElement('div');card.className='card';card.style.cssText='display:flex;justify-content:space-between;align-items:center;gap:10px';
@@ -896,12 +917,16 @@ function renderLibrary(){
     var mid=document.createElement('div');mid.style.cssText='flex:1;min-width:0';
     var t=document.createElement('div');t.style.cssText='font-weight:800;color:#145a3f;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';t.innerText=s.scientificName||'Unnamed';
     var sub=document.createElement('div');sub.style.cssText='color:#666;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';sub.innerText=s.commonName||'';
-    var loc=document.createElement('div');loc.style.cssText='color:#666;font-size:13px;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+    var cloc=document.createElement('div');cloc.style.cssText='color:#666;font-size:13px;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+    if(s.commonLocation) cloc.innerHTML='&#127758; '+escapeHtml(s.commonLocation);
+    var loc=document.createElement('div');loc.style.cssText='color:#666;font-size:13px;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
     if(s.coords&&s.coords.lat) loc.innerHTML='&#128205; '+(s.location?escapeHtml(s.location):s.coords.lat.toFixed(4)+', '+s.coords.lon.toFixed(4));
     else loc.innerHTML=s.location?'&#128205; '+escapeHtml(s.location):'';
     var imgCount=(s.images||[]).length;
-    if(imgCount){var ic=document.createElement('div');ic.style.cssText='color:#999;font-size:12px;margin-top:2px';ic.innerText='\ud83d\udcf7 '+imgCount+' photo'+(imgCount>1?'s':'');mid.appendChild(t);mid.appendChild(sub);mid.appendChild(loc);mid.appendChild(ic);}
-    else{mid.appendChild(t);mid.appendChild(sub);mid.appendChild(loc);}
+    mid.appendChild(t);mid.appendChild(sub);
+    if(s.commonLocation) mid.appendChild(cloc);
+    mid.appendChild(loc);
+    if(imgCount){var ic=document.createElement('div');ic.style.cssText='color:#999;font-size:12px;margin-top:2px';ic.innerText='\ud83d\udcf7 '+imgCount+' photo'+(imgCount>1?'s':'');mid.appendChild(ic);}
 
     /* Right: action buttons */
     var right=document.createElement('div');right.style.cssText='display:flex;flex-direction:column;gap:8px;flex-shrink:0';
@@ -975,11 +1000,12 @@ async function autoPurgeTrash(){
 
 /** Build a map of { fieldKey -> Set of unique values } from all saved records */
 function buildAutocompleteDictionary(){
-  var dict = {scientificName:new Set(), commonName:new Set(), location:new Set(), tax0:new Set(), tax1:new Set(), tax2:new Set(), tax3:new Set(), tax4:new Set(), tax5:new Set(), tax6:new Set()};
+  var dict = {scientificName:new Set(), commonName:new Set(), commonLocation:new Set(), location:new Set(), tax0:new Set(), tax1:new Set(), tax2:new Set(), tax3:new Set(), tax4:new Set(), tax5:new Set(), tax6:new Set()};
   var recs = readLocalRecords().filter(function(r){return !r.deleted;});
   recs.forEach(function(r){
     if(r.scientificName) dict.scientificName.add(r.scientificName);
     if(r.commonName) dict.commonName.add(r.commonName);
+    if(r.commonLocation) dict.commonLocation.add(r.commonLocation);
     if(r.location) dict.location.add(r.location);
     var tax = r.taxonomy || [];
     for(var i = 0; i < 7; i++){
@@ -1236,6 +1262,10 @@ document.addEventListener('DOMContentLoaded',function(){
     if(found){var p=found.parent;while(p){if(p._children){p.children=p._children;p._children=null;}p=p.parent;}renderTree();fitToScreen();}else showToast('No match',2);
   });
   document.getElementById('clearSearch').addEventListener('click',function(){document.getElementById('treeSearch').value='';});
+
+  /* Library search */
+  document.getElementById('librarySearch').addEventListener('input',function(){renderLibrary();});
+  document.getElementById('libSearchClear').addEventListener('click',function(){document.getElementById('librarySearch').value='';renderLibrary();});
 
   /* Autocomplete for taxonomy & name fields */
   initAutocomplete();
