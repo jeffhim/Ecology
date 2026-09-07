@@ -3,157 +3,161 @@
 <head>
 <meta charset="utf-8" >
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>Jeffrey's Exploration — Fixed</title>
+<title>Jeffrey's Exploration</title>
 <meta name="theme-color" content="#2fb86a">
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;800&display=swap" rel="stylesheet">
-<!-- Preload Google Identity so popup is triggered from user gesture -->
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-<!-- D3 + Leaflet -->
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" >
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
 <style>
 :root{
-  --accent:#2fb86a; --accent-dark:#238a55; --bg:#f2faf4; --card:#ffffff; --muted:#6b6b6b;
-  --radius:14px; --nav-height:64px; --header-height:64px; --safe-top:env(safe-area-inset-top,20px);
-  --safe-bottom:env(safe-area-inset-bottom,0px); --shadow:0 8px 24px rgba(20,40,30,0.06);
-  --input-bg: linear-gradient(180deg,#ffffff,#f7fff7);
-  --input-border: rgba(43,184,106,0.18);
-  --btn-radius: 999px;
-  --soft-green: #eaf9ef;
+  --accent:#2fb86a;--accent-dark:#238a55;--bg:#f2faf4;--card:#fff;--muted:#6b6b6b;
+  --radius:14px;--shadow:0 8px 24px rgba(20,40,30,.06);
+  --input-bg:linear-gradient(180deg,#fff,#f7fff7);--input-border:rgba(43,184,106,.18);
+  --btn-radius:999px;--soft-green:#eaf9ef;
 }
 
-/* Reset & layout — prevent body scroll so fixed bottom bar never detaches on iOS */
-html, body {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-  -webkit-text-size-adjust: 100%;
-  background: var(--bg);
-  font-family: "Baloo 2", system-ui, -apple-system, "Segoe UI", Roboto, Arial;
-  color: #0b2b1f;
+/* ===== FLEXBOX SHELL — the iOS-proof layout ===== */
+html{height:100%;margin:0;padding:0}
+body{
+  display:flex;flex-direction:column;
+  height:100vh;height:100dvh;          /* dvh = dynamic viewport, shrinks when Safari toolbar shows */
+  margin:0;padding:0;overflow:hidden;
+  -webkit-text-size-adjust:100%;
+  background:var(--bg);
+  font-family:"Baloo 2",system-ui,-apple-system,"Segoe UI",Roboto,Arial;
+  color:#0b2b1f;
 }
 
-/* Header */
+/* ---------- Header (flex item, NOT fixed) ---------- */
 header{
-  position:fixed; top:0; left:0; right:0; width:100%; z-index:1200;
+  flex:0 0 auto;
   background:linear-gradient(90deg,var(--accent),var(--accent-dark));
-  color:#fff; padding:calc(8px + var(--safe-top)) 18px 12px 18px;
-  display:flex; align-items:center; justify-content:space-between;
-  height:calc(var(--header-height) + var(--safe-top)); box-shadow:0 6px 18px rgba(0,0,0,0.08); box-sizing:border-box;
+  color:#fff;
+  padding:12px 18px;
+  padding-top:calc(12px + env(safe-area-inset-top,0px));
+  display:flex;align-items:center;justify-content:space-between;
+  box-shadow:0 6px 18px rgba(0,0,0,.08);box-sizing:border-box;
+  z-index:10;
 }
 .titleWrap{display:flex;align-items:center;gap:12px;flex:1;min-width:0}
-.titleWrap svg{flex:0 0 36px;width:36px;height:36px;display:block}
-h1{font-size:18px;margin:0;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:calc(100% - 160px);}
-
-/* header status */
+.titleWrap svg{flex:0 0 36px;width:36px;height:36px}
+h1{font-size:18px;margin:0;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .headerStatus{display:flex;gap:10px;align-items:center;flex:0 0 auto}
 .statusMini{display:flex;align-items:center;gap:6px;font-size:12px;color:#eafaf0}
-.dot{width:10px;height:10px;border-radius:999px;background:#d9534f;box-shadow:0 2px 6px rgba(0,0,0,0.08)}
+.dot{width:10px;height:10px;border-radius:999px;background:#d9534f;box-shadow:0 2px 6px rgba(0,0,0,.08)}
 .dot.green{background:#2fb86a}
 
-/* Bottom nav: fixed and flush to bottom */
+/* ---------- Scrollable content (flex item, ONLY scrollable area) ---------- */
+.container{
+  flex:1 1 0;
+  min-height:0;          /* critical: allows flex child to shrink below content size */
+  overflow-y:auto;overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior-y:contain;
+  padding:12px 14px;box-sizing:border-box;
+}
+.container>*{max-width:1100px;margin-left:auto;margin-right:auto}
+
+/* ---------- Bottom nav (flex item, NOT fixed — sits at bottom of flex column) ---------- */
 .bottomNav{
-  position:fixed;
-  left:0;
-  right:0;
-  bottom:0;
-  height:calc(var(--nav-height) + env(safe-area-inset-bottom, 0px));
-  padding:8px 12px;
-  padding-bottom:calc(8px + env(safe-area-inset-bottom, 0px));
-  box-sizing:border-box;
+  flex:0 0 auto;
   background:linear-gradient(180deg,#fff,#f6fff6);
   border-top:1px solid #e9f3ea;
-  display:flex;
-  align-items:center;
-  justify-content:space-around;
-  z-index:1300;
-  box-shadow:0 -6px 20px rgba(10,30,20,0.03);
-  /* iOS safe: prevent any transform/translate that could detach it */
-  -webkit-transform: translateZ(0);
-  transform: translateZ(0);
+  display:flex;align-items:center;justify-content:space-around;
+  padding:8px 12px;
+  padding-bottom:calc(8px + env(safe-area-inset-bottom,0px));
+  box-sizing:border-box;
+  box-shadow:0 -6px 20px rgba(10,30,20,.03);
+  z-index:10;
 }
-.navBtn{flex:1;text-align:center;color:#3b6b52;font-weight:800;cursor:pointer;padding:8px 6px;text-decoration:none;display:block}
+.navBtn{flex:1;text-align:center;color:#3b6b52;font-weight:800;cursor:pointer;padding:8px 6px;text-decoration:none;display:block;font-size:13px}
 .navBtn.active{color:var(--accent-dark)}
-.navIcon{display:block;font-size:20px;margin-bottom:6px}
+.navIcon{display:block;font-size:20px;margin-bottom:4px}
 
-/*
-  Container: the ONLY scrollable area.
-  position:fixed with top/bottom boundaries keeps it between header & nav.
-  This prevents body-level scroll, which is the #1 cause of iOS fixed-bar detachment.
-*/
-.container{
-  position: fixed;
-  top: calc(var(--header-height) + var(--safe-top));
-  left: 0;
-  right: 0;
-  bottom: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px));
-  overflow-y: auto;
-  overflow-x: hidden;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior: none;
-  padding: 12px 14px;
-  box-sizing: border-box;
-}
-.container > *{
-  max-width: 1100px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-/* Cards and sections */
+/* ---------- Cards & sections ---------- */
 .card{background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:12px;box-shadow:var(--shadow);overflow:visible}
 .sectionTitle{display:block;background:linear-gradient(180deg,#f3fff6,#fff);border-radius:10px;padding:8px 12px;color:var(--accent-dark);font-weight:800;margin:-16px -16px 12px -16px}
 
-/* Inputs & buttons */
-input[type="text"],textarea,select, input[type="file"]{
-  width:100%;
-  padding:12px 14px;
-  border-radius:12px;
-  border:1px solid var(--input-border);
-  background:var(--input-bg);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,0.6);
-  font-size:16px;
-  outline:none;
-  box-sizing:border-box;
+/* ---------- Inputs & buttons ---------- */
+input[type="text"],textarea,select,input[type="file"]{
+  width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--input-border);
+  background:var(--input-bg);box-shadow:inset 0 1px 0 rgba(255,255,255,.6);
+  font-size:16px;outline:none;box-sizing:border-box;
 }
 textarea{min-height:84px;resize:vertical}
-.btn{background:linear-gradient(180deg,var(--accent),var(--accent-dark));color:#fff;border:none;padding:8px 14px;border-radius:var(--btn-radius);cursor:pointer;font-weight:800;box-shadow:0 6px 18px rgba(43,184,106,0.12);font-size:16px}
-.btn.ghost{background:transparent;color:var(--accent-dark);border:1px solid rgba(35,138,85,0.12);box-shadow:none}
+.btn{background:linear-gradient(180deg,var(--accent),var(--accent-dark));color:#fff;border:none;padding:8px 14px;border-radius:var(--btn-radius);cursor:pointer;font-weight:800;box-shadow:0 6px 18px rgba(43,184,106,.12);font-size:16px}
+.btn.ghost{background:transparent;color:var(--accent-dark);border:1px solid rgba(35,138,85,.12);box-shadow:none}
 .btn.small{padding:6px 10px;font-size:14px;border-radius:999px}
 
-/* Thumbs */
+/* ---------- Thumbs ---------- */
 .thumbGrid{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
 .thumbItem{position:relative;width:84px;height:84px;border-radius:12px;overflow:hidden;border:1px solid #eef6ef;background:#fff;display:flex;align-items:center;justify-content:center}
 .thumbItem img{width:100%;height:100%;object-fit:cover;display:block}
 .thumbControls{position:absolute;right:6px;top:6px;display:flex;gap:6px;z-index:30}
-.thumbBtn{width:28px;height:28px;border-radius:8px;border:none;background:rgba(0,0,0,0.45);color:#fff;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px}
-.thumbBtn.profile{background:rgba(43,184,106,0.95)}
-.thumbBadge{position:absolute;left:6px;bottom:6px;background:rgba(0,0,0,0.55);color:#fff;padding:2px 6px;border-radius:999px;font-size:12px}
+.thumbBtn{width:28px;height:28px;border-radius:8px;border:none;background:rgba(0,0,0,.45);color:#fff;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px}
+.thumbBtn.profile{background:rgba(43,184,106,.95)}
+.thumbBadge{position:absolute;left:6px;bottom:6px;background:rgba(0,0,0,.55);color:#fff;padding:2px 6px;border-radius:999px;font-size:12px}
 
-/* Toast & modal */
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--nav-height) + 18px + env(safe-area-inset-bottom,0px));background:rgba(15,80,50,0.95);color:#fff;padding:12px 18px;border-radius:12px;font-weight:700;z-index:2000;opacity:0;transition:opacity .2s}
+/* ---------- Toast & modal ---------- */
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:90px;background:rgba(15,80,50,.95);color:#fff;padding:12px 18px;border-radius:12px;font-weight:700;z-index:2000;opacity:0;transition:opacity .2s;pointer-events:none}
 .toast.show{opacity:1}
-.modalBackdrop{position:fixed;left:0;top:0;right:0;bottom:0;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;z-index:2500}
+.modalBackdrop{position:fixed;left:0;top:0;right:0;bottom:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:2500}
 .modal{background:#fff;border-radius:12px;padding:16px;max-width:920px;width:92%;max-height:80vh;overflow:auto}
 
-/* Map */
+/* ---------- Map ---------- */
 .leaflet-container{width:100%;height:420px;border-radius:10px}
-.mapControls{display:flex;gap:8px;align-items:center;margin-top:8px}
+.mapControls{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap}
 .kv{font-weight:700;color:#145a3f}
 
-/* Responsive */
-@media (max-width:900px){
-  .thumbItem{width:72px;height:72px}
+/* ---------- Autocomplete dropdown ---------- */
+.ac-wrap{position:relative}
+.ac-list{
+  position:absolute;left:0;right:0;top:100%;
+  max-height:180px;overflow-y:auto;
+  background:#fff;border:1px solid var(--input-border);border-top:none;
+  border-radius:0 0 12px 12px;box-shadow:0 8px 20px rgba(20,40,30,.1);
+  z-index:200;display:none;
 }
+.ac-list.open{display:block}
+.ac-item{
+  padding:10px 14px;font-size:15px;cursor:pointer;
+  border-bottom:1px solid rgba(43,184,106,.06);
+  color:#0b2b1f;transition:background .1s;
+}
+.ac-item:last-child{border-bottom:none}
+.ac-item:active,.ac-item:hover{background:var(--soft-green)}
+.ac-item mark{background:rgba(47,184,106,.25);color:inherit;border-radius:2px;padding:0 1px}
+
+/* ---------- Duplicate species warning ---------- */
+.dup-warn{
+  display:none;margin-top:6px;padding:10px 14px;
+  border-radius:10px;font-size:14px;line-height:1.4;
+  background:linear-gradient(135deg,#fff8e1,#fff3cd);
+  border:1px solid #f0c36d;color:#7a5d00;
+  animation:dupPulse .4s ease;
+}
+.dup-warn.show{display:block}
+.dup-warn strong{color:#6b4c00}
+.dup-warn .dup-edit{
+  display:inline-block;margin-top:6px;padding:4px 10px;
+  border-radius:999px;font-size:13px;font-weight:800;cursor:pointer;
+  background:#f0c36d;color:#5a4200;border:none;
+}
+.dup-warn .dup-edit:active{background:#e0b040}
+@keyframes dupPulse{0%{opacity:0;transform:translateY(-4px)}100%{opacity:1;transform:translateY(0)}}
+
+/* ---------- Responsive ---------- */
+@media(max-width:900px){.thumbItem{width:72px;height:72px}}
 </style>
 </head>
 <body>
+
+<!-- ① Header — flex item -->
 <header id="appHeader">
   <div class="titleWrap">
-    <svg width="36" height="36" viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M12 2C9.8 2 7.8 3 6.6 4.6C5.4 6.2 5 8.2 5.2 10.2C6 18 12 22 12 22s6-4 6.8-11.8c.2-2-0.2-4-1.4-5.6C16.2 3 14.2 2 12 2z"/></svg>
+    <svg width="36" height="36" viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M12 2C9.8 2 7.8 3 6.6 4.6C5.4 6.2 5 8.2 5.2 10.2C6 18 12 22 12 22s6-4 6.8-11.8c.2-2-.2-4-1.4-5.6C16.2 3 14.2 2 12 2z"/></svg>
     <h1 id="appTitle">Jeffrey's exploration</h1>
   </div>
   <div class="headerStatus">
@@ -162,7 +166,9 @@ textarea{min-height:84px;resize:vertical}
   </div>
 </header>
 
+<!-- ② Scrollable content — flex item -->
 <div class="container" id="mainContainer">
+
   <!-- Home -->
   <section id="pageHome" class="card" aria-labelledby="homeTitle">
     <div class="sectionTitle" id="homeTitle">Overview</div>
@@ -178,7 +184,6 @@ textarea{min-height:84px;resize:vertical}
         </div>
       </div>
     </div>
-
     <div style="margin-top:12px" class="card">
       <div class="sectionTitle">Taxonomy Tree</div>
       <div id="treeControls" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
@@ -193,10 +198,9 @@ textarea{min-height:84px;resize:vertical}
           <button id="resetView" class="btn small ghost">Reset</button>
         </div>
       </div>
-
       <div class="treeWrap" style="margin-top:10px;position:relative">
         <svg id="treeSvg" width="100%" height="520" style="touch-action:none"></svg>
-        <div id="minimap" aria-hidden="true" style="position:absolute;right:12px;bottom:12px;background:rgba(255,255,255,0.9);padding:8px;border-radius:8px;border:1px solid #eef6ef">
+        <div id="minimap" aria-hidden="true" style="position:absolute;right:12px;bottom:12px;background:rgba(255,255,255,.9);padding:8px;border-radius:8px;border:1px solid #eef6ef">
           <div style="font-weight:700;margin-bottom:6px">Overview</div><svg id="miniSvg" width="120" height="80"></svg>
         </div>
       </div>
@@ -207,52 +211,36 @@ textarea{min-height:84px;resize:vertical}
   <section id="pageAdd" class="card" aria-labelledby="addTitle" style="display:none">
     <div class="sectionTitle" id="addTitle">Add New Species</div>
     <div class="formFull">
-      <label>Scientific name
-        <input id="speciesName" type="text" placeholder="e.g. Formica rufa" autocomplete="off">
-      </label>
-      <label style="margin-top:8px">Common name
-        <input id="commonName" type="text" placeholder="e.g. Red wood ant" autocomplete="off">
-      </label>
-
+      <label class="ac-wrap">Scientific name<input id="speciesName" type="text" placeholder="e.g. Formica rufa" autocomplete="off" data-ac="scientificName"><div class="ac-list" data-for="speciesName"></div></label>
+      <div id="dupWarn" class="dup-warn"></div>
+      <label class="ac-wrap" style="margin-top:8px">Common name<input id="commonName" type="text" placeholder="e.g. Red wood ant" autocomplete="off" data-ac="commonName"><div class="ac-list" data-for="commonName"></div></label>
       <div class="formGrid" style="margin-top:10px;display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px">
-        <label>Kingdom <input id="taxKingdom" placeholder="Kingdom"></label>
-        <label>Phylum <input id="taxPhylum" placeholder="Phylum"></label>
-        <label>Class <input id="taxClass" placeholder="Class"></label>
-        <label>Order <input id="taxOrder" placeholder="Order"></label>
-        <label>Family <input id="taxFamily" placeholder="Family"></label>
-        <label>Genus <input id="taxGenus" placeholder="Genus"></label>
-        <label>Species <input id="taxSpecies" placeholder="Species"></label>
+        <label class="ac-wrap">Kingdom <input id="taxKingdom" placeholder="Kingdom" data-ac="tax0"><div class="ac-list" data-for="taxKingdom"></div></label>
+        <label class="ac-wrap">Phylum <input id="taxPhylum" placeholder="Phylum" data-ac="tax1"><div class="ac-list" data-for="taxPhylum"></div></label>
+        <label class="ac-wrap">Class <input id="taxClass" placeholder="Class" data-ac="tax2"><div class="ac-list" data-for="taxClass"></div></label>
+        <label class="ac-wrap">Order <input id="taxOrder" placeholder="Order" data-ac="tax3"><div class="ac-list" data-for="taxOrder"></div></label>
+        <label class="ac-wrap">Family <input id="taxFamily" placeholder="Family" data-ac="tax4"><div class="ac-list" data-for="taxFamily"></div></label>
+        <label class="ac-wrap">Genus <input id="taxGenus" placeholder="Genus" data-ac="tax5"><div class="ac-list" data-for="taxGenus"></div></label>
+        <label class="ac-wrap">Species <input id="taxSpecies" placeholder="Species" data-ac="tax6"><div class="ac-list" data-for="taxSpecies"></div></label>
       </div>
-
       <div style="margin-top:10px">
-        <label>Location (where found)
-          <input id="locationInput" type="text" placeholder="Address or place name">
-        </label>
-
-        <div style="margin-top:8px;display:flex;gap:8px;align-items:center">
+        <label>Location (where found)<input id="locationInput" type="text" placeholder="Address or place name"></label>
+        <div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <button id="btnUseGPS" class="btn small">Use current location</button>
           <button id="btnPickOnMap" class="btn small ghost">Pick on map</button>
           <div style="color:var(--muted);font-size:13px">or type location manually</div>
         </div>
-
         <div id="locationMeta" style="margin-top:8px;color:#666;font-size:13px;display:none">
           <div><span class="kv">Latitude:</span> <span id="locLat"></span></div>
           <div><span class="kv">Longitude:</span> <span id="locLon"></span></div>
         </div>
-
-        <label style="margin-top:8px">Commonly found location
-          <input id="commonlyFoundInput" type="text" placeholder="e.g. Under rocks, near rivers, forest canopy" autocomplete="off">
-        </label>
-
         <label style="margin-top:8px">Behaviours<textarea id="behaviourInput" placeholder="Observed behaviours"></textarea></label>
         <label style="margin-top:8px">Other notes<textarea id="otherNotesInput" placeholder="Other notes"></textarea></label>
       </div>
-
       <div style="margin-top:8px">
         <label>Upload images (multiple)<input id="speciesImages" type="file" accept="image/*" multiple></label>
         <div id="thumbs" class="thumbGrid"></div>
       </div>
-
       <div style="margin-top:12px;display:flex;gap:8px">
         <button id="saveBtnAdd" class="btn">Save Record</button>
         <button id="saveLocalOnlyBtnAdd" class="btn ghost">Save Local Only</button>
@@ -271,28 +259,32 @@ textarea{min-height:84px;resize:vertical}
     <div class="sectionTitle" id="settingsTitle">Settings</div>
     <div style="display:flex;flex-direction:column;gap:10px">
       <div style="font-weight:700;color:#145a3f">Account</div>
-      <div style="display:flex;gap:8px">
-        <button id="btnSignGrantSettings" class="btn small">Sign in & Grant Drive Access</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button id="btnSignGrantSettings" class="btn small">Sign in &amp; Grant Drive Access</button>
         <button id="btnSignRetrySettings" class="btn small ghost">Retry</button>
       </div>
 
       <div style="margin-top:8px">
+        <div style="font-weight:700;color:#145a3f;margin-bottom:6px">Google Drive Sync</div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <button id="pullFromDriveBtn" class="btn small">Pull from Drive</button>
+          <button id="backupAllBtn" class="btn small ghost">Backup all to Drive</button>
+        </div>
+        <div style="margin-top:6px;color:var(--muted);font-size:13px">Pull downloads records from Drive into this device. Backup uploads local records to Drive.</div>
+      </div>
+
+      <div style="margin-top:8px">
         <div style="font-weight:700;color:#145a3f;margin-bottom:6px">Export / Import</div>
-        <div style="display:flex;gap:8px;align-items:center">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <button id="exportLocalBtnSettings" class="btn ghost small">Export local JSON</button>
           <button id="importLocalBtnSettings" class="btn small">Import JSON</button>
           <input id="importFile" type="file" accept="application/json" style="display:none">
         </div>
-        <div style="margin-top:8px;color:var(--muted);font-size:13px">Export will download a JSON file of locally saved records.</div>
+        <div style="margin-top:6px;color:var(--muted);font-size:13px">Export will download a JSON file of locally saved records.</div>
       </div>
 
       <div style="margin-top:8px;display:flex;gap:8px;align-items:center">
-        <button id="backupAllBtn" class="btn small">Backup all to Drive</button>
-        <div style="color:var(--muted);font-size:13px">Backup local-only records to Drive (conservative preview)</div>
-      </div>
-
-      <div style="margin-top:8px;display:flex;gap:8px;align-items:center">
-        <button id="openTrashBtn" class="openTrashBtn" title="Open Trash">Open Trash</button>
+        <button id="openTrashBtn" class="btn small ghost">Open Trash</button>
       </div>
 
       <div style="margin-top:12px">
@@ -301,16 +293,19 @@ textarea{min-height:84px;resize:vertical}
       </div>
     </div>
   </section>
+
 </div>
 
-<div id="toast" class="toast" role="status" aria-live="polite"></div>
-
+<!-- ③ Bottom nav — flex item, always at bottom -->
 <nav class="bottomNav" role="navigation" aria-label="Main navigation">
   <a href="#pageHome" id="navHome" class="navBtn"><span class="navIcon">&#127795;</span>Home</a>
   <a href="#pageAdd" id="navAdd" class="navBtn"><span class="navIcon">&#10133;</span>Add</a>
   <a href="#pageLibrary" id="navLibrary" class="navBtn"><span class="navIcon">&#128218;</span>Library</a>
   <a href="#pageSettings" id="navSettings" class="navBtn"><span class="navIcon">&#9881;</span>Settings</a>
 </nav>
+
+<!-- Toast (position:fixed overlay — unaffected by flex) -->
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 <!-- Map modal -->
 <div id="mapModal" style="display:none">
@@ -321,19 +316,24 @@ textarea{min-height:84px;resize:vertical}
       <div class="mapControls">
         <button id="mapConfirm" class="btn small">Confirm location</button>
         <button id="mapCancel" class="btn small ghost">Cancel</button>
-        <div style="margin-left:auto;color:#666;font-size:13px">Click map to place marker; drag marker to adjust</div>
+        <div style="margin-left:auto;color:#666;font-size:13px">Click map to place marker; drag to adjust</div>
       </div>
       <div style="margin-top:8px;color:#666;font-size:13px">Selected: <span id="mapSelLat">--</span>, <span id="mapSelLon">--</span></div>
     </div>
   </div>
 </div>
-
-<!-- Sync preview & Trash modals -->
 <div id="syncPreviewModal" style="display:none"></div>
 <div id="trashModal" style="display:none"></div>
 
 <script>
-/* ---------- Config & storage ---------- */
+/* ================================================================
+   Jeffrey's Exploration — full app JS
+   Layout: body = flex column (header | container | bottomNav)
+   Storage: in-memory + IndexedDB (no localStorage)
+   Sync: push TO Drive + pull FROM Drive
+   ================================================================ */
+
+/* ---------- Config ---------- */
 var CLIENT_ID = "58009415485-8qvhrvbasmrq5ugms01dv8vt7pneen6u.apps.googleusercontent.com";
 var SCOPES = "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive";
 var LOCAL_KEY = 'exploration_records_fixed_v1';
@@ -350,10 +350,9 @@ var tokenRequestInProgress = false;
 function showToast(msg, s){
   s = s || 3;
   var t = document.getElementById('toast');
-  t.innerText = msg;
-  t.classList.add('show');
+  t.innerText = msg; t.classList.add('show');
   clearTimeout(t._t);
-  t._t = setTimeout(function(){ t.classList.remove('show'); }, s*1000);
+  t._t = setTimeout(function(){ t.classList.remove('show'); }, s * 1000);
 }
 function escapeHtml(s){ return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function appendSyncLog(line){
@@ -364,39 +363,34 @@ function appendSyncLog(line){
   prev.push(entry);
   el.dataset.log = JSON.stringify(prev);
   el.innerHTML = prev.slice().reverse().map(function(l){ return '<div>' + escapeHtml(l) + '</div>'; }).join('');
-  console.info('[SYNC]', line);
 }
 
-/* ---------- In-memory store (backed by IndexedDB for persistence) ---------- */
+/* ---------- IndexedDB ---------- */
 var _memStore = {};
 
 function openDb(){
   if(window._dbPromise) return window._dbPromise;
-  window._dbPromise = new Promise(function(resolve,reject){
-    var req = indexedDB.open('exploration_app_db_fixed_v2',2);
+  window._dbPromise = new Promise(function(resolve, reject){
+    var req = indexedDB.open('exploration_app_db_fixed_v2', 2);
     req.onupgradeneeded = function(e){
       var db = e.target.result;
-      if(!db.objectStoreNames.contains('images')) db.createObjectStore('images',{keyPath:'id'});
-      if(!db.objectStoreNames.contains('kvstore')) db.createObjectStore('kvstore',{keyPath:'key'});
+      if(!db.objectStoreNames.contains('images')) db.createObjectStore('images', {keyPath:'id'});
+      if(!db.objectStoreNames.contains('kvstore')) db.createObjectStore('kvstore', {keyPath:'key'});
     };
     req.onsuccess = function(){ resolve(req.result); };
     req.onerror = function(){ reject(req.error); };
   });
   return window._dbPromise;
 }
-
-/* Persist a key-value pair to IndexedDB in background */
 function persistToIdb(key, value){
   openDb().then(function(db){
     var tx = db.transaction('kvstore','readwrite');
     tx.objectStore('kvstore').put({key: key, value: value});
-  }).catch(function(e){ console.warn('persistToIdb error', e); });
+  }).catch(function(e){ console.warn('persistToIdb', e); });
 }
-
-/* Load a key from IndexedDB */
 function loadFromIdb(key){
   return openDb().then(function(db){
-    return new Promise(function(res,rej){
+    return new Promise(function(res, rej){
       var tx = db.transaction('kvstore','readonly');
       var r = tx.objectStore('kvstore').get(key);
       r.onsuccess = function(){ res(r.result ? r.result.value : null); };
@@ -404,34 +398,24 @@ function loadFromIdb(key){
     });
   });
 }
-
-/* Load all persisted data into memory on startup */
 async function initMemStore(){
   try{
-    var recVal = await loadFromIdb(LOCAL_KEY);
-    if(recVal) _memStore[LOCAL_KEY] = recVal;
-    var qVal = await loadFromIdb(SYNC_QUEUE_KEY);
-    if(qVal) _memStore[SYNC_QUEUE_KEY] = qVal;
-  }catch(e){ console.warn('initMemStore error', e); }
+    var a = await loadFromIdb(LOCAL_KEY);  if(a) _memStore[LOCAL_KEY] = a;
+    var b = await loadFromIdb(SYNC_QUEUE_KEY); if(b) _memStore[SYNC_QUEUE_KEY] = b;
+  }catch(e){ console.warn('initMemStore', e); }
 }
-
-/* ---------- Local storage helpers (use in-memory + IDB) ---------- */
-function readLocalRecords(){ try{ return JSON.parse(_memStore[LOCAL_KEY] || '[]'); }catch(e){ return []; } }
-function writeLocalRecords(arr){ _memStore[LOCAL_KEY] = JSON.stringify(arr); persistToIdb(LOCAL_KEY, _memStore[LOCAL_KEY]); }
-function readSyncQueue(){ try{ return JSON.parse(_memStore[SYNC_QUEUE_KEY] || '[]'); }catch(e){ return []; } }
-function writeSyncQueue(q){ _memStore[SYNC_QUEUE_KEY] = JSON.stringify(q); persistToIdb(SYNC_QUEUE_KEY, _memStore[SYNC_QUEUE_KEY]); }
 async function idbPut(id, blob){
   var db = await openDb();
-  return new Promise(function(res,rej){
+  return new Promise(function(res, rej){
     var tx = db.transaction('images','readwrite');
-    tx.objectStore('images').put({id:id,blob:blob});
+    tx.objectStore('images').put({id:id, blob:blob});
     tx.oncomplete = function(){ res(true); };
     tx.onerror = function(){ rej(tx.error); };
   });
 }
 async function idbGet(id){
   var db = await openDb();
-  return new Promise(function(res,rej){
+  return new Promise(function(res, rej){
     var tx = db.transaction('images','readonly');
     var r = tx.objectStore('images').get(id);
     r.onsuccess = function(){ res(r.result ? r.result.blob : null); };
@@ -440,7 +424,7 @@ async function idbGet(id){
 }
 async function idbDelete(id){
   var db = await openDb();
-  return new Promise(function(res,rej){
+  return new Promise(function(res, rej){
     var tx = db.transaction('images','readwrite');
     tx.objectStore('images').delete(id);
     tx.oncomplete = function(){ res(true); };
@@ -448,26 +432,31 @@ async function idbDelete(id){
   });
 }
 
-/* ---------- Google Identity init (best-effort at load) ---------- */
+/* ---------- Local record helpers (in-memory + IDB) ---------- */
+function readLocalRecords(){ try{ return JSON.parse(_memStore[LOCAL_KEY] || '[]'); }catch(e){ return []; } }
+function writeLocalRecords(arr){ _memStore[LOCAL_KEY] = JSON.stringify(arr); persistToIdb(LOCAL_KEY, _memStore[LOCAL_KEY]); }
+function readSyncQueue(){ try{ return JSON.parse(_memStore[SYNC_QUEUE_KEY] || '[]'); }catch(e){ return []; } }
+function writeSyncQueue(q){ _memStore[SYNC_QUEUE_KEY] = JSON.stringify(q); persistToIdb(SYNC_QUEUE_KEY, _memStore[SYNC_QUEUE_KEY]); }
+
+/* ---------- Google Identity ---------- */
 function initTokenClientIfNeeded(){
   try{
     if(tokenClient) return tokenClient;
-    if(!(window.google && google.accounts && google.accounts.oauth2)) {
-      console.warn('GSI not available yet');
-      return null;
-    }
+    if(!(window.google && google.accounts && google.accounts.oauth2)){ return null; }
     tokenClient = google.accounts.oauth2.initTokenClient({
-      client_id: CLIENT_ID,
-      scope: SCOPES,
-      callback: function(resp) {
+      client_id: CLIENT_ID, scope: SCOPES,
+      callback: function(resp){
         tokenRequestInProgress = false;
         if(resp && resp.access_token){
           accessToken = resp.access_token;
           document.getElementById('signedDot').classList.add('green');
           document.getElementById('signedText').innerText = 'Signed';
           appendSyncLog('Signed in to Google');
-          showToast('Signed in', 2);
-          attemptSyncQueue().catch(function(){});
+          showToast('Signed in \u2014 pulling from Drive\u2026', 3);
+          /* After sign-in: pull from Drive first, then push queue */
+          pullFromDrive().then(function(){
+            return attemptSyncQueue();
+          }).catch(function(e){ console.warn('post-signin sync', e); });
         } else {
           showToast('Sign in cancelled or failed', 3);
         }
@@ -475,25 +464,17 @@ function initTokenClientIfNeeded(){
       }
     });
     return tokenClient;
-  }catch(e){
-    console.warn('initTokenClientIfNeeded error', e);
-    return null;
-  }
+  }catch(e){ console.warn('initTokenClient', e); return null; }
 }
-
-function setSignButtonsEnabled(enabled){
+function setSignButtonsEnabled(on){
   var btn = document.getElementById('btnSignGrantSettings');
   var retry = document.getElementById('btnSignRetrySettings');
-  if(enabled){
-    btn.disabled = false; btn.innerText = 'Sign in & Grant Drive Access'; btn.style.opacity = 1; btn.setAttribute('aria-busy','false');
-    retry.disabled = false; retry.style.opacity = 1; retry.setAttribute('aria-busy','false');
-  } else {
-    btn.disabled = true; btn.innerText = 'Signing...'; btn.style.opacity = 0.7; btn.setAttribute('aria-busy','true');
-    retry.disabled = true; retry.style.opacity = 0.6; retry.setAttribute('aria-busy','true');
-  }
+  btn.disabled = !on; btn.style.opacity = on ? 1 : 0.7;
+  retry.disabled = !on; retry.style.opacity = on ? 1 : 0.6;
+  btn.innerText = on ? 'Sign in & Grant Drive Access' : 'Signing\u2026';
 }
 
-/* ---------- Drive wrappers ---------- */
+/* ---------- Drive helpers ---------- */
 async function driveFetch(url, opts){
   opts = opts || {};
   if(!accessToken) throw new Error('No access token');
@@ -510,791 +491,733 @@ async function getOrCreateFolderId(folderName){
   var j = await res.json();
   if(j.files && j.files.length){ cachedFolderId = j.files[0].id; return cachedFolderId; }
   var createRes = await fetch('https://www.googleapis.com/drive/v3/files', {
-    method: 'POST',
-    headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name: folderName, mimeType: 'application/vnd.google-apps.folder' })
+    method:'POST',
+    headers:{'Authorization':'Bearer '+accessToken,'Content-Type':'application/json'},
+    body:JSON.stringify({name:folderName, mimeType:'application/vnd.google-apps.folder'})
   });
   if(!createRes.ok) throw new Error('Create folder failed: ' + createRes.status);
   var cj = await createRes.json();
-  cachedFolderId = cj.id;
-  return cachedFolderId;
+  cachedFolderId = cj.id; return cachedFolderId;
 }
 async function uploadJsonRecordToFolder(name, obj, folderId){
-  var metadata = { name: name + '.json', mimeType: 'application/json', parents: folderId ? [folderId] : undefined };
-  var blob = new Blob([JSON.stringify(obj)], { type: 'application/json' });
+  var meta = {name: name+'.json', mimeType:'application/json', parents: folderId?[folderId]:undefined};
+  var blob = new Blob([JSON.stringify(obj)],{type:'application/json'});
   var form = new FormData();
-  form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+  form.append('metadata', new Blob([JSON.stringify(meta)],{type:'application/json'}));
   form.append('file', blob);
-  var r = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', { method: 'POST', headers: { 'Authorization': 'Bearer ' + accessToken }, body: form });
+  var r = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',{method:'POST',headers:{'Authorization':'Bearer '+accessToken},body:form});
   if(!r.ok) throw new Error('Upload JSON failed: ' + r.status);
   return r.json();
 }
 async function uploadImageBlobToFolder(blob, nameHint, folderId){
-  var meta = { name: nameHint, mimeType: blob.type, parents: folderId ? [folderId] : undefined };
+  var meta = {name:nameHint, mimeType:blob.type, parents: folderId?[folderId]:undefined};
   var form = new FormData();
-  form.append('metadata', new Blob([JSON.stringify(meta)], { type: 'application/json' }));
+  form.append('metadata', new Blob([JSON.stringify(meta)],{type:'application/json'}));
   form.append('file', blob);
-  var r = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', { method: 'POST', headers: { 'Authorization': 'Bearer ' + accessToken }, body: form });
+  var r = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',{method:'POST',headers:{'Authorization':'Bearer '+accessToken},body:form});
   if(!r.ok) throw new Error('Upload image failed: ' + r.status);
   return r.json();
 }
 async function deleteDriveFile(driveId){
   if(!accessToken) throw new Error('Not signed');
-  var url = 'https://www.googleapis.com/drive/v3/files/' + encodeURIComponent(driveId);
-  var res = await driveFetch(url, { method: 'DELETE' });
+  var res = await driveFetch('https://www.googleapis.com/drive/v3/files/' + encodeURIComponent(driveId), {method:'DELETE'});
   if(res.status === 204) return true;
   var j = await res.json().catch(function(){ return null; });
-  throw new Error('Drive delete failed: ' + (j && j.error && j.error.message ? j.error.message : res.status));
+  throw new Error('Drive delete: ' + (j && j.error && j.error.message ? j.error.message : res.status));
 }
 
-/* ---------- Sync queue processing ---------- */
+/* ============================================================
+   PULL FROM DRIVE — download records & merge locally
+   ============================================================ */
+async function pullFromDrive(){
+  if(!accessToken){ showToast('Sign in first to pull from Drive', 3); return; }
+  appendSyncLog('Pulling records from Drive\u2026');
+  showToast('Pulling from Drive\u2026', 2);
+  try{
+    var folderId = await getOrCreateFolderId('EcologyApp_Records');
+    /* List all JSON files in the folder */
+    var pageToken = null;
+    var allFiles = [];
+    do {
+      var listUrl = 'https://www.googleapis.com/drive/v3/files?q=' +
+        encodeURIComponent("'" + folderId + "' in parents and mimeType='application/json' and trashed=false") +
+        '&fields=nextPageToken,files(id,name,modifiedTime)&pageSize=100';
+      if(pageToken) listUrl += '&pageToken=' + encodeURIComponent(pageToken);
+      var listRes = await driveFetch(listUrl);
+      if(!listRes.ok) throw new Error('List files failed: ' + listRes.status);
+      var listJson = await listRes.json();
+      allFiles = allFiles.concat(listJson.files || []);
+      pageToken = listJson.nextPageToken || null;
+    } while(pageToken);
+
+    if(!allFiles.length){
+      appendSyncLog('No records found on Drive');
+      showToast('No records on Drive', 2);
+      return;
+    }
+    appendSyncLog('Found ' + allFiles.length + ' file(s) on Drive');
+
+    /* Download each JSON file and merge */
+    var existingRecords = readLocalRecords();
+    var existingIds = {};
+    existingRecords.forEach(function(r){ existingIds[r.id] = true; });
+    var newCount = 0;
+    var updatedCount = 0;
+
+    for(var fi = 0; fi < allFiles.length; fi++){
+      var file = allFiles[fi];
+      try{
+        var dlUrl = 'https://www.googleapis.com/drive/v3/files/' + encodeURIComponent(file.id) + '?alt=media';
+        var dlRes = await driveFetch(dlUrl);
+        if(!dlRes.ok){ appendSyncLog('Failed to download ' + file.name); continue; }
+        var recData = await dlRes.json();
+        if(!recData || !recData.id){ appendSyncLog('Skipping invalid file ' + file.name); continue; }
+
+        /* Ensure it has required fields */
+        recData.driveId = file.id;
+        recData.status = 'uploaded';
+
+        if(existingIds[recData.id]){
+          /* Update existing record if the Drive version is newer */
+          var existingIdx = existingRecords.findIndex(function(r){ return r.id === recData.id; });
+          if(existingIdx !== -1){
+            var existing = existingRecords[existingIdx];
+            var existingTime = existing.updatedAt || existing.createdAt || '';
+            var remoteTime = recData.updatedAt || recData.createdAt || '';
+            if(remoteTime > existingTime){
+              /* Preserve local-only fields, update from Drive */
+              recData.images = recData.images || existing.images || [];
+              existingRecords[existingIdx] = Object.assign({}, existing, recData);
+              updatedCount++;
+            }
+          }
+        } else {
+          /* New record from Drive */
+          recData.images = recData.images || [];
+          existingRecords.push(recData);
+          existingIds[recData.id] = true;
+          newCount++;
+        }
+      }catch(e){
+        appendSyncLog('Error processing ' + file.name + ': ' + (e.message || e));
+      }
+    }
+
+    writeLocalRecords(existingRecords);
+    renderTree(); renderLibrary(); updateSpeciesCount();
+    var msg = 'Pull complete: ' + newCount + ' new, ' + updatedCount + ' updated';
+    appendSyncLog(msg);
+    showToast(msg, 3);
+    document.getElementById('syncDot').classList.add('green');
+    document.getElementById('syncText').innerText = 'Synced';
+  }catch(e){
+    console.error('pullFromDrive error', e);
+    appendSyncLog('Pull failed: ' + (e.message || e));
+    showToast('Pull from Drive failed', 3);
+  }
+}
+
+/* ---------- Sync queue processing (push) ---------- */
 async function attemptSyncQueue(){
   try{
-    if(!accessToken){ document.getElementById('syncDot').classList.remove('green'); document.getElementById('syncText').innerText = 'Sync'; appendSyncLog('Not signed \u2014 sync skipped'); return false; }
+    if(!accessToken){ document.getElementById('syncDot').classList.remove('green'); document.getElementById('syncText').innerText='Sync'; return false; }
     var queue = readSyncQueue();
-    if(!queue.length){ document.getElementById('syncDot').classList.add('green'); document.getElementById('syncText').innerText = 'Synced'; appendSyncLog('Sync queue empty'); return true; }
-    appendSyncLog('Starting sync of ' + queue.length + ' item(s)');
+    if(!queue.length){ document.getElementById('syncDot').classList.add('green'); document.getElementById('syncText').innerText='Synced'; return true; }
+    appendSyncLog('Syncing ' + queue.length + ' item(s)');
     var folderId = await getOrCreateFolderId('EcologyApp_Records');
     var queueCopy = queue.slice();
     for(var qi=0; qi<queueCopy.length; qi++){
       var recId = queueCopy[qi];
       var records = readLocalRecords();
       var rec = records.find(function(r){ return r.id===recId; });
-      if(!rec){ writeSyncQueue(readSyncQueue().filter(function(x){ return x!==recId; })); appendSyncLog('Removed missing record ' + recId); continue; }
+      if(!rec){ writeSyncQueue(readSyncQueue().filter(function(x){return x!==recId;})); continue; }
       for(var i=0;i<(rec.images||[]).length;i++){
         var imRef = rec.images[i];
         if(imRef.driveId) continue;
-        var blob = await idbGet(imRef.id).catch(function(){ return null; });
-        if(!blob){ appendSyncLog('Image ' + imRef.id + ' missing locally'); continue; }
-        var up = await uploadImageBlobToFolder(blob, (rec.scientificName||rec.id).replace(/\s+/g,'_') + '_img_' + Date.now() + '_' + i + '.' + ((imRef.name||'').split('.').pop()), folderId);
+        var blob = await idbGet(imRef.id).catch(function(){return null;});
+        if(!blob) continue;
+        var up = await uploadImageBlobToFolder(blob, (rec.scientificName||rec.id).replace(/\s+/g,'_')+'_img_'+Date.now()+'_'+i+'.'+((imRef.name||'').split('.').pop()), folderId);
         imRef.driveId = up.id;
-        appendSyncLog('Uploaded image ' + imRef.id + ' -> ' + up.id);
       }
-      var recToUpload = { id: rec.id, scientificName: rec.scientificName, commonName: rec.commonName, taxonomy: rec.taxonomy, location: rec.location, coords: rec.coords || null, behaviours: rec.behaviours, otherNotes: rec.otherNotes, images: (rec.images||[]).map(function(im){ return { driveId: im.driveId || null, name: im.name || null }; }), createdAt: rec.createdAt };
-      var uploaded = await uploadJsonRecordToFolder(rec.scientificName || rec.id, recToUpload, folderId);
-      var updated = readLocalRecords().map(function(r){ return r.id===recId ? Object.assign({}, r, {status:'uploaded', driveId: uploaded.id}) : r; });
+      var recToUpload = {id:rec.id,scientificName:rec.scientificName,commonName:rec.commonName,taxonomy:rec.taxonomy,location:rec.location,coords:rec.coords||null,behaviours:rec.behaviours,otherNotes:rec.otherNotes,images:(rec.images||[]).map(function(im){return{driveId:im.driveId||null,name:im.name||null};}),createdAt:rec.createdAt,updatedAt:rec.updatedAt||null};
+      var uploaded = await uploadJsonRecordToFolder(rec.scientificName||rec.id, recToUpload, folderId);
+      var updated = readLocalRecords().map(function(r){return r.id===recId?Object.assign({},r,{status:'uploaded',driveId:uploaded.id}):r;});
       writeLocalRecords(updated);
-      var newQueue = readSyncQueue().filter(function(x){ return x!==recId; });
-      writeSyncQueue(newQueue);
-      appendSyncLog('Uploaded ' + recId + ' -> ' + uploaded.id);
+      writeSyncQueue(readSyncQueue().filter(function(x){return x!==recId;}));
+      appendSyncLog('Uploaded ' + recId);
     }
     document.getElementById('syncDot').classList.add('green');
-    document.getElementById('syncText').innerText = 'Synced';
+    document.getElementById('syncText').innerText='Synced';
     appendSyncLog('Sync completed');
     return true;
   }catch(e){
-    console.error('Sync error', e);
-    appendSyncLog('Sync failed: ' + (e && e.message ? e.message : String(e)));
+    appendSyncLog('Sync failed: ' + (e&&e.message?e.message:e));
     document.getElementById('syncDot').classList.remove('green');
-    document.getElementById('syncText').innerText = 'Sync';
+    document.getElementById('syncText').innerText='Sync';
     return false;
   }
 }
 
-/* ---------- Map modal & Leaflet setup ---------- */
-var map = null;
-var mapMarker = null;
-var mapInitialized = false;
-var mapSelectedLat = null;
-var mapSelectedLon = null;
-
-function openMapModal(initialLat, initialLon){
-  var modal = document.getElementById('mapModal');
-  modal.style.display = 'block';
+/* ---------- Map ---------- */
+var map=null,mapMarker=null,mapInitialized=false,mapSelectedLat=null,mapSelectedLon=null;
+function openMapModal(lat, lon){
+  document.getElementById('mapModal').style.display='block';
   setTimeout(function(){
     if(!mapInitialized){
-      map = L.map('mapContainer', { center: [initialLat || 22.32, initialLon || 114.17], zoom: initialLat ? 14 : 6 });
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
-      map.on('click', function(e){
-        placeMapMarker(e.latlng.lat, e.latlng.lng);
-      });
-      mapInitialized = true;
-    } else {
-      map.invalidateSize();
-      if(initialLat && initialLon) map.setView([initialLat, initialLon], 14);
-    }
-    if(initialLat && initialLon) placeMapMarker(initialLat, initialLon);
-  }, 120);
+      map = L.map('mapContainer',{center:[lat||22.32,lon||114.17],zoom:lat?14:6});
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; OSM'}).addTo(map);
+      map.on('click',function(e){placeMapMarker(e.latlng.lat,e.latlng.lng);});
+      mapInitialized=true;
+    } else { map.invalidateSize(); if(lat&&lon) map.setView([lat,lon],14); }
+    if(lat&&lon) placeMapMarker(lat,lon);
+  },120);
 }
-function closeMapModal(){ document.getElementById('mapModal').style.display = 'none'; }
-function placeMapMarker(lat, lon){
-  mapSelectedLat = lat; mapSelectedLon = lon;
-  document.getElementById('mapSelLat').innerText = lat.toFixed(6);
-  document.getElementById('mapSelLon').innerText = lon.toFixed(6);
-  if(mapMarker){
-    mapMarker.setLatLng([lat, lon]);
-  } else {
-    mapMarker = L.marker([lat, lon], { draggable: true }).addTo(map);
-    mapMarker.on('dragend', function(e){ var p = e.target.getLatLng(); placeMapMarker(p.lat, p.lng); });
-  }
-  map.setView([lat, lon], 14);
+function closeMapModal(){document.getElementById('mapModal').style.display='none';}
+function placeMapMarker(lat,lon){
+  mapSelectedLat=lat;mapSelectedLon=lon;
+  document.getElementById('mapSelLat').innerText=lat.toFixed(6);
+  document.getElementById('mapSelLon').innerText=lon.toFixed(6);
+  if(mapMarker) mapMarker.setLatLng([lat,lon]);
+  else { mapMarker=L.marker([lat,lon],{draggable:true}).addTo(map); mapMarker.on('dragend',function(e){var p=e.target.getLatLng();placeMapMarker(p.lat,p.lng);}); }
+  map.setView([lat,lon],14);
 }
-
-/* ---------- Reverse geocode (Nominatim) ---------- */
-async function reverseGeocode(lat, lon){
+async function reverseGeocode(lat,lon){
   try{
-    var url = 'https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=' + encodeURIComponent(lat) + '&lon=' + encodeURIComponent(lon) + '&accept-language=zh-HK';
-    var res = await fetch(url, { headers: { 'User-Agent': 'JeffreyExplorationApp/1.0 (contact)' } });
-    if(!res.ok) return null;
-    var j = await res.json();
-    return j.display_name || null;
-  }catch(e){
-    console.warn('reverseGeocode failed', e);
-    return null;
-  }
+    var res=await fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat='+lat+'&lon='+lon+'&accept-language=zh-HK',{headers:{'User-Agent':'JeffreyExplorationApp/1.0'}});
+    if(!res.ok) return null; var j=await res.json(); return j.display_name||null;
+  }catch(e){return null;}
 }
-
-/* ---------- Use current GPS ---------- */
 function useCurrentLocation(){
-  if(!navigator.geolocation) { showToast('Geolocation not supported',3); return; }
-  showToast('Getting current location\u2026',2);
+  if(!navigator.geolocation){showToast('Geolocation not supported',3);return;}
+  showToast('Getting location\u2026',2);
   navigator.geolocation.getCurrentPosition(async function(pos){
-    var lat = pos.coords.latitude;
-    var lon = pos.coords.longitude;
-    document.getElementById('locLat').innerText = lat.toFixed(6);
-    document.getElementById('locLon').innerText = lon.toFixed(6);
-    document.getElementById('locationMeta').style.display = 'block';
-    var addr = await reverseGeocode(lat, lon);
-    if(addr) document.getElementById('locationInput').value = addr;
-    document.getElementById('locationInput').dataset.lat = lat;
-    document.getElementById('locationInput').dataset.lon = lon;
+    var lat=pos.coords.latitude,lon=pos.coords.longitude;
+    document.getElementById('locLat').innerText=lat.toFixed(6);
+    document.getElementById('locLon').innerText=lon.toFixed(6);
+    document.getElementById('locationMeta').style.display='block';
+    var addr=await reverseGeocode(lat,lon);
+    if(addr) document.getElementById('locationInput').value=addr;
+    document.getElementById('locationInput').dataset.lat=lat;
+    document.getElementById('locationInput').dataset.lon=lon;
     showToast('Location recorded',2);
-  }, function(err){
-    console.warn('geolocation error', err);
-    showToast('Unable to get location: ' + (err.message || 'permission denied'),4);
-  }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
+  },function(err){showToast('Location failed: '+(err.message||'denied'),4);},{enableHighAccuracy:true,timeout:10000,maximumAge:0});
 }
 
-/* ---------- Thumbs helper ---------- */
-function createThumbElement(imgRef){
-  var d = document.createElement('div'); d.className='thumbItem'; d.dataset.id = imgRef.id; if(imgRef.name) d.dataset.name = imgRef.name;
-  var img = document.createElement('img'); img.alt = imgRef.name || '';
-  if(imgRef.url) img.src = imgRef.url;
-  d.appendChild(img);
-  var controls = document.createElement('div'); controls.className='thumbControls';
-  var btnProfile = document.createElement('button'); btnProfile.className='thumbBtn profile'; btnProfile.title='Set as profile'; btnProfile.dataset.action='profile'; btnProfile.dataset.id = imgRef.id; btnProfile.innerText='\u2605';
-  var btnDel = document.createElement('button'); btnDel.className='thumbBtn'; btnDel.title='Delete'; btnDel.dataset.action='delete'; btnDel.dataset.id = imgRef.id; btnDel.innerText='\u2715';
-  controls.appendChild(btnProfile); controls.appendChild(btnDel);
-  d.appendChild(controls);
-  if(imgRef.isProfile){ var badge = document.createElement('div'); badge.className='thumbBadge'; badge.innerText='Profile'; d.appendChild(badge); d.classList.add('profileSelected'); window._selectedProfile = imgRef.id; }
+/* ---------- Thumbs ---------- */
+function createThumbElement(ref){
+  var d=document.createElement('div');d.className='thumbItem';d.dataset.id=ref.id;if(ref.name)d.dataset.name=ref.name;
+  var img=document.createElement('img');img.alt=ref.name||'';if(ref.url)img.src=ref.url;d.appendChild(img);
+  var c=document.createElement('div');c.className='thumbControls';
+  var bp=document.createElement('button');bp.className='thumbBtn profile';bp.dataset.action='profile';bp.dataset.id=ref.id;bp.innerText='\u2605';
+  var bd=document.createElement('button');bd.className='thumbBtn';bd.dataset.action='delete';bd.dataset.id=ref.id;bd.innerText='\u2715';
+  c.appendChild(bp);c.appendChild(bd);d.appendChild(c);
+  if(ref.isProfile){var badge=document.createElement('div');badge.className='thumbBadge';badge.innerText='Profile';d.appendChild(badge);d.classList.add('profileSelected');window._selectedProfile=ref.id;}
   return d;
 }
 
 /* ---------- Save / Edit ---------- */
 function populateEditForm(id){
-  var records = readLocalRecords(); var r = records.find(function(x){ return x.id===id; }); if(!r) return showToast('Record not found',2);
-  document.getElementById('speciesName').value = r.scientificName || '';
-  document.getElementById('commonName').value = r.commonName || '';
-  document.getElementById('taxKingdom').value = (r.taxonomy && r.taxonomy[0]) || '';
-  document.getElementById('taxPhylum').value = (r.taxonomy && r.taxonomy[1]) || '';
-  document.getElementById('taxClass').value = (r.taxonomy && r.taxonomy[2]) || '';
-  document.getElementById('taxOrder').value = (r.taxonomy && r.taxonomy[3]) || '';
-  document.getElementById('taxFamily').value = (r.taxonomy && r.taxonomy[4]) || '';
-  document.getElementById('taxGenus').value = (r.taxonomy && r.taxonomy[5]) || '';
-  document.getElementById('taxSpecies').value = (r.taxonomy && r.taxonomy[6]) || '';
-  document.getElementById('locationInput').value = r.location || '';
-  if(r.coords){ document.getElementById('locationInput').dataset.lat = r.coords.lat; document.getElementById('locationInput').dataset.lon = r.coords.lon; document.getElementById('locLat').innerText = r.coords.lat.toFixed(6); document.getElementById('locLon').innerText = r.coords.lon.toFixed(6); document.getElementById('locationMeta').style.display = 'block'; } else { document.getElementById('locationMeta').style.display = 'none'; delete document.getElementById('locationInput').dataset.lat; delete document.getElementById('locationInput').dataset.lon; }
-  document.getElementById('commonlyFoundInput').value = r.commonlyFound || '';
-  document.getElementById('behaviourInput').value = r.behaviours || '';
-  document.getElementById('otherNotesInput').value = r.otherNotes || '';
-  var thumbs = document.getElementById('thumbs'); thumbs.innerHTML = '';
-  window._tmpFiles = {}; window._deletedImages = []; window._selectedProfile = null;
-  (async function(){ for(var idx=0; idx<(r.images||[]).length; idx++){ var im = r.images[idx]; var blob = await idbGet(im.id).catch(function(){ return null; }); var url = blob ? URL.createObjectURL(blob) : ''; var item = createThumbElement({ id: im.id, url: url, name: im.name, isProfile: !!im.isProfile }); thumbs.appendChild(item); } })();
-  document.getElementById('saveBtnAdd').dataset.editing = id; document.getElementById('saveBtnAdd').innerText = 'Save Changes';
-  document.getElementById('saveLocalOnlyBtnAdd').dataset.editing = id; document.getElementById('saveLocalOnlyBtnAdd').innerText = 'Save Local Only';
+  var recs=readLocalRecords(),r=recs.find(function(x){return x.id===id;});
+  if(!r)return showToast('Not found',2);
+  document.getElementById('speciesName').value=r.scientificName||'';
+  document.getElementById('commonName').value=r.commonName||'';
+  var tax=r.taxonomy||[];
+  ['taxKingdom','taxPhylum','taxClass','taxOrder','taxFamily','taxGenus','taxSpecies'].forEach(function(fid,i){document.getElementById(fid).value=tax[i]||'';});
+  document.getElementById('locationInput').value=r.location||'';
+  if(r.coords){document.getElementById('locationInput').dataset.lat=r.coords.lat;document.getElementById('locationInput').dataset.lon=r.coords.lon;document.getElementById('locLat').innerText=r.coords.lat.toFixed(6);document.getElementById('locLon').innerText=r.coords.lon.toFixed(6);document.getElementById('locationMeta').style.display='block';}else{document.getElementById('locationMeta').style.display='none';delete document.getElementById('locationInput').dataset.lat;delete document.getElementById('locationInput').dataset.lon;}
+  document.getElementById('behaviourInput').value=r.behaviours||'';
+  document.getElementById('otherNotesInput').value=r.otherNotes||'';
+  var thumbs=document.getElementById('thumbs');thumbs.innerHTML='';
+  window._tmpFiles={};window._deletedImages=[];window._selectedProfile=null;
+  (async function(){for(var i=0;i<(r.images||[]).length;i++){var im=r.images[i];var blob=await idbGet(im.id).catch(function(){return null;});var url=blob?URL.createObjectURL(blob):'';thumbs.appendChild(createThumbElement({id:im.id,url:url,name:im.name,isProfile:!!im.isProfile}));}})();
+  document.getElementById('saveBtnAdd').dataset.editing=id;document.getElementById('saveBtnAdd').innerText='Save Changes';
+  document.getElementById('saveLocalOnlyBtnAdd').dataset.editing=id;document.getElementById('saveLocalOnlyBtnAdd').innerText='Save Local Only';
 }
-
 async function handleSaveFromAdd(opts){
-  opts = opts || {};
-  var autoUpload = opts.autoUpload !== false;
+  opts=opts||{};var autoUpload=opts.autoUpload!==false;
   try{
-    var editingId = document.getElementById('saveBtnAdd').dataset.editing || null;
-    var scientific = document.getElementById('speciesName').value.trim();
-    if(!scientific){ showToast('Please enter scientific name.', 3); return; }
-    var common = document.getElementById('commonName').value.trim();
-    var taxonomy = [
-      document.getElementById('taxKingdom').value.trim(),
-      document.getElementById('taxPhylum').value.trim(),
-      document.getElementById('taxClass').value.trim(),
-      document.getElementById('taxOrder').value.trim(),
-      document.getElementById('taxFamily').value.trim(),
-      document.getElementById('taxGenus').value.trim(),
-      document.getElementById('taxSpecies').value.trim()
-    ].filter(Boolean);
-    var locationText = document.getElementById('locationInput').value.trim();
-    var lat = document.getElementById('locationInput').dataset.lat ? parseFloat(document.getElementById('locationInput').dataset.lat) : null;
-    var lon = document.getElementById('locationInput').dataset.lon ? parseFloat(document.getElementById('locationInput').dataset.lon) : null;
-    var commonlyFound = document.getElementById('commonlyFoundInput').value.trim();
-    var behaviours = document.getElementById('behaviourInput').value.trim();
-    var otherNotes = document.getElementById('otherNotesInput').value.trim();
-
-    var thumbsEls = Array.from(document.querySelectorAll('.thumbItem'));
-    var imageRefsPlaceholder = thumbsEls.map(function(el, idx){
-      var id = el.dataset.id;
-      var isTmp = id && id.startsWith('tmp_');
-      if(isTmp){
-        return { id: id, name: el.dataset.name || 'image_' + idx, isProfile: el.classList.contains('profileSelected') || (window._selectedProfile === id), pending:true };
-      } else {
-        return { id: id, name: el.dataset.name || 'image_' + idx, isProfile: el.classList.contains('profileSelected') || (window._selectedProfile === id), pending:false };
-      }
-    });
+    var editingId=document.getElementById('saveBtnAdd').dataset.editing||null;
+    var scientific=document.getElementById('speciesName').value.trim();
+    if(!scientific){showToast('Please enter scientific name.',3);return;}
+    var common=document.getElementById('commonName').value.trim();
+    var taxonomy=['taxKingdom','taxPhylum','taxClass','taxOrder','taxFamily','taxGenus','taxSpecies'].map(function(id){return document.getElementById(id).value.trim();}).filter(Boolean);
+    var locationText=document.getElementById('locationInput').value.trim();
+    var lat=document.getElementById('locationInput').dataset.lat?parseFloat(document.getElementById('locationInput').dataset.lat):null;
+    var lon=document.getElementById('locationInput').dataset.lon?parseFloat(document.getElementById('locationInput').dataset.lon):null;
+    var behaviours=document.getElementById('behaviourInput').value.trim();
+    var otherNotes=document.getElementById('otherNotesInput').value.trim();
+    var thumbsEls=Array.from(document.querySelectorAll('.thumbItem'));
+    var imgRefs=thumbsEls.map(function(el,idx){var id=el.dataset.id;return{id:id,name:el.dataset.name||'image_'+idx,isProfile:el.classList.contains('profileSelected')||(window._selectedProfile===id),pending:!!(id&&id.startsWith('tmp_'))};});
 
     if(editingId){
-      var records = readLocalRecords(); var rec = records.find(function(r){ return r.id===editingId; }); if(!rec){ showToast('Record not found', 3); return; }
-      rec.scientificName = scientific; rec.commonName = common; rec.taxonomy = taxonomy; rec.location = locationText; rec.coords = lat && lon ? { lat: lat, lon: lon } : null; rec.commonlyFound = commonlyFound; rec.behaviours = behaviours; rec.otherNotes = otherNotes; rec.updatedAt = new Date().toISOString();
-      rec.images = imageRefsPlaceholder;
-      writeLocalRecords(records);
-      showToast('Saved locally (processing images in background)',2);
-      delete document.getElementById('saveBtnAdd').dataset.editing;
-      delete document.getElementById('saveLocalOnlyBtnAdd').dataset.editing;
-      document.getElementById('saveBtnAdd').innerText='Save Record';
-      document.getElementById('saveLocalOnlyBtnAdd').innerText='Save Local Only';
-      processImagesAndSync(rec.id, autoUpload).catch(function(err){ console.error('background process error', err); });
-      clearAddForm();
-      renderTree(); renderLibrary();
-      return;
+      var records=readLocalRecords();var rec=records.find(function(r){return r.id===editingId;});if(!rec){showToast('Not found',3);return;}
+      Object.assign(rec,{scientificName:scientific,commonName:common,taxonomy:taxonomy,location:locationText,coords:lat&&lon?{lat:lat,lon:lon}:null,behaviours:behaviours,otherNotes:otherNotes,images:imgRefs,updatedAt:new Date().toISOString()});
+      writeLocalRecords(records);showToast('Saved locally',2);
+      delete document.getElementById('saveBtnAdd').dataset.editing;delete document.getElementById('saveLocalOnlyBtnAdd').dataset.editing;
+      document.getElementById('saveBtnAdd').innerText='Save Record';document.getElementById('saveLocalOnlyBtnAdd').innerText='Save Local Only';
+      processImagesAndSync(rec.id,autoUpload).catch(function(){});clearAddForm();renderTree();renderLibrary();return;
     }
-
-    var recordId = 'rec_' + Date.now() + '_' + Math.floor(Math.random()*10000);
-    var record = { id: recordId, scientificName:scientific, commonName:common, taxonomy:taxonomy, location: locationText || null, coords: lat && lon ? { lat: lat, lon: lon } : null, commonlyFound: commonlyFound, behaviours:behaviours, otherNotes:otherNotes, images:imageRefsPlaceholder, createdAt:new Date().toISOString(), status:'pending' };
-    var allRecords = readLocalRecords(); allRecords.push(record); writeLocalRecords(allRecords);
-    showToast('Saved locally (processing images in background)',2);
-    processImagesAndSync(recordId, autoUpload).catch(function(err){ console.error('background process error', err); });
-    clearAddForm();
-    renderTree(); renderLibrary();
-  }catch(e){ console.error(e); showToast('Save failed',3); }
+    var recordId='rec_'+Date.now()+'_'+Math.floor(Math.random()*10000);
+    var record={id:recordId,scientificName:scientific,commonName:common,taxonomy:taxonomy,location:locationText||null,coords:lat&&lon?{lat:lat,lon:lon}:null,behaviours:behaviours,otherNotes:otherNotes,images:imgRefs,createdAt:new Date().toISOString(),status:'pending'};
+    var all=readLocalRecords();all.push(record);writeLocalRecords(all);
+    showToast('Saved locally',2);
+    processImagesAndSync(recordId,autoUpload).catch(function(){});clearAddForm();renderTree();renderLibrary();
+  }catch(e){console.error(e);showToast('Save failed',3);}
 }
-
 function clearAddForm(){
-  document.getElementById('speciesName').value = '';
-  document.getElementById('commonName').value = '';
-  document.getElementById('taxKingdom').value = '';
-  document.getElementById('taxPhylum').value = '';
-  document.getElementById('taxClass').value = '';
-  document.getElementById('taxOrder').value = '';
-  document.getElementById('taxFamily').value = '';
-  document.getElementById('taxGenus').value = '';
-  document.getElementById('taxSpecies').value = '';
-  document.getElementById('locationInput').value = '';
-  delete document.getElementById('locationInput').dataset.lat;
-  delete document.getElementById('locationInput').dataset.lon;
-  document.getElementById('locationMeta').style.display = 'none';
-  document.getElementById('commonlyFoundInput').value = '';
-  document.getElementById('behaviourInput').value = '';
-  document.getElementById('otherNotesInput').value = '';
-  document.getElementById('speciesImages').value = '';
-  document.getElementById('thumbs').innerHTML = '';
-  window._tmpFiles = {};
-  window._deletedImages = [];
-  window._selectedProfile = null;
+  ['speciesName','commonName','taxKingdom','taxPhylum','taxClass','taxOrder','taxFamily','taxGenus','taxSpecies','locationInput','behaviourInput','otherNotesInput'].forEach(function(id){document.getElementById(id).value='';});
+  delete document.getElementById('locationInput').dataset.lat;delete document.getElementById('locationInput').dataset.lon;
+  document.getElementById('locationMeta').style.display='none';
+  document.getElementById('speciesImages').value='';document.getElementById('thumbs').innerHTML='';
+  window._tmpFiles={};window._deletedImages=[];window._selectedProfile=null;
 }
-
-/* Background: compress tmp files, store to IDB, update record images, queue for sync */
 async function processImagesAndSync(recordId, autoUpload){
-  if(autoUpload === undefined) autoUpload = true;
+  if(autoUpload===undefined)autoUpload=true;
   try{
-    var recs = readLocalRecords(); var rec = recs.find(function(r){ return r.id===recordId; }); if(!rec) return;
-    var tmpFiles = window._tmpFiles || {};
-    var finalImageRefs = [];
-    for(var imgIdx=0; imgIdx<(rec.images || []).length; imgIdx++){
-      var imgRef = rec.images[imgIdx];
-      if(imgRef.pending && imgRef.id && imgRef.id.startsWith('tmp_')){
-        var tmp = tmpFiles[imgRef.id];
-        if(!tmp) continue;
-        try{
-          var compressed = await compressImageFile(tmp, 1200, 0.75);
-          var imgId = 'img_' + Date.now() + '_' + Math.floor(Math.random()*10000);
-          await idbPut(imgId, compressed);
-          finalImageRefs.push({ id: imgId, name: tmp.name || imgRef.name, isProfile: !!imgRef.isProfile });
-        }catch(e){
-          console.warn('image compress/store failed', e);
-        }
-      } else {
-        finalImageRefs.push({ id: imgRef.id, name: imgRef.name, isProfile: !!imgRef.isProfile, driveId: imgRef.driveId || null });
-      }
+    var recs=readLocalRecords();var rec=recs.find(function(r){return r.id===recordId;});if(!rec)return;
+    var tmpFiles=window._tmpFiles||{};var final=[];
+    for(var i=0;i<(rec.images||[]).length;i++){
+      var ref=rec.images[i];
+      if(ref.pending&&ref.id&&ref.id.startsWith('tmp_')){
+        var tmp=tmpFiles[ref.id];if(!tmp)continue;
+        try{var comp=await compressImageFile(tmp,1200,.75);var imgId='img_'+Date.now()+'_'+Math.floor(Math.random()*10000);await idbPut(imgId,comp);final.push({id:imgId,name:tmp.name||ref.name,isProfile:!!ref.isProfile});}catch(e){console.warn('img compress fail',e);}
+      } else { final.push({id:ref.id,name:ref.name,isProfile:!!ref.isProfile,driveId:ref.driveId||null}); }
     }
-    var updatedRecords = readLocalRecords().map(function(r){ return r.id===recordId ? Object.assign({}, r, {images: finalImageRefs}) : r; });
-    writeLocalRecords(updatedRecords);
-    appendSyncLog('Images processed for ' + recordId);
-    if(autoUpload && accessToken){
-      var q = readSyncQueue(); if(q.indexOf(recordId)===-1){ q.push(recordId); writeSyncQueue(q); appendSyncLog('Queued ' + recordId + ' for sync'); }
-      var ok = await attemptSyncQueue();
-      if(ok) showToast('Saved and synced',2); else showToast('Saved locally (queued)',2);
-    } else if(autoUpload){
-      var q2 = readSyncQueue(); if(q2.indexOf(recordId)===-1){ q2.push(recordId); writeSyncQueue(q2); appendSyncLog('Queued ' + recordId + ' (not signed)'); }
-      showToast('Saved locally (queued)',2);
-    } else {
-      appendSyncLog('Saved local-only ' + recordId);
+    writeLocalRecords(readLocalRecords().map(function(r){return r.id===recordId?Object.assign({},r,{images:final}):r;}));
+    if(autoUpload){
+      var q=readSyncQueue();if(q.indexOf(recordId)===-1){q.push(recordId);writeSyncQueue(q);}
+      if(accessToken) await attemptSyncQueue();
     }
-  }catch(e){
-    console.error('processImagesAndSync error', e);
-    appendSyncLog('Background processing failed: ' + (e && e.message ? e.message : String(e)));
-  } finally {
-    window._tmpFiles = {};
-  }
+  }catch(e){appendSyncLog('Process error: '+(e.message||e));}finally{window._tmpFiles={};}
 }
-
-/* image compression helper */
-async function compressImageFile(file, maxDim, quality){
-  maxDim = maxDim || 1200; quality = quality || 0.75;
+async function compressImageFile(file,maxDim,quality){
+  maxDim=maxDim||1200;quality=quality||.75;
   return new Promise(function(resolve,reject){
-    var fr = new FileReader(); var img = new Image();
-    fr.onload = function(){ img.src = fr.result; }; fr.onerror = function(){ reject(fr.error); };
-    img.onload = function(){ var w=img.width,h=img.height,nw=w,nh=h; if(Math.max(w,h)>maxDim){ if(w>h){ nw=maxDim; nh=Math.round(h*(maxDim/w)); } else { nh=maxDim; nw=Math.round(w*(maxDim/h)); } } var canvas=document.createElement('canvas'); canvas.width=nw; canvas.height=nh; var ctx=canvas.getContext('2d'); ctx.drawImage(img,0,0,nw,nh); canvas.toBlob(function(blob){ resolve(blob); },'image/jpeg',quality); };
-    img.onerror = function(){ reject(new Error('Image load error')); }; fr.readAsDataURL(file);
+    var fr=new FileReader(),img=new Image();
+    fr.onload=function(){img.src=fr.result;};fr.onerror=function(){reject(fr.error);};
+    img.onload=function(){var w=img.width,h=img.height,nw=w,nh=h;if(Math.max(w,h)>maxDim){if(w>h){nw=maxDim;nh=Math.round(h*(maxDim/w));}else{nh=maxDim;nw=Math.round(w*(maxDim/h));}}var c=document.createElement('canvas');c.width=nw;c.height=nh;c.getContext('2d').drawImage(img,0,0,nw,nh);c.toBlob(function(b){resolve(b);},'image/jpeg',quality);};
+    img.onerror=function(){reject(new Error('Image load error'));};fr.readAsDataURL(file);
   });
 }
 
-/* ---------- Tree (D3) rendering ---------- */
-var svg = d3.select('#treeSvg');
-var inner = svg.append('g').attr('class','innerGroup');
-var miniSvg = d3.select('#miniSvg');
-var treeLayout = d3.tree();
-var root = d3.hierarchy({name:'Life',children:[]});
+/* ---------- D3 Tree ---------- */
+var svg=d3.select('#treeSvg'),inner=svg.append('g').attr('class','innerGroup'),miniSvg=d3.select('#miniSvg'),treeLayout=d3.tree();
+var root=d3.hierarchy({name:'Life',children:[]});
 
 function buildTreeDataFromLocal(){
-  var records = readLocalRecords().filter(function(r){ return !r.deleted; });
-  var treeRoot = {name:'Life',children:[]};
-  for(var ri=0; ri<records.length; ri++){
-    var r = records[ri];
-    var levels = r.taxonomy && r.taxonomy.length ? r.taxonomy : ['Unclassified'];
-    var cursor = treeRoot;
-    for(var li=0; li<levels.length; li++){
-      var lvl = levels[li];
-      var child = (cursor.children || []).find(function(c){ return c.name===lvl; });
-      if(!child){ child = {name: lvl, children: []}; cursor.children = cursor.children || []; cursor.children.push(child); }
-      cursor = child;
-    }
-    cursor.children = cursor.children || [];
-    cursor.children.push({name: r.scientificName || r.id, species:true, recordId: r.id});
-  }
-  return treeRoot;
+  var recs=readLocalRecords().filter(function(r){return!r.deleted;});
+  var rt={name:'Life',children:[]};
+  recs.forEach(function(r){
+    var levels=r.taxonomy&&r.taxonomy.length?r.taxonomy:['Unclassified'];var cur=rt;
+    levels.forEach(function(lvl){var ch=(cur.children||[]).find(function(c){return c.name===lvl;});if(!ch){ch={name:lvl,children:[]};cur.children=cur.children||[];cur.children.push(ch);}cur=ch;});
+    cur.children=cur.children||[];cur.children.push({name:r.scientificName||r.id,species:true,recordId:r.id});
+  });
+  if(!rt.children||!rt.children.length) return{name:'Life',children:[{name:'No records yet',children:[]}]};
+  return rt;
 }
-function collapseAll(d, depth, maxDepth){ depth = depth || 0; maxDepth = maxDepth || 2; if(d.children){ d.children.forEach(function(c){ collapseAll(c, depth+1, maxDepth); }); if(depth>=maxDepth){ d._children = d.children; d.children = null; } } }
-function truncate(s,n){ if(!s) return ''; return s.length>n? s.slice(0,n-1)+'\u2026':s; }
-
+function collapseAll(d,depth,max){depth=depth||0;max=max||2;if(d.children){d.children.forEach(function(c){collapseAll(c,depth+1,max);});if(depth>=max){d._children=d.children;d.children=null;}}}
+function truncate(s,n){if(!s)return'';return s.length>n?s.slice(0,n-1)+'\u2026':s;}
 function renderTree(){
   try{
-    var data = buildTreeDataFromLocal();
-    root = d3.hierarchy(data);
-    collapseAll(root,0,2);
-    var svgW = svg.node().clientWidth; var svgH = +svg.attr('height');
-    treeLayout.size([svgW-40, svgH-40]); treeLayout(root);
-    var links = inner.selectAll('.link').data(root.links(), function(d){ return d.target.data.name + '_' + d.target.depth; });
-    links.join(
-      function(enter){ return enter.append('path').attr('class','link').attr('d', function(d){ return linkPath(d); }).attr('fill','none').attr('stroke','#cfeee0').attr('stroke-width',2); },
-      function(update){ return update.attr('d', function(d){ return linkPath(d); }); },
-      function(exit){ return exit.remove(); }
+    var data=buildTreeDataFromLocal();root=d3.hierarchy(data);collapseAll(root,0,2);
+    var svgW=svg.node().clientWidth,svgH=+svg.attr('height');
+    treeLayout.size([svgW-40,svgH-40]);treeLayout(root);
+    inner.selectAll('.link').data(root.links(),function(d){return d.target.data.name+'_'+d.target.depth;}).join(
+      function(en){return en.append('path').attr('class','link').attr('d',linkPath).attr('fill','none').attr('stroke','#cfeee0').attr('stroke-width',2);},
+      function(up){return up.attr('d',linkPath);},
+      function(ex){return ex.remove();}
     );
-    var nodes = inner.selectAll('.node').data(root.descendants(), function(d){ return d.data.name + '_' + d.depth; });
-    var nodeEnter = nodes.enter().append('g').attr('class','node').attr('transform', function(d){ return 'translate(' + d.x + ',' + d.y + ')'; });
-    nodeEnter.append('circle').attr('r', function(d){ return d.children || d._children ? 6 : 5; }).attr('fill', function(d){ return d.children || d._children ? 'var(--accent)' : '#fff'; }).attr('stroke','var(--accent)');
-    nodeEnter.append('text').attr('x',0).attr('y',-10).attr('text-anchor','middle').text(function(d){ return truncate(d.data.name,28); }).style('font-size','13px');
-    nodes.merge(nodeEnter).transition().duration(200).attr('transform', function(d){ return 'translate(' + d.x + ',' + d.y + ')'; });
-    inner.selectAll('.node').on('click', function(event,d){ event.stopPropagation(); if(d.children){ d._children = d.children; d.children = null; } else { d.children = d._children; d._children = null; } renderTree(); if(d.data.species && d.data.recordId){ showSection('#pageLibrary'); setTimeout(function(){ showLocalRecord(d.data.recordId); }, 300); } });
-    updateMinimap();
-    updateSpeciesCount();
-  }catch(e){ console.warn('renderTree error', e); }
+    var nodes=inner.selectAll('.node').data(root.descendants(),function(d){return d.data.name+'_'+d.depth;});
+    var ne=nodes.enter().append('g').attr('class','node').attr('transform',function(d){return'translate('+d.x+','+d.y+')';});
+    ne.append('circle').attr('r',function(d){return d.children||d._children?6:5;}).attr('fill',function(d){return d.children||d._children?'var(--accent)':'#fff';}).attr('stroke','var(--accent)');
+    ne.append('text').attr('x',0).attr('y',-10).attr('text-anchor','middle').text(function(d){return truncate(d.data.name,28);}).style('font-size','13px');
+    nodes.merge(ne).transition().duration(200).attr('transform',function(d){return'translate('+d.x+','+d.y+')';});
+    inner.selectAll('.node').on('click',function(ev,d){ev.stopPropagation();if(d.children){d._children=d.children;d.children=null;}else{d.children=d._children;d._children=null;}renderTree();if(d.data.species&&d.data.recordId){showSection('#pageLibrary');}});
+    updateMinimap();updateSpeciesCount();
+  }catch(e){console.warn('renderTree',e);}
 }
-function linkPath(d){ var x1=d.source.x,y1=d.source.y,x2=d.target.x,y2=d.target.y,midY=(y1+y2)/2; return 'M'+x1+','+y1+' C'+x1+','+midY+' '+x2+','+midY+' '+x2+','+y2; }
-var zoom = d3.zoom().scaleExtent([0.4,6]).on('zoom', function(event){ inner.attr('transform', event.transform); updateMinimapViewport(event.transform); });
-svg.call(zoom).on('dblclick.zoom', null);
-document.getElementById('zoomIn').addEventListener('click', function(){ svg.transition().call(zoom.scaleBy, 1.2); });
-document.getElementById('zoomOut').addEventListener('click', function(){ svg.transition().call(zoom.scaleBy, 1/1.2); });
-document.getElementById('resetView').addEventListener('click', function(){ fitToScreen(); });
-function fitToScreen(){ var nodes = root.descendants(); if(!nodes.length) return; var minX=d3.min(nodes,function(d){ return d.x; }), maxX=d3.max(nodes,function(d){ return d.x; }), minY=d3.min(nodes,function(d){ return d.y; }), maxY=d3.max(nodes,function(d){ return d.y; }); var contentW=maxX-minX+200, contentH=maxY-minY+200; var svgW=svg.node().clientWidth, svgH=+svg.attr('height'); var scale=Math.min(svgW/contentW, svgH/contentH,1); var tx=(svgW - scale*(minX+maxX))/2; var ty=(svgH - scale*(minY+maxY))/2; var t = d3.zoomIdentity.translate(tx,ty).scale(scale); svg.transition().duration(600).call(zoom.transform, t); }
-function updateMinimap(){ var nodes = root.descendants(); if(!nodes.length) return; var maxX=d3.max(nodes,function(d){ return d.x; }), maxY=d3.max(nodes,function(d){ return d.y; }), minX=d3.min(nodes,function(d){ return d.x; }), minY=d3.min(nodes,function(d){ return d.y; }); var w = Math.max(1, maxX-minX); var h = Math.max(1, maxY-minY); miniSvg.attr('viewBox', minX+' '+minY+' '+w+' '+h); miniSvg.selectAll('*').remove(); miniSvg.selectAll('circle').data(nodes).enter().append('circle').attr('cx',function(d){ return d.x; }).attr('cy',function(d){ return d.y; }).attr('r',1.2).attr('fill','#cfeee0'); miniSvg.append('rect').attr('id','miniViewport').attr('x',0).attr('y',0).attr('width',10).attr('height',10).attr('fill','rgba(43,184,106,0.12)').attr('stroke','#2fb86a'); updateMinimapViewport(); }
-function updateMinimapViewport(transform){ var t = transform || d3.zoomTransform(svg.node()); var svgW = svg.node().clientWidth, svgH = +svg.attr('height'); var x0=(0 - t.x)/t.k, y0=(0 - t.y)/t.k, x1=(svgW - t.x)/t.k, y1=(svgH - t.y)/t.k; miniSvg.select('#miniViewport').attr('x', x0).attr('y', y0).attr('width', Math.max(1, x1-x0)).attr('height', Math.max(1, y1-y0)); }
+function linkPath(d){var x1=d.source.x,y1=d.source.y,x2=d.target.x,y2=d.target.y,m=(y1+y2)/2;return'M'+x1+','+y1+' C'+x1+','+m+' '+x2+','+m+' '+x2+','+y2;}
+var zoom=d3.zoom().scaleExtent([.4,6]).on('zoom',function(ev){inner.attr('transform',ev.transform);updateMinimapViewport(ev.transform);});
+svg.call(zoom).on('dblclick.zoom',null);
+document.getElementById('zoomIn').addEventListener('click',function(){svg.transition().call(zoom.scaleBy,1.2);});
+document.getElementById('zoomOut').addEventListener('click',function(){svg.transition().call(zoom.scaleBy,1/1.2);});
+document.getElementById('resetView').addEventListener('click',fitToScreen);
+function fitToScreen(){var ns=root.descendants();if(!ns.length)return;var x0=d3.min(ns,function(d){return d.x;}),x1=d3.max(ns,function(d){return d.x;}),y0=d3.min(ns,function(d){return d.y;}),y1=d3.max(ns,function(d){return d.y;});var cw=x1-x0+200,ch=y1-y0+200,sw=svg.node().clientWidth,sh=+svg.attr('height'),sc=Math.min(sw/cw,sh/ch,1);var t=d3.zoomIdentity.translate((sw-sc*(x0+x1))/2,(sh-sc*(y0+y1))/2).scale(sc);svg.transition().duration(600).call(zoom.transform,t);}
+function updateMinimap(){var ns=root.descendants();if(!ns.length)return;var x0=d3.min(ns,function(d){return d.x;}),x1=d3.max(ns,function(d){return d.x;}),y0=d3.min(ns,function(d){return d.y;}),y1=d3.max(ns,function(d){return d.y;});var w=Math.max(1,x1-x0),h=Math.max(1,y1-y0);miniSvg.attr('viewBox',x0+' '+y0+' '+w+' '+h);miniSvg.selectAll('*').remove();miniSvg.selectAll('circle').data(ns).enter().append('circle').attr('cx',function(d){return d.x;}).attr('cy',function(d){return d.y;}).attr('r',1.2).attr('fill','#cfeee0');miniSvg.append('rect').attr('id','miniViewport').attr('x',0).attr('y',0).attr('width',10).attr('height',10).attr('fill','rgba(43,184,106,.12)').attr('stroke','#2fb86a');updateMinimapViewport();}
+function updateMinimapViewport(tf){var t=tf||d3.zoomTransform(svg.node());var sw=svg.node().clientWidth,sh=+svg.attr('height');var a=(0-t.x)/t.k,b=(0-t.y)/t.k,c=(sw-t.x)/t.k,dd=(sh-t.y)/t.k;miniSvg.select('#miniViewport').attr('x',a).attr('y',b).attr('width',Math.max(1,c-a)).attr('height',Math.max(1,dd-b));}
 
-/* ---------- Library rendering ---------- */
+/* ---------- Library ---------- */
 function renderLibrary(){
-  var container = document.getElementById('libraryContent'); container.innerHTML = '';
-  var records = readLocalRecords().filter(function(r){ return !r.deleted; });
-  if(!records.length){ container.innerHTML = '<div>No records yet</div>'; return; }
-  records.sort(function(a,b){ return (a.scientificName||'').localeCompare(b.scientificName||''); });
-  records.forEach(function(s){
-    var card = document.createElement('div'); card.className='card'; card.style.display='flex'; card.style.gap='12px'; card.style.alignItems='center';
-
-    // Profile picture area
-    var picWrap = document.createElement('div');
-    picWrap.style.cssText = 'flex:0 0 64px;width:64px;height:64px;border-radius:12px;overflow:hidden;background:#eaf9ef;display:flex;align-items:center;justify-content:center;border:1px solid #daf0de;';
-    var profileImg = (s.images || []).find(function(im){ return im.isProfile; }) || (s.images && s.images[0]) || null;
-    if(profileImg && profileImg.id){
-      var imgEl = document.createElement('img');
-      imgEl.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
-      imgEl.alt = s.scientificName || '';
-      picWrap.appendChild(imgEl);
-      // Load from IDB async
-      (function(el, imgId){
-        idbGet(imgId).then(function(blob){
-          if(blob) el.src = URL.createObjectURL(blob);
-          else el.parentNode.innerHTML = '<div style="color:#aaa;font-size:24px;text-align:center;">&#127793;</div>';
-        }).catch(function(){
-          el.parentNode.innerHTML = '<div style="color:#aaa;font-size:24px;text-align:center;">&#127793;</div>';
-        });
-      })(imgEl, profileImg.id);
-    } else {
-      picWrap.innerHTML = '<div style="color:#aaa;font-size:24px;text-align:center;">&#127793;</div>';
-    }
-    card.appendChild(picWrap);
-
-    // Info area
-    var mid = document.createElement('div'); mid.style.cssText = 'flex:1;min-width:0;';
-    var title = document.createElement('div'); title.style.fontWeight='800'; title.style.color='#145a3f'; title.innerText = s.scientificName || 'Unnamed';
-    var sub = document.createElement('div'); sub.style.color='#666'; sub.innerText = s.commonName || '';
-    mid.appendChild(title); mid.appendChild(sub);
-    if(s.commonlyFound){
-      var cfDiv = document.createElement('div'); cfDiv.style.cssText='color:#666;font-size:13px;margin-top:4px;';
-      cfDiv.innerHTML = 'Commonly found: ' + escapeHtml(s.commonlyFound);
-      mid.appendChild(cfDiv);
-    }
-    var loc = document.createElement('div'); loc.style.color='#666'; loc.style.fontSize='13px'; loc.style.marginTop='4px';
-    if(s.coords && s.coords.lat && s.coords.lon){
-      loc.innerHTML = 'Location: ' + (s.location ? escapeHtml(s.location) + ' \u2014 ' : '') + '<strong>' + s.coords.lat.toFixed(6) + ', ' + s.coords.lon.toFixed(6) + '</strong>';
-    } else {
-      loc.innerHTML = 'Location: ' + (s.location ? escapeHtml(s.location) : '\u2014');
-    }
-    mid.appendChild(loc);
-    card.appendChild(mid);
-
-    // Action buttons
-    var right = document.createElement('div'); right.style.display='flex'; right.style.flexDirection='column'; right.style.gap='8px'; right.style.flexShrink='0';
-    var editBtn = document.createElement('button'); editBtn.className='btn small'; editBtn.innerText='Edit';
-    editBtn.addEventListener('click', (function(recId){ return function(){ populateEditForm(recId); showSection('#pageAdd'); setTimeout(function(){ document.getElementById('pageAdd').scrollIntoView({behavior:'smooth', block:'start'}); },120); }; })(s.id));
-    var delBtn = document.createElement('button'); delBtn.className='btn small ghost'; delBtn.innerText='Delete';
-    delBtn.addEventListener('click', (function(recId){ return function(){ softDeleteRecord(recId); }; })(s.id));
-    right.appendChild(editBtn); right.appendChild(delBtn);
-    card.appendChild(right);
-    container.appendChild(card);
+  var el=document.getElementById('libraryContent');el.innerHTML='';
+  var recs=readLocalRecords().filter(function(r){return!r.deleted;});
+  if(!recs.length){el.innerHTML='<div>No records yet</div>';return;}
+  recs.sort(function(a,b){return(a.scientificName||'').localeCompare(b.scientificName||'');});
+  recs.forEach(function(s){
+    var card=document.createElement('div');card.className='card';card.style.cssText='display:flex;justify-content:space-between;align-items:center';
+    var left=document.createElement('div');
+    var t=document.createElement('div');t.style.cssText='font-weight:800;color:#145a3f';t.innerText=s.scientificName||'Unnamed';
+    var sub=document.createElement('div');sub.style.color='#666';sub.innerText=s.commonName||'';
+    var loc=document.createElement('div');loc.style.cssText='color:#666;font-size:13px;margin-top:6px';
+    if(s.coords&&s.coords.lat) loc.innerHTML='Location: '+(s.location?escapeHtml(s.location)+' \u2014 ':'')+'<strong>'+s.coords.lat.toFixed(6)+', '+s.coords.lon.toFixed(6)+'</strong>';
+    else loc.innerHTML='Location: '+(s.location?escapeHtml(s.location):'\u2014');
+    left.appendChild(t);left.appendChild(sub);left.appendChild(loc);
+    var right=document.createElement('div');right.style.cssText='display:flex;flex-direction:column;gap:8px;flex-shrink:0';
+    var eb=document.createElement('button');eb.className='btn small';eb.innerText='Edit';
+    eb.addEventListener('click',(function(rid){return function(){populateEditForm(rid);showSection('#pageAdd');};})(s.id));
+    var db=document.createElement('button');db.className='btn small ghost';db.innerText='Delete';
+    db.addEventListener('click',(function(rid){return function(){softDeleteRecord(rid);};})(s.id));
+    right.appendChild(eb);right.appendChild(db);
+    card.appendChild(left);card.appendChild(right);el.appendChild(card);
   });
 }
 
-/* ---------- Soft delete & Trash ---------- */
+/* ---------- Trash ---------- */
 function softDeleteRecord(id){
-  var records = readLocalRecords();
-  var rec = records.find(function(r){ return r.id===id; });
-  if(!rec) return showToast('Record not found',2);
-  rec.deleted = true; rec.deletedAt = new Date().toISOString();
-  writeLocalRecords(records);
-  appendSyncLog('Moved ' + id + ' to Trash');
-  renderTree(); renderLibrary();
+  var recs=readLocalRecords();var r=recs.find(function(x){return x.id===id;});
+  if(!r)return showToast('Not found',2);
+  r.deleted=true;r.deletedAt=new Date().toISOString();writeLocalRecords(recs);
+  appendSyncLog('Trashed '+id);renderTree();renderLibrary();
 }
 function openTrashModal(){
-  var modalRoot = document.getElementById('trashModal');
-  modalRoot.innerHTML = '';
-  var backdrop = document.createElement('div'); backdrop.className='modalBackdrop';
-  var modal = document.createElement('div'); modal.className='modal';
-  modal.innerHTML = '<h3 style="margin-top:0">Trash</h3><p style="color:#666">Deleted records are retained for ' + TRASH_RETENTION_DAYS + ' days. You can restore or permanently delete.</p>';
-  var list = document.createElement('div'); list.style.display='grid'; list.style.gap='8px';
-  var records = readLocalRecords().filter(function(r){ return r.deleted; });
-  if(!records.length){ list.innerHTML = '<div>No items in Trash</div>'; }
-  records.forEach(function(r){
-    var row = document.createElement('div'); row.style.display='flex'; row.style.justifyContent='space-between'; row.style.alignItems='center'; row.style.padding='8px'; row.style.border='1px solid #eef6ef'; row.style.borderRadius='8px';
-    var left = document.createElement('div'); left.innerHTML = '<div style="font-weight:800">' + escapeHtml(r.scientificName||r.id) + '</div><div style="color:#666">' + escapeHtml(r.commonName||'') + '</div><div style="color:#999;font-size:12px">Deleted: ' + new Date(r.deletedAt).toLocaleString() + '</div>';
-    var right = document.createElement('div'); right.style.display='flex'; right.style.gap='8px';
-    var btnRestore = document.createElement('button'); btnRestore.className='btn small'; btnRestore.innerText='Restore';
-    btnRestore.addEventListener('click', (function(recId){ return function(){ restoreFromTrash(recId); modalRoot.innerHTML=''; modalRoot.style.display='none'; }; })(r.id));
-    var btnPerm = document.createElement('button'); btnPerm.className='btn small ghost'; btnPerm.innerText='Delete permanently';
-    btnPerm.addEventListener('click', (function(recId){ return function(){ permanentDelete(recId); modalRoot.innerHTML=''; modalRoot.style.display='none'; }; })(r.id));
-    right.appendChild(btnRestore); right.appendChild(btnPerm);
-    row.appendChild(left); row.appendChild(right);
-    list.appendChild(row);
+  var root=document.getElementById('trashModal');root.innerHTML='';
+  var bd=document.createElement('div');bd.className='modalBackdrop';
+  var m=document.createElement('div');m.className='modal';
+  m.innerHTML='<h3 style="margin-top:0">Trash</h3><p style="color:#666">Deleted records kept '+TRASH_RETENTION_DAYS+' days.</p>';
+  var list=document.createElement('div');list.style.cssText='display:grid;gap:8px';
+  var recs=readLocalRecords().filter(function(r){return r.deleted;});
+  if(!recs.length) list.innerHTML='<div>No items in Trash</div>';
+  recs.forEach(function(r){
+    var row=document.createElement('div');row.style.cssText='display:flex;justify-content:space-between;align-items:center;padding:8px;border:1px solid #eef6ef;border-radius:8px';
+    var l=document.createElement('div');l.innerHTML='<div style="font-weight:800">'+escapeHtml(r.scientificName||r.id)+'</div><div style="color:#999;font-size:12px">Deleted: '+new Date(r.deletedAt).toLocaleString()+'</div>';
+    var rt=document.createElement('div');rt.style.cssText='display:flex;gap:8px';
+    var br=document.createElement('button');br.className='btn small';br.innerText='Restore';
+    br.addEventListener('click',(function(rid){return function(){restoreFromTrash(rid);root.innerHTML='';root.style.display='none';};})(r.id));
+    var bp=document.createElement('button');bp.className='btn small ghost';bp.innerText='Delete forever';
+    bp.addEventListener('click',(function(rid){return function(){permanentDelete(rid);root.innerHTML='';root.style.display='none';};})(r.id));
+    rt.appendChild(br);rt.appendChild(bp);row.appendChild(l);row.appendChild(rt);list.appendChild(row);
   });
-  modal.appendChild(list);
-  var footer = document.createElement('div'); footer.style.display='flex'; footer.style.justifyContent='flex-end'; footer.style.marginTop='12px';
-  var btnClose = document.createElement('button'); btnClose.className='btn small ghost'; btnClose.innerText='Close';
-  btnClose.addEventListener('click', function(){ modalRoot.innerHTML=''; modalRoot.style.display='none'; });
-  footer.appendChild(btnClose);
-  modal.appendChild(footer);
-  backdrop.appendChild(modal);
-  modalRoot.appendChild(backdrop);
-  modalRoot.style.display='block';
+  m.appendChild(list);
+  var ft=document.createElement('div');ft.style.cssText='display:flex;justify-content:flex-end;margin-top:12px';
+  var bc=document.createElement('button');bc.className='btn small ghost';bc.innerText='Close';
+  bc.addEventListener('click',function(){root.innerHTML='';root.style.display='none';});
+  ft.appendChild(bc);m.appendChild(ft);bd.appendChild(m);root.appendChild(bd);root.style.display='block';
 }
 function restoreFromTrash(id){
-  var records = readLocalRecords();
-  var rec = records.find(function(r){ return r.id===id; });
-  if(!rec) return showToast('Record not found',2);
-  delete rec.deleted; delete rec.deletedAt;
-  writeLocalRecords(records);
-  appendSyncLog('Restored ' + id + ' from Trash');
-  renderTree(); renderLibrary();
+  var recs=readLocalRecords();var r=recs.find(function(x){return x.id===id;});if(!r)return;
+  delete r.deleted;delete r.deletedAt;writeLocalRecords(recs);renderTree();renderLibrary();
 }
 async function permanentDelete(id){
-  var records = readLocalRecords();
-  var rec = records.find(function(r){ return r.id===id; });
-  if(!rec) return showToast('Record not found',2);
-  if(accessToken){
-    try{
-      if(rec.driveId){ await deleteDriveFile(rec.driveId); appendSyncLog('Deleted remote record file ' + rec.driveId); }
-      for(var i=0; i<(rec.images||[]).length; i++){ var im = rec.images[i]; if(im.driveId){ try{ await deleteDriveFile(im.driveId); appendSyncLog('Deleted remote image ' + im.driveId); }catch(e){ appendSyncLog('Failed to delete remote image ' + im.driveId); } } }
-    }catch(e){
-      appendSyncLog('Permanent delete remote attempt failed: ' + e.message);
-    }
-  }
-  for(var j=0; j<(rec.images||[]).length; j++){ try{ await idbDelete(rec.images[j].id); }catch(e){ /* noop */ } }
-  var updated = records.filter(function(r){ return r.id!==id; });
-  writeLocalRecords(updated);
-  appendSyncLog('Permanently deleted ' + id + ' locally');
-  renderTree(); renderLibrary();
+  var recs=readLocalRecords();var r=recs.find(function(x){return x.id===id;});if(!r)return;
+  if(accessToken){try{if(r.driveId)await deleteDriveFile(r.driveId);for(var i=0;i<(r.images||[]).length;i++){if(r.images[i].driveId)try{await deleteDriveFile(r.images[i].driveId);}catch(e){}}}catch(e){}}
+  for(var j=0;j<(r.images||[]).length;j++){try{await idbDelete(r.images[j].id);}catch(e){}}
+  writeLocalRecords(recs.filter(function(x){return x.id!==id;}));renderTree();renderLibrary();
 }
-
-/* Auto purge Trash older than retention days */
 async function autoPurgeTrash(){
   try{
-    var records = readLocalRecords();
-    var now = Date.now();
-    var retentionMs = TRASH_RETENTION_DAYS * 24 * 3600 * 1000;
-    var toPurge = records.filter(function(r){ return r.deleted && r.deletedAt && (now - new Date(r.deletedAt).getTime() > retentionMs); });
-    for(var pi=0; pi<toPurge.length; pi++){
-      var r = toPurge[pi];
-      appendSyncLog('Auto-purging ' + r.id + ' from Trash (older than ' + TRASH_RETENTION_DAYS + ' days)');
-      if(accessToken){
-        try{
-          if(r.driveId){ await deleteDriveFile(r.driveId); appendSyncLog('Deleted remote record file ' + r.driveId); }
-          for(var i=0; i<(r.images||[]).length; i++){ var im = r.images[i]; if(im.driveId){ try{ await deleteDriveFile(im.driveId); appendSyncLog('Deleted remote image ' + im.driveId); }catch(e){ appendSyncLog('Failed to delete remote image ' + im.driveId); } } }
-        }catch(e){
-          appendSyncLog('Auto purge remote delete failed: ' + e.message);
-        }
-      }
-      for(var j=0; j<(r.images||[]).length; j++){ try{ await idbDelete(r.images[j].id); }catch(e){ /* noop */ } }
+    var recs=readLocalRecords(),now=Date.now(),ms=TRASH_RETENTION_DAYS*86400000;
+    var old=recs.filter(function(r){return r.deleted&&r.deletedAt&&(now-new Date(r.deletedAt).getTime()>ms);});
+    for(var i=0;i<old.length;i++){
+      var r=old[i];
+      if(accessToken){try{if(r.driveId)await deleteDriveFile(r.driveId);for(var j=0;j<(r.images||[]).length;j++){if(r.images[j].driveId)try{await deleteDriveFile(r.images[j].driveId);}catch(e){}}}catch(e){}}
+      for(var k=0;k<(r.images||[]).length;k++){try{await idbDelete(r.images[k].id);}catch(e){}}
     }
-    var remaining = records.filter(function(r){ return !(r.deleted && r.deletedAt && (now - new Date(r.deletedAt).getTime() > retentionMs)); });
-    writeLocalRecords(remaining);
-    if(toPurge.length) { appendSyncLog('Auto-purged ' + toPurge.length + ' items from Trash'); renderTree(); renderLibrary(); }
-  }catch(e){ console.error('autoPurgeTrash error', e); appendSyncLog('Auto purge failed: ' + e.message); }
+    if(old.length){writeLocalRecords(recs.filter(function(r){return!(r.deleted&&r.deletedAt&&(now-new Date(r.deletedAt).getTime()>ms));}));renderTree();renderLibrary();}
+  }catch(e){console.error('autoPurge',e);}
 }
 
-/* ---------- UI & wiring on DOMContentLoaded ---------- */
-document.addEventListener('DOMContentLoaded', function(){
-  // Initialize token client if script already loaded
-  try{ initTokenClientIfNeeded(); }catch(e){ console.warn('early init failed', e); }
+/* ============================================================
+   AUTOCOMPLETE — suggest previously-used taxonomy / names
+   ============================================================ */
 
-  // Navigation
-  document.querySelectorAll('.navBtn').forEach(function(a){
-    a.addEventListener('click', function(e){
-      e.preventDefault();
-      var href = a.getAttribute('href') || '#pageHome';
-      history.replaceState(null,'',href);
-      showSection(href);
-    });
+/** Build a map of { fieldKey -> Set of unique values } from all saved records */
+function buildAutocompleteDictionary(){
+  var dict = {scientificName:new Set(), commonName:new Set(), tax0:new Set(), tax1:new Set(), tax2:new Set(), tax3:new Set(), tax4:new Set(), tax5:new Set(), tax6:new Set()};
+  var recs = readLocalRecords().filter(function(r){return !r.deleted;});
+  recs.forEach(function(r){
+    if(r.scientificName) dict.scientificName.add(r.scientificName);
+    if(r.commonName) dict.commonName.add(r.commonName);
+    var tax = r.taxonomy || [];
+    for(var i = 0; i < 7; i++){
+      if(tax[i]) dict['tax'+i].add(tax[i]);
+    }
   });
-  window.addEventListener('hashchange', function(){ var h = location.hash && document.querySelector(location.hash) ? location.hash : '#pageHome'; showSection(h); });
-  var initial = location.hash && document.querySelector(location.hash) ? location.hash : '#pageHome';
-  history.replaceState(null,'',initial);
-  showSection(initial);
+  return dict;
+}
 
-  // Sign-in click handler
-  document.getElementById('btnSignGrantSettings').addEventListener('click', function(){
-    if(tokenRequestInProgress){ console.info('Sign-in already in progress'); return; }
-    tokenRequestInProgress = true;
-    setSignButtonsEnabled(false);
-    try{
-      if(!tokenClient) initTokenClientIfNeeded();
-      if(tokenClient){
-        tokenClient.requestAccessToken({ prompt: 'consent' });
-      } else {
-        tokenRequestInProgress = false;
-        setSignButtonsEnabled(true);
-        showToast('Sign-in not ready yet. Please try again.', 3);
+/** Return matches from a Set, sorted: exact-prefix first, then contains */
+function acMatch(valueSet, query, maxResults){
+  maxResults = maxResults || 8;
+  if(!query) return [];
+  var q = query.toLowerCase();
+  var prefix = [], contains = [];
+  valueSet.forEach(function(v){
+    var low = v.toLowerCase();
+    if(low === q) return; /* skip exact duplicate of what user already typed */
+    if(low.startsWith(q)) prefix.push(v);
+    else if(low.indexOf(q) !== -1) contains.push(v);
+  });
+  prefix.sort(function(a,b){return a.localeCompare(b);});
+  contains.sort(function(a,b){return a.localeCompare(b);});
+  return prefix.concat(contains).slice(0, maxResults);
+}
+
+/** Highlight the matching substring in a suggestion */
+function acHighlight(text, query){
+  if(!query) return escapeHtml(text);
+  var idx = text.toLowerCase().indexOf(query.toLowerCase());
+  if(idx === -1) return escapeHtml(text);
+  return escapeHtml(text.slice(0, idx)) + '<mark>' + escapeHtml(text.slice(idx, idx + query.length)) + '</mark>' + escapeHtml(text.slice(idx + query.length));
+}
+
+/** Show the dropdown for a given input */
+function acShow(input){
+  var key = input.getAttribute('data-ac');
+  if(!key) return;
+  var listEl = input.parentNode.querySelector('.ac-list');
+  if(!listEl) return;
+  var query = input.value.trim();
+  if(!query){ acHideAll(); return; }
+  var dict = buildAutocompleteDictionary();
+  var set = dict[key];
+  if(!set){ acHideAll(); return; }
+  var matches = acMatch(set, query, 8);
+  if(!matches.length){ listEl.classList.remove('open'); listEl.innerHTML=''; return; }
+  listEl.innerHTML = matches.map(function(m){
+    return '<div class="ac-item" data-value="' + escapeHtml(m).replace(/"/g,'&quot;') + '">' + acHighlight(m, query) + '</div>';
+  }).join('');
+  listEl.classList.add('open');
+}
+
+/** Hide all open dropdowns */
+function acHideAll(){
+  document.querySelectorAll('.ac-list.open').forEach(function(el){ el.classList.remove('open'); el.innerHTML=''; });
+}
+
+/** Wire up autocomplete on all [data-ac] inputs */
+function initAutocomplete(){
+  var inputs = document.querySelectorAll('input[data-ac]');
+  inputs.forEach(function(inp){
+    /* Show suggestions on typing */
+    inp.addEventListener('input', function(){ acShow(inp); });
+    /* Also show on focus if there's text */
+    inp.addEventListener('focus', function(){ if(inp.value.trim()) acShow(inp); });
+  });
+
+  /* Delegate click on suggestion items */
+  document.addEventListener('click', function(e){
+    var item = e.target.closest('.ac-item');
+    if(item){
+      e.preventDefault(); e.stopPropagation();
+      var val = item.getAttribute('data-value');
+      /* Find the parent ac-wrap's input */
+      var wrap = item.closest('.ac-wrap');
+      if(wrap){
+        var inp = wrap.querySelector('input[data-ac]');
+        if(inp){ inp.value = val; inp.focus(); }
       }
-    }catch(err){
-      console.error('Sign in error', err);
-      tokenRequestInProgress = false;
-      setSignButtonsEnabled(true);
-      showToast('Sign in failed: ' + (err.message || 'unknown'), 4);
-    }
-  });
-
-  document.getElementById('btnSignRetrySettings').addEventListener('click', function(){
-    if(tokenRequestInProgress){ console.info('Retry blocked: request in progress'); return; }
-    tokenRequestInProgress = true;
-    setSignButtonsEnabled(false);
-    try{
-      if(!tokenClient) initTokenClientIfNeeded();
-      if(tokenClient) tokenClient.requestAccessToken({ prompt: 'consent' });
-      else { tokenRequestInProgress = false; setSignButtonsEnabled(true); showToast('Sign-in not ready',2); }
-    }catch(err){
-      console.error('Retry error', err);
-      tokenRequestInProgress = false;
-      setSignButtonsEnabled(true);
-      showToast('Retry failed',3);
-    }
-  });
-
-  // Auto-populate Genus and Species from scientific name
-  document.getElementById('speciesName').addEventListener('input', function(){
-    var val = this.value.trim();
-    var parts = val.split(/\s+/);
-    var genusField = document.getElementById('taxGenus');
-    var speciesField = document.getElementById('taxSpecies');
-    if(parts.length >= 1 && parts[0]){
-      genusField.value = parts[0].charAt(0).toUpperCase() + parts[0].slice(1).toLowerCase();
-    } else {
-      genusField.value = '';
-    }
-    if(parts.length >= 2 && parts[1]){
-      speciesField.value = parts[1].toLowerCase();
-    } else {
-      speciesField.value = '';
-    }
-  });
-
-  // Map modal wiring
-  document.getElementById('btnPickOnMap').addEventListener('click', function(){
-    var lat = parseFloat(document.getElementById('locationInput').dataset.lat || 0) || null;
-    var lon = parseFloat(document.getElementById('locationInput').dataset.lon || 0) || null;
-    openMapModal(lat, lon);
-  });
-  document.getElementById('mapCancel').addEventListener('click', function(){ closeMapModal(); });
-  document.getElementById('mapConfirm').addEventListener('click', function(){
-    if(mapSelectedLat && mapSelectedLon){
-      document.getElementById('locLat').innerText = mapSelectedLat.toFixed(6);
-      document.getElementById('locLon').innerText = mapSelectedLon.toFixed(6);
-      document.getElementById('locationMeta').style.display = 'block';
-      document.getElementById('locationInput').dataset.lat = mapSelectedLat;
-      document.getElementById('locationInput').dataset.lon = mapSelectedLon;
-      (async function(){ var currentText = document.getElementById('locationInput').value.trim(); if(!currentText){ var addr = await reverseGeocode(mapSelectedLat, mapSelectedLon); if(addr) document.getElementById('locationInput').value = addr; } })();
-      showToast('Map location selected',2);
-    } else {
-      showToast('Please click on the map to choose a location',2);
+      acHideAll();
       return;
     }
-    closeMapModal();
+    /* Click anywhere else closes dropdowns */
+    if(!e.target.closest('.ac-wrap')) acHideAll();
   });
 
-  // Use GPS
-  document.getElementById('btnUseGPS').addEventListener('click', function(){ useCurrentLocation(); });
+  /* Hide on Escape */
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape') acHideAll();
+  });
+}
 
-  // Image input
-  document.getElementById('speciesImages').addEventListener('change', function(e){
-    var files = e.target.files; var thumbs = document.getElementById('thumbs'); thumbs.innerHTML = '';
-    window._tmpFiles = window._tmpFiles || {};
+/* ============================================================
+   DUPLICATE SPECIES WARNING
+   ============================================================ */
+function checkDuplicateSpecies(){
+  var inp = document.getElementById('speciesName');
+  var warn = document.getElementById('dupWarn');
+  var val = inp.value.trim();
+  if(!val){ warn.classList.remove('show'); warn.innerHTML=''; return; }
+
+  /* If we are editing an existing record, don't warn about that same record */
+  var editingId = document.getElementById('saveBtnAdd').dataset.editing || null;
+  var valLower = val.toLowerCase();
+  var recs = readLocalRecords().filter(function(r){ return !r.deleted; });
+  var exactMatch = null;
+  var closeMatches = [];
+
+  recs.forEach(function(r){
+    if(editingId && r.id === editingId) return; /* skip the record being edited */
+    var name = (r.scientificName || '').toLowerCase();
+    if(name === valLower){
+      exactMatch = r;
+    } else if(name.indexOf(valLower) !== -1 || valLower.indexOf(name) !== -1){
+      /* one contains the other — likely a close match / typo */
+      closeMatches.push(r);
+    }
+  });
+
+  if(exactMatch){
+    var common = exactMatch.commonName ? ' (' + escapeHtml(exactMatch.commonName) + ')' : '';
+    warn.innerHTML = '<strong>\u26a0 Duplicate:</strong> <strong>' + escapeHtml(exactMatch.scientificName) + '</strong>' + common +
+      ' already exists in your records.' +
+      '<br><button class="dup-edit" data-dup-id="' + escapeHtml(exactMatch.id) + '">Edit existing record instead</button>';
+    warn.classList.add('show');
+  } else if(closeMatches.length){
+    var list = closeMatches.slice(0, 3).map(function(r){
+      var c = r.commonName ? ' (' + escapeHtml(r.commonName) + ')' : '';
+      return '<strong>' + escapeHtml(r.scientificName) + '</strong>' + c;
+    }).join(', ');
+    warn.innerHTML = '<strong>\u26a0 Similar species found:</strong> ' + list +
+      '<br><span style="font-size:13px;color:#9a7a20">Make sure this is a new species and not a duplicate.</span>';
+    warn.classList.add('show');
+  } else {
+    warn.classList.remove('show');
+    warn.innerHTML = '';
+  }
+}
+
+/* ---------- Navigation ---------- */
+function showSection(hash){
+  document.querySelectorAll('section.card').forEach(function(s){s.style.display='none';});
+  var el=document.querySelector(hash)||document.getElementById('pageHome');
+  if(el) el.style.display='block';
+  document.querySelectorAll('.navBtn').forEach(function(b){b.classList.remove('active');});
+  var a=document.querySelector('a[href="'+hash+'"]');if(a)a.classList.add('active');
+  /* scroll the container to top */
+  document.getElementById('mainContainer').scrollTop=0;
+  if(el&&el.id==='pageLibrary') renderLibrary();
+  updateSpeciesCount();
+}
+function updateSpeciesCount(){document.getElementById('speciesCount').innerText='Species recorded: '+readLocalRecords().filter(function(r){return!r.deleted;}).length;}
+
+/* ---------- DOMContentLoaded ---------- */
+document.addEventListener('DOMContentLoaded',function(){
+  try{initTokenClientIfNeeded();}catch(e){}
+
+  /* Nav buttons */
+  document.querySelectorAll('.navBtn').forEach(function(a){
+    a.addEventListener('click',function(e){e.preventDefault();var h=a.getAttribute('href')||'#pageHome';history.replaceState(null,'',h);showSection(h);});
+  });
+  window.addEventListener('hashchange',function(){showSection(location.hash&&document.querySelector(location.hash)?location.hash:'#pageHome');});
+  var init=location.hash&&document.querySelector(location.hash)?location.hash:'#pageHome';
+  history.replaceState(null,'',init);showSection(init);
+
+  /* Sign-in */
+  function doSignIn(){
+    if(tokenRequestInProgress)return;tokenRequestInProgress=true;setSignButtonsEnabled(false);
+    try{if(!tokenClient)initTokenClientIfNeeded();if(tokenClient)tokenClient.requestAccessToken({prompt:'consent'});else{tokenRequestInProgress=false;setSignButtonsEnabled(true);showToast('Sign-in not ready',3);}}
+    catch(e){tokenRequestInProgress=false;setSignButtonsEnabled(true);showToast('Sign in failed',3);}
+  }
+  document.getElementById('btnSignGrantSettings').addEventListener('click',doSignIn);
+  document.getElementById('btnSignRetrySettings').addEventListener('click',doSignIn);
+
+  /* Pull from Drive button */
+  document.getElementById('pullFromDriveBtn').addEventListener('click',function(){pullFromDrive().catch(function(){});});
+
+  /* Backup all button */
+  document.getElementById('backupAllBtn').addEventListener('click',function(){
+    if(!accessToken){showToast('Sign in first',3);return;}
+    var recs=readLocalRecords().filter(function(r){return!r.deleted;});
+    var q=readSyncQueue();
+    recs.forEach(function(r){if(q.indexOf(r.id)===-1){q.push(r.id);}});
+    writeSyncQueue(q);
+    appendSyncLog('Queued '+recs.length+' records for backup');
+    attemptSyncQueue().catch(function(){});
+  });
+
+  /* Map */
+  document.getElementById('btnPickOnMap').addEventListener('click',function(){
+    var lat=parseFloat(document.getElementById('locationInput').dataset.lat||0)||null;
+    var lon=parseFloat(document.getElementById('locationInput').dataset.lon||0)||null;
+    openMapModal(lat,lon);
+  });
+  document.getElementById('mapCancel').addEventListener('click',closeMapModal);
+  document.getElementById('mapConfirm').addEventListener('click',function(){
+    if(!mapSelectedLat||!mapSelectedLon){showToast('Click map to choose location',2);return;}
+    document.getElementById('locLat').innerText=mapSelectedLat.toFixed(6);
+    document.getElementById('locLon').innerText=mapSelectedLon.toFixed(6);
+    document.getElementById('locationMeta').style.display='block';
+    document.getElementById('locationInput').dataset.lat=mapSelectedLat;
+    document.getElementById('locationInput').dataset.lon=mapSelectedLon;
+    (async function(){if(!document.getElementById('locationInput').value.trim()){var a=await reverseGeocode(mapSelectedLat,mapSelectedLon);if(a)document.getElementById('locationInput').value=a;}})();
+    showToast('Location selected',2);closeMapModal();
+  });
+  document.getElementById('btnUseGPS').addEventListener('click',useCurrentLocation);
+
+  /* Image input */
+  document.getElementById('speciesImages').addEventListener('change',function(e){
+    var files=e.target.files,thumbs=document.getElementById('thumbs');thumbs.innerHTML='';
+    window._tmpFiles=window._tmpFiles||{};
     for(var i=0;i<files.length;i++){
-      var f = files[i]; var url = URL.createObjectURL(f); var id = 'tmp_' + Date.now() + '_' + i;
-      window._tmpFiles[id] = f;
-      var d = document.createElement('div'); d.className='thumbItem'; d.dataset.id = id; d.dataset.name = f.name;
-      var img = document.createElement('img'); img.src = url; img.alt = f.name; d.appendChild(img);
-      var controls = document.createElement('div'); controls.className='thumbControls';
-      var p = document.createElement('button'); p.className='thumbBtn profile'; p.dataset.action='profile'; p.dataset.id=d.dataset.id; p.innerText='\u2605';
-      var del = document.createElement('button'); del.className='thumbBtn'; del.dataset.action='delete'; del.dataset.id=d.dataset.id; del.innerText='\u2715';
-      controls.appendChild(p); controls.appendChild(del); d.appendChild(controls); thumbs.appendChild(d);
+      var f=files[i],url=URL.createObjectURL(f),id='tmp_'+Date.now()+'_'+i;
+      window._tmpFiles[id]=f;
+      var d=document.createElement('div');d.className='thumbItem';d.dataset.id=id;d.dataset.name=f.name;
+      var img=document.createElement('img');img.src=url;img.alt=f.name;d.appendChild(img);
+      var c=document.createElement('div');c.className='thumbControls';
+      var p=document.createElement('button');p.className='thumbBtn profile';p.dataset.action='profile';p.dataset.id=id;p.innerText='\u2605';
+      var del=document.createElement('button');del.className='thumbBtn';del.dataset.action='delete';del.dataset.id=id;del.innerText='\u2715';
+      c.appendChild(p);c.appendChild(del);d.appendChild(c);thumbs.appendChild(d);
     }
   });
+  document.getElementById('thumbs').addEventListener('click',function(e){
+    var btn=e.target.closest('button[data-action]');if(!btn)return;
+    var action=btn.dataset.action,id=btn.dataset.id;
+    if(action==='delete'){if(id&&id.startsWith('tmp_'))delete window._tmpFiles[id];var el=document.querySelector('.thumbItem[data-id="'+id+'"]');if(el)el.remove();}
+    else if(action==='profile'){document.querySelectorAll('.thumbItem').forEach(function(t){t.classList.remove('profileSelected');});var el2=document.querySelector('.thumbItem[data-id="'+id+'"]');if(el2)el2.classList.add('profileSelected');window._selectedProfile=id;}
+  });
 
-  // Thumbs click
-  document.getElementById('thumbs').addEventListener('click', function(e){
-    var btn = e.target.closest('button[data-action]');
+  /* Save */
+  document.getElementById('saveBtnAdd').addEventListener('click',async function(){await handleSaveFromAdd({autoUpload:true});});
+  document.getElementById('saveLocalOnlyBtnAdd').addEventListener('click',async function(){await handleSaveFromAdd({autoUpload:false});});
+
+  /* Export / Import */
+  document.getElementById('exportLocalBtnSettings').addEventListener('click',function(){
+    var d=JSON.stringify(readLocalRecords(),null,2);var b=new Blob([d],{type:'application/json'});var u=URL.createObjectURL(b);
+    var a=document.createElement('a');a.href=u;a.download='exploration_'+new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')+'.json';
+    document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(u);showToast('Exported',2);
+  });
+  document.getElementById('importLocalBtnSettings').addEventListener('click',function(){document.getElementById('importFile').click();});
+  document.getElementById('importFile').addEventListener('change',async function(e){
+    var f=e.target.files[0];if(!f)return;
+    try{var txt=await f.text();var arr=JSON.parse(txt);if(!Array.isArray(arr))throw new Error('bad');var ex=readLocalRecords();var merged=ex.concat(arr).filter(function(v,i,a){return a.findIndex(function(x){return x.id===v.id;})===i;});writeLocalRecords(merged);showToast('Imported',2);renderTree();renderLibrary();}catch(e){showToast('Import failed',3);}
+  });
+
+  /* Trash */
+  document.getElementById('openTrashBtn').addEventListener('click',openTrashModal);
+
+  /* Search */
+  document.getElementById('searchBtn').addEventListener('click',function(){
+    var q=document.getElementById('treeSearch').value.trim().toLowerCase();if(!q)return;
+    var found=root.descendants().find(function(d){return(d.data.name||'').toLowerCase().indexOf(q)!==-1;});
+    if(found){var p=found.parent;while(p){if(p._children){p.children=p._children;p._children=null;}p=p.parent;}renderTree();fitToScreen();}else showToast('No match',2);
+  });
+  document.getElementById('clearSearch').addEventListener('click',function(){document.getElementById('treeSearch').value='';});
+
+  /* Autocomplete for taxonomy & name fields */
+  initAutocomplete();
+
+  /* Duplicate species warning on scientific name input */
+  document.getElementById('speciesName').addEventListener('input', checkDuplicateSpecies);
+  document.getElementById('speciesName').addEventListener('change', checkDuplicateSpecies);
+  /* "Edit existing record instead" button inside warning */
+  document.getElementById('dupWarn').addEventListener('click', function(e){
+    var btn = e.target.closest('[data-dup-id]');
     if(!btn) return;
-    var action = btn.dataset.action;
-    var id = btn.dataset.id;
-    if(action === 'delete'){
-      if(id && id.startsWith('tmp_')){ delete window._tmpFiles[id]; var el = document.querySelector('.thumbItem[data-id="' + id + '"]'); if(el) el.remove(); }
-      else { window._deletedImages = window._deletedImages || []; window._deletedImages.push(id); var el2 = document.querySelector('.thumbItem[data-id="' + id + '"]'); if(el2) el2.remove(); }
-    } else if(action === 'profile'){
-      // Remove profileSelected and badge from all thumbs
-      document.querySelectorAll('.thumbItem').forEach(function(t){
-        t.classList.remove('profileSelected');
-        var oldBadge = t.querySelector('.thumbBadge');
-        if(oldBadge) oldBadge.remove();
-      });
-      var el3 = document.querySelector('.thumbItem[data-id="' + id + '"]');
-      if(el3){
-        el3.classList.add('profileSelected');
-        // Add "Profile" badge
-        var badge = document.createElement('div');
-        badge.className = 'thumbBadge';
-        badge.innerText = 'Profile';
-        el3.appendChild(badge);
-      }
-      window._selectedProfile = id;
-      showToast('Set as profile photo', 1);
-    }
+    var id = btn.getAttribute('data-dup-id');
+    if(id){ populateEditForm(id); document.getElementById('dupWarn').classList.remove('show'); }
   });
 
-  // Save buttons
-  document.getElementById('saveBtnAdd').addEventListener('click', async function(){ await handleSaveFromAdd({autoUpload:true}); });
-  document.getElementById('saveLocalOnlyBtnAdd').addEventListener('click', async function(){ await handleSaveFromAdd({autoUpload:false}); });
-
-  // Export/Import
-  document.getElementById('exportLocalBtnSettings').addEventListener('click', function(){
-    var data = JSON.stringify(readLocalRecords(), null, 2);
-    var blob = new Blob([data], { type: 'application/json' });
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a'); a.href = url; a.download = 'exploration_records_' + new Date().toISOString().slice(0,19).replace(/[:T]/g,'-') + '.json';
-    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-    showToast('Local JSON exported', 3);
-  });
-  document.getElementById('importLocalBtnSettings').addEventListener('click', function(){ document.getElementById('importFile').click(); });
-  document.getElementById('importFile').addEventListener('change', async function(e){
-    var f = e.target.files[0]; if(!f) return;
-    try{ var txt = await f.text(); var arr = JSON.parse(txt); if(!Array.isArray(arr)) throw new Error('Invalid file'); var existing = readLocalRecords(); var merged = existing.concat(arr); var deduped = merged.filter(function(v,i,a){ return a.findIndex(function(x){ return x.id===v.id; })===i; }); writeLocalRecords(deduped); showToast('Imported records',2); renderTree(); renderLibrary(); }catch(err){ showToast('Import failed',3); }
-  });
-
-  // Trash button
-  document.getElementById('openTrashBtn').addEventListener('click', function(){ openTrashModal(); });
-
-  // Search
-  document.getElementById('searchBtn').addEventListener('click', function(){
-    var q = document.getElementById('treeSearch').value.trim().toLowerCase();
-    if(!q) return;
-    var found = root.descendants().find(function(d){ return (d.data.name||'').toLowerCase().indexOf(q)!==-1; });
-    if(found){ var p = found.parent; while(p){ if(p._children){ p.children = p._children; p._children = null; } p = p.parent; } renderTree(); fitToScreen(); } else showToast('No match found',2);
-  });
-  document.getElementById('clearSearch').addEventListener('click', function(){ document.getElementById('treeSearch').value = ''; });
-
-  // Load persisted data from IndexedDB, then render UI
+  /* Init: load persisted data then render */
   initMemStore().then(function(){
-    renderTree();
-    updateSpeciesCount();
-    renderLibrary();
-    setTimeout(function(){ autoPurgeTrash().catch(function(){}); }, 600);
-    setInterval(function(){ if(accessToken) attemptSyncQueue().catch(function(){}); }, 60000);
-  }).catch(function(e){
-    console.warn('initMemStore failed, rendering with empty data', e);
-    renderTree();
-    updateSpeciesCount();
-    renderLibrary();
-  });
-
-  // Handle iOS keyboard pushing content up — scroll back to focused element
-  var scrollContainer = document.getElementById('mainContainer');
-  document.querySelectorAll('input, textarea, select').forEach(function(el){
-    el.addEventListener('focus', function(){
-      // On iOS, virtual keyboard can shift the viewport. Ensure the focused element stays visible.
-      setTimeout(function(){
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 350);
-    });
+    renderTree();updateSpeciesCount();renderLibrary();
+    setTimeout(function(){autoPurgeTrash().catch(function(){});},600);
+    setInterval(function(){if(accessToken)attemptSyncQueue().catch(function(){});},60000);
+  }).catch(function(){
+    renderTree();updateSpeciesCount();renderLibrary();
   });
 });
 
-/* ---------- Utility functions ---------- */
-function showSection(hash){
-  document.querySelectorAll('section.card').forEach(function(s){ s.style.display='none'; });
-  var el = document.querySelector(hash) || document.getElementById('pageHome');
-  if(el) el.style.display='block';
-  document.querySelectorAll('.navBtn').forEach(function(b){ b.classList.remove('active'); });
-  var active = document.querySelector('a[href="' + hash + '"]');
-  if(active) active.classList.add('active');
-  // Scroll the container (not body) to top when switching sections
-  var container = document.getElementById('mainContainer');
-  if(container) container.scrollTop = 0;
-  if(el && el.id === 'pageLibrary') renderLibrary();
-  updateSpeciesCount();
-}
-
-function updateSpeciesCount(){ document.getElementById('speciesCount').innerText = 'Species recorded: ' + readLocalRecords().filter(function(r){ return !r.deleted; }).length; }
-
-/* prevent iOS pinch zoom */
-document.addEventListener('gesturestart', function(e){ e.preventDefault(); });
-
-/* Prevent iOS rubber-band bounce on the edges */
-document.body.addEventListener('touchmove', function(e){
-  // Only prevent default on body-level touches (not inside the scrollable container)
-  if(!e.target.closest('.container') && !e.target.closest('.modal') && !e.target.closest('.leaflet-container')){
-    e.preventDefault();
-  }
-}, { passive: false });
+/* Prevent iOS pinch zoom */
+document.addEventListener('gesturestart',function(e){e.preventDefault();});
 </script>
 </body>
 </html>
