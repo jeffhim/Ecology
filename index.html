@@ -148,8 +148,18 @@ textarea{min-height:84px;resize:vertical}
 .dup-warn .dup-edit:active{background:#e0b040}
 @keyframes dupPulse{0%{opacity:0;transform:translateY(-4px)}100%{opacity:1;transform:translateY(0)}}
 
+/* ---------- Library card thumbnail ---------- */
+.lib-thumb{
+  width:68px;height:68px;border-radius:10px;overflow:hidden;
+  flex:0 0 68px;background:#eaf9ef;display:flex;align-items:center;justify-content:center;
+  border:1px solid #e0f0e4;
+}
+.lib-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.lib-thumb .lib-thumb-placeholder{color:#bbd4c4;font-size:28px;line-height:1}
+.lib-card-row{display:flex;gap:12px;align-items:center}
+
 /* ---------- Responsive ---------- */
-@media(max-width:900px){.thumbItem{width:72px;height:72px}}
+@media(max-width:900px){.thumbItem{width:72px;height:72px}.lib-thumb{width:56px;height:56px;flex:0 0 56px}}
 </style>
 </head>
 <body>
@@ -224,7 +234,7 @@ textarea{min-height:84px;resize:vertical}
         <label class="ac-wrap">Species <input id="taxSpecies" placeholder="Species" data-ac="tax6"><div class="ac-list" data-for="taxSpecies"></div></label>
       </div>
       <div style="margin-top:10px">
-        <label>Location (where found)<input id="locationInput" type="text" placeholder="Address or place name"></label>
+        <label class="ac-wrap">Location (where found)<input id="locationInput" type="text" placeholder="Address or place name" autocomplete="off" data-ac="location"><div class="ac-list" data-for="locationInput"></div></label>
         <div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <button id="btnUseGPS" class="btn small">Use current location</button>
           <button id="btnPickOnMap" class="btn small ghost">Pick on map</button>
@@ -822,16 +832,19 @@ function renderTree(){
     var data=buildTreeDataFromLocal();root=d3.hierarchy(data);collapseAll(root,0,2);
     var svgW=svg.node().clientWidth,svgH=+svg.attr('height');
     treeLayout.size([svgW-40,svgH-40]);treeLayout(root);
-    inner.selectAll('.link').data(root.links(),function(d){return d.target.data.name+'_'+d.target.depth;}).join(
-      function(en){return en.append('path').attr('class','link').attr('d',linkPath).attr('fill','none').attr('stroke','#cfeee0').attr('stroke-width',2);},
-      function(up){return up.attr('d',linkPath);},
-      function(ex){return ex.remove();}
-    );
-    var nodes=inner.selectAll('.node').data(root.descendants(),function(d){return d.data.name+'_'+d.depth;});
-    var ne=nodes.enter().append('g').attr('class','node').attr('transform',function(d){return'translate('+d.x+','+d.y+')';});
+    /* Clear old nodes & links completely, then redraw (fixes stale "No records yet" leftover) */
+    inner.selectAll('.node').remove();
+    inner.selectAll('.link').remove();
+
+    /* Draw links */
+    inner.selectAll('.link').data(root.links()).enter().append('path')
+      .attr('class','link').attr('d',linkPath).attr('fill','none').attr('stroke','#cfeee0').attr('stroke-width',2);
+
+    /* Draw nodes */
+    var ne=inner.selectAll('.node').data(root.descendants()).enter().append('g')
+      .attr('class','node').attr('transform',function(d){return'translate('+d.x+','+d.y+')';});
     ne.append('circle').attr('r',function(d){return d.children||d._children?6:5;}).attr('fill',function(d){return d.children||d._children?'var(--accent)':'#fff';}).attr('stroke','var(--accent)');
     ne.append('text').attr('x',0).attr('y',-10).attr('text-anchor','middle').text(function(d){return truncate(d.data.name,28);}).style('font-size','13px');
-    nodes.merge(ne).transition().duration(200).attr('transform',function(d){return'translate('+d.x+','+d.y+')';});
     inner.selectAll('.node').on('click',function(ev,d){ev.stopPropagation();if(d.children){d._children=d.children;d.children=null;}else{d.children=d._children;d._children=null;}renderTree();if(d.data.species&&d.data.recordId){showSection('#pageLibrary');}});
     updateMinimap();updateSpeciesCount();
   }catch(e){console.warn('renderTree',e);}
@@ -853,21 +866,52 @@ function renderLibrary(){
   if(!recs.length){el.innerHTML='<div>No records yet</div>';return;}
   recs.sort(function(a,b){return(a.scientificName||'').localeCompare(b.scientificName||'');});
   recs.forEach(function(s){
-    var card=document.createElement('div');card.className='card';card.style.cssText='display:flex;justify-content:space-between;align-items:center';
-    var left=document.createElement('div');
-    var t=document.createElement('div');t.style.cssText='font-weight:800;color:#145a3f';t.innerText=s.scientificName||'Unnamed';
-    var sub=document.createElement('div');sub.style.color='#666';sub.innerText=s.commonName||'';
-    var loc=document.createElement('div');loc.style.cssText='color:#666;font-size:13px;margin-top:6px';
-    if(s.coords&&s.coords.lat) loc.innerHTML='Location: '+(s.location?escapeHtml(s.location)+' \u2014 ':'')+'<strong>'+s.coords.lat.toFixed(6)+', '+s.coords.lon.toFixed(6)+'</strong>';
-    else loc.innerHTML='Location: '+(s.location?escapeHtml(s.location):'\u2014');
-    left.appendChild(t);left.appendChild(sub);left.appendChild(loc);
+    var card=document.createElement('div');card.className='card';card.style.cssText='display:flex;justify-content:space-between;align-items:center;gap:10px';
+
+    /* Thumbnail on the left */
+    var thumbWrap=document.createElement('div');thumbWrap.className='lib-thumb';
+    var profileImg=(s.images||[]).find(function(im){return im.isProfile;})||(s.images&&s.images.length?s.images[0]:null);
+    if(profileImg&&profileImg.id){
+      var thumbEl=document.createElement('img');thumbEl.alt=s.scientificName||'';
+      thumbEl.style.opacity='0';thumbEl.style.transition='opacity .25s';
+      thumbWrap.appendChild(thumbEl);
+      /* Async load image from IndexedDB */
+      (function(imgEl,imgId){
+        idbGet(imgId).then(function(blob){
+          if(blob){
+            var url=URL.createObjectURL(blob);
+            imgEl.src=url;imgEl.style.opacity='1';
+          } else {
+            imgEl.parentNode.innerHTML='<div class="lib-thumb-placeholder">&#127793;</div>';
+          }
+        }).catch(function(){
+          imgEl.parentNode.innerHTML='<div class="lib-thumb-placeholder">&#127793;</div>';
+        });
+      })(thumbEl,profileImg.id);
+    } else {
+      thumbWrap.innerHTML='<div class="lib-thumb-placeholder">&#127793;</div>';
+    }
+
+    /* Middle: text info */
+    var mid=document.createElement('div');mid.style.cssText='flex:1;min-width:0';
+    var t=document.createElement('div');t.style.cssText='font-weight:800;color:#145a3f;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';t.innerText=s.scientificName||'Unnamed';
+    var sub=document.createElement('div');sub.style.cssText='color:#666;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';sub.innerText=s.commonName||'';
+    var loc=document.createElement('div');loc.style.cssText='color:#666;font-size:13px;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+    if(s.coords&&s.coords.lat) loc.innerHTML='&#128205; '+(s.location?escapeHtml(s.location):s.coords.lat.toFixed(4)+', '+s.coords.lon.toFixed(4));
+    else loc.innerHTML=s.location?'&#128205; '+escapeHtml(s.location):'';
+    var imgCount=(s.images||[]).length;
+    if(imgCount){var ic=document.createElement('div');ic.style.cssText='color:#999;font-size:12px;margin-top:2px';ic.innerText='\ud83d\udcf7 '+imgCount+' photo'+(imgCount>1?'s':'');mid.appendChild(t);mid.appendChild(sub);mid.appendChild(loc);mid.appendChild(ic);}
+    else{mid.appendChild(t);mid.appendChild(sub);mid.appendChild(loc);}
+
+    /* Right: action buttons */
     var right=document.createElement('div');right.style.cssText='display:flex;flex-direction:column;gap:8px;flex-shrink:0';
     var eb=document.createElement('button');eb.className='btn small';eb.innerText='Edit';
     eb.addEventListener('click',(function(rid){return function(){populateEditForm(rid);showSection('#pageAdd');};})(s.id));
     var db=document.createElement('button');db.className='btn small ghost';db.innerText='Delete';
     db.addEventListener('click',(function(rid){return function(){softDeleteRecord(rid);};})(s.id));
     right.appendChild(eb);right.appendChild(db);
-    card.appendChild(left);card.appendChild(right);el.appendChild(card);
+
+    card.appendChild(thumbWrap);card.appendChild(mid);card.appendChild(right);el.appendChild(card);
   });
 }
 
@@ -931,11 +975,12 @@ async function autoPurgeTrash(){
 
 /** Build a map of { fieldKey -> Set of unique values } from all saved records */
 function buildAutocompleteDictionary(){
-  var dict = {scientificName:new Set(), commonName:new Set(), tax0:new Set(), tax1:new Set(), tax2:new Set(), tax3:new Set(), tax4:new Set(), tax5:new Set(), tax6:new Set()};
+  var dict = {scientificName:new Set(), commonName:new Set(), location:new Set(), tax0:new Set(), tax1:new Set(), tax2:new Set(), tax3:new Set(), tax4:new Set(), tax5:new Set(), tax6:new Set()};
   var recs = readLocalRecords().filter(function(r){return !r.deleted;});
   recs.forEach(function(r){
     if(r.scientificName) dict.scientificName.add(r.scientificName);
     if(r.commonName) dict.commonName.add(r.commonName);
+    if(r.location) dict.location.add(r.location);
     var tax = r.taxonomy || [];
     for(var i = 0; i < 7; i++){
       if(tax[i]) dict['tax'+i].add(tax[i]);
