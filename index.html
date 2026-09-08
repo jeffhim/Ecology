@@ -1108,12 +1108,28 @@ function initAutocomplete(){
  * the Genus (taxGenus) and Species (taxSpecies) fields.
  * Also, if the scientific name exactly matches an existing record,
  * auto-fill ALL taxonomy fields from that record.
+ *
+ * Tracks previously auto-filled values so they keep updating as the user
+ * types more characters — but won't overwrite manually-entered values.
  */
-function autoFillGenusSpecies(){
-  var val = document.getElementById('speciesName').value.trim();
-  if(!val) return;
+var _afGenus = '';   /* last value auto-fill wrote into Genus */
+var _afSpecies = ''; /* last value auto-fill wrote into Species */
+var _afTax = ['','','','','','','']; /* last values auto-fill wrote into all 7 fields */
+var _afTimer = null;
 
-  /* 1) Check if this exact scientific name exists — if so, copy full taxonomy */
+function autoFillGenusSpecies(){
+  clearTimeout(_afTimer);
+  _afTimer = setTimeout(_doAutoFill, 250); /* debounce 250ms */
+}
+function _doAutoFill(){
+  var val = document.getElementById('speciesName').value.trim();
+  if(!val){
+    _afGenus = ''; _afSpecies = '';
+    _afTax = ['','','','','','',''];
+    return;
+  }
+
+  /* 1) Check if this exact scientific name exists — copy full taxonomy */
   var recs = readLocalRecords().filter(function(r){ return !r.deleted; });
   var match = recs.find(function(r){
     return (r.scientificName || '').toLowerCase() === val.toLowerCase();
@@ -1122,27 +1138,44 @@ function autoFillGenusSpecies(){
     var fields = ['taxKingdom','taxPhylum','taxClass','taxOrder','taxFamily','taxGenus','taxSpecies'];
     fields.forEach(function(fid, i){
       var el = document.getElementById(fid);
-      /* Only fill if field is empty — don't overwrite user's manual edits */
-      if(!el.value.trim() && match.taxonomy[i]){
-        el.value = match.taxonomy[i];
+      var cur = el.value.trim();
+      var newVal = match.taxonomy[i] || '';
+      /* Fill if field is empty, or still holds the previous auto-fill value */
+      if(!cur || cur === _afTax[i]){
+        el.value = newVal;
+        _afTax[i] = newVal;
       }
     });
+    _afGenus = _afTax[5];
+    _afSpecies = _afTax[6];
     return;
   }
 
-  /* 2) Otherwise, parse binomial name: "Genus species" → fill Genus & Species */
+  /* 2) Parse binomial name: "Genus species" → fill Genus & Species */
   var parts = val.split(/\s+/);
+  var newGenus = '';
+  var newSpecies = '';
+
   if(parts.length >= 1){
-    var genusEl = document.getElementById('taxGenus');
-    if(!genusEl.value.trim()){
-      genusEl.value = parts[0].charAt(0).toUpperCase() + parts[0].slice(1).toLowerCase();
-    }
+    newGenus = parts[0].charAt(0).toUpperCase() + parts[0].slice(1).toLowerCase();
   }
   if(parts.length >= 2){
-    var speciesEl = document.getElementById('taxSpecies');
-    if(!speciesEl.value.trim()){
-      speciesEl.value = parts.slice(1).join(' ').toLowerCase();
-    }
+    newSpecies = parts.slice(1).join(' ').toLowerCase();
+  }
+
+  var genusEl = document.getElementById('taxGenus');
+  var curGenus = genusEl.value.trim();
+  /* Update if empty or still matches previous auto-fill value */
+  if(!curGenus || curGenus === _afGenus){
+    genusEl.value = newGenus;
+    _afGenus = newGenus;
+  }
+
+  var speciesEl = document.getElementById('taxSpecies');
+  var curSpecies = speciesEl.value.trim();
+  if(!curSpecies || curSpecies === _afSpecies){
+    speciesEl.value = newSpecies;
+    _afSpecies = newSpecies;
   }
 }
 
